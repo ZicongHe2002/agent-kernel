@@ -1,0 +1,23 @@
+{
+  "status": "draft_not_registrable",
+  "kernel_id": "mla_forward",
+  "known_context_only": {
+    "batch": 1,
+    "heads": 16,
+    "seq_len": 4096,
+    "q_rank": 1536,
+    "kv_rank": 512,
+    "d_nope": 128,
+    "d_rope": 64
+  },
+  "unresolved": [
+    "Actual callable and complete tensor signature",
+    "Value/output dimensions and layouts",
+    "Every weight/projector shape and precision contract",
+    "Causal/mask/length/scale/soft-cap semantics",
+    "O-only versus O+LSE contract",
+    "Full-forward versus attention-only measurement scope",
+    "Trusted reference implementation and approved tolerances"
+  ],
+  "instruction": "Inspect the real repository and fill a backend-specific problem schema. These historical dimensions are not a complete input contract, and are not a valid config record."
+}

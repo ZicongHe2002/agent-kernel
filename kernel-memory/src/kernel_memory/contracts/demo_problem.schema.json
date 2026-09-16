@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:kernel-memory:problem:demo-vector-add:v1",
+  "title": "CPU demo vector addition problem (not an MLA contract)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "n": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "dtype": {
+      "enum": [
+        "float32"
+      ]
+    },
+    "operation": {
+      "const": "vector_add"
+    },
+    "outputs": {
+      "const": [
+        "y"
+      ]
+    }
+  },
+  "required": [
+    "n",
+    "dtype",
+    "operation",
+    "outputs"
+  ]
+}

@@ -1,0 +1,889 @@
+{
+  "bundle_version": "0.2.0",
+  "is_fixture": true,
+  "description": "Synthetic, internally linked examples. No real GitHub PR, kernel execution, TPU measurement or LLO measurement is represented.",
+  "records": [
+    {
+      "schema_version": "0.2.0",
+      "record_type": "kernel",
+      "record_id": "kernel-demo",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "kernel_id": "demo_vector_add",
+        "display_name": "Synthetic vector-add Memory fixture",
+        "adapter_id": "mock-v1",
+        "contract_notes": "Fixture records only. Implement a real CPU adapter separately. Never report these latencies as measured."
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "config",
+      "record_id": "cfg-demo",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "kernel_id": "demo_vector_add",
+        "config_id": "demo-n16-f32",
+        "problem_schema_id": "urn:kernel-memory:problem:demo-vector-add:v1",
+        "problem_schema_digest": "sha256:cdd22559a450d844802382bf42c4d5a56545918f4e961c4fe87446ccc9687928",
+        "problem": {
+          "n": 16,
+          "dtype": "float32",
+          "operation": "vector_add",
+          "outputs": [
+            "y"
+          ]
+        },
+        "config_hash": "sha256:f93d42a53c9f6bcdab1fa855d9b3e5727e65601ff355aa96dc16142a282c1915",
+        "tags": [
+          "fixture",
+          "not-mla",
+          "not-measured"
+        ]
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "baseline",
+      "record_id": "baseline-demo",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "config_ref": "cfg-demo",
+        "baseline_id": "demo-reference",
+        "description": "Synthetic baseline fixture; fictional Git object IDs.",
+        "repo_uid": "github:github.com:repo:900001",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000001"
+        },
+        "entrypoint": "demo.reference:vector_add",
+        "role": "both"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "pr",
+      "record_id": "pr-demo-101",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "config_ref": "cfg-demo",
+        "pr_key": "gh-900001-pr-101",
+        "repo_uid": "github:github.com:repo:900001",
+        "provider": "github",
+        "number": 101,
+        "title": "SYNTHETIC PR: tile experiments",
+        "hypothesis": "Exercise storage of grouped modifications.",
+        "origin_ref": "baseline-demo"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "commit",
+      "record_id": "commit-demo-a",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-101",
+        "repo_uid": "github:github.com:repo:900001",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000002"
+        },
+        "git_parent_oids": [
+          {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000001"
+          }
+        ],
+        "diff_base_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000001"
+        },
+        "source_available": false,
+        "change_status": "recorded",
+        "changes": [
+          {
+            "change_id": "change-demo-a",
+            "component": "tiling",
+            "key": "block_q",
+            "before": 128,
+            "after": 256,
+            "rationale": "Synthetic metadata; not vector-add source code.",
+            "extraction_source": "explicit",
+            "attribution": "group_only"
+          }
+        ],
+        "summary": "Fixture for a commit with a measured-looking but explicitly synthetic result.",
+        "summary_author": "collector",
+        "diff_artifact_ref": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "commit",
+      "record_id": "commit-demo-b",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-101",
+        "repo_uid": "github:github.com:repo:900001",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000003"
+        },
+        "git_parent_oids": [
+          {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000002"
+          }
+        ],
+        "diff_base_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000002"
+        },
+        "source_available": false,
+        "change_status": "not_extracted",
+        "changes": [],
+        "summary": "Known commit with no run; never infer a test result.",
+        "summary_author": "collector",
+        "diff_artifact_ref": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "pr_snapshot",
+      "record_id": "snapshot-demo-101",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-101",
+        "previous_snapshot_ref": null,
+        "observed_head": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000003"
+        },
+        "observed_base": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000001"
+        },
+        "commit_refs": [
+          "commit-demo-a",
+          "commit-demo-b"
+        ],
+        "enumeration_status": "complete_for_snapshot",
+        "reason": null,
+        "github_state": "open"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "pr",
+      "record_id": "pr-demo-102",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "config_ref": "cfg-demo",
+        "pr_key": "gh-900001-pr-102",
+        "repo_uid": "github:github.com:repo:900001",
+        "provider": "github",
+        "number": 102,
+        "title": "SYNTHETIC PR: branch from non-head commit",
+        "hypothesis": "Exercise a branch from commit A, not from PR 101 head B.",
+        "origin_ref": "commit-demo-a"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "commit",
+      "record_id": "commit-demo-c",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-102",
+        "repo_uid": "github:github.com:repo:900001",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000004"
+        },
+        "git_parent_oids": [
+          {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000002"
+          }
+        ],
+        "diff_base_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000002"
+        },
+        "source_available": false,
+        "change_status": "recorded",
+        "changes": [
+          {
+            "change_id": "change-demo-c1",
+            "component": "pipeline",
+            "key": "stages",
+            "before": 2,
+            "after": 3,
+            "rationale": "Synthetic grouped change.",
+            "extraction_source": "explicit",
+            "attribution": "group_only"
+          },
+          {
+            "change_id": "change-demo-c2",
+            "component": "layout",
+            "key": "layout_id",
+            "before": "layout-a",
+            "after": "layout-b",
+            "rationale": "Synthetic grouped change.",
+            "extraction_source": "explicit",
+            "attribution": "group_only"
+          }
+        ],
+        "summary": "Two changes in one commit; no individual causal credit.",
+        "summary_author": "collector",
+        "diff_artifact_ref": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "commit",
+      "record_id": "commit-demo-a-in-102",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-102",
+        "repo_uid": "github:github.com:repo:900001",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000002"
+        },
+        "git_parent_oids": [
+          {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000001"
+          }
+        ],
+        "diff_base_oid": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000001"
+        },
+        "source_available": false,
+        "change_status": "not_extracted",
+        "changes": [],
+        "summary": "Separate PR-membership binding for the same source commit A; no run is implied.",
+        "summary_author": "collector",
+        "diff_artifact_ref": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "pr_snapshot",
+      "record_id": "snapshot-demo-102",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "pr_ref": "pr-demo-102",
+        "previous_snapshot_ref": null,
+        "observed_head": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000004"
+        },
+        "observed_base": {
+          "algorithm": "sha1",
+          "hex": "0000000000000000000000000000000000000001"
+        },
+        "commit_refs": [
+          "commit-demo-a-in-102",
+          "commit-demo-c"
+        ],
+        "enumeration_status": "complete_for_snapshot",
+        "reason": null,
+        "github_state": "open"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "relation",
+      "record_id": "relation-demo-origin",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "config_ref": "cfg-demo",
+        "kind": "optimization_origin",
+        "from_ref": "commit-demo-a",
+        "to_ref": "commit-demo-c",
+        "evidence_refs": [],
+        "rationale": "An explicit optimization-origin edge, separate from Git parents and benchmark baseline."
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "run",
+      "record_id": "run-demo-baseline",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "subject_ref": "baseline-demo",
+        "config_ref": "cfg-demo",
+        "request_id": "request-run-demo-baseline",
+        "attempt_no": 1,
+        "rerun_of": null,
+        "stage": "benchmark",
+        "provenance": "fixture",
+        "source": {
+          "repo_uid": "github:github.com:repo:900001",
+          "target_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000001"
+          },
+          "tested_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000001"
+          },
+          "tested_tree": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000065"
+          },
+          "checkout_mode": "exact_commit",
+          "merge_parent_oids": [],
+          "dirty": false,
+          "patch_digest": null,
+          "source_digest": "sha256:ef81b5fee94f52589514fe103101d5e5c7ebc22cf2c76d2ba66715075d95955a",
+          "entrypoint": "demo.fixture:never_execute",
+          "implementation_overrides": {},
+          "variant_digest": "sha256:912eba07ef959af5e7d4ae6591c5de437602fc9f8032a814a2bbc22a666b6fb3"
+        },
+        "environment": {
+          "backend": "mock",
+          "accelerator_model": "MOCK-NO-HARDWARE",
+          "device_count": 1,
+          "topology": "single",
+          "software": {
+            "runner": "fixture-v1"
+          },
+          "execution_flags": {},
+          "host_timer_environment": {},
+          "unknown_required_fields": [],
+          "environment_hash": "sha256:24c29a6bc6a2bf01f55efe635f3ebb9a81c6b121020ba42d3f1446268d0c1021"
+        },
+        "protocol": {
+          "protocol_id": "fixture-bench-v1",
+          "measurement_scope": "fixture_only",
+          "timing_method": "mock",
+          "include_compile": false,
+          "include_transfers": false,
+          "warmup": 0,
+          "repetitions": 5,
+          "statistic": "median",
+          "quantile_method": "linear",
+          "input_suite_hash": "sha256:aeeb6728da1fc3f5522cb9905b4877492e25d7ffee5e5b4e8ec2aff85130bb7e",
+          "capture_profile": false,
+          "protocol_hash": "sha256:a827b0c81614fd7748d5d225c4b794298acf4c8e0161f0d9cdc74185aa90f3b0"
+        },
+        "verifier": {
+          "verifier_id": "fixture-verifier-v1",
+          "reference_source_hash": "sha256:c00cd32ad8dc67fd45ffd16aa76bbcd9ca03ffd0b444cee8ecb539b8809d5930",
+          "suite_hash": "sha256:5296888f5d931bdb1c55f2d36b3379e1c40f8e711c8f55d94bac00042a281afa",
+          "tolerances": {
+            "atol": "0",
+            "rtol": "0"
+          },
+          "nonfinite_policy": "reject_unexpected",
+          "verifier_hash": "sha256:8148bbe92451462c7887eaa2b3763dde62a33012dbd2784086801d4e0ada0870"
+        },
+        "execution_status": "succeeded",
+        "failure_reason": null,
+        "correctness": {
+          "status": "pass",
+          "cases_total": 1,
+          "cases_passed": 1,
+          "max_abs_error": 0,
+          "max_rel_error": 0,
+          "report_artifact_ref": "run-demo-baseline-correctness"
+        },
+        "timing": {
+          "status": "recorded",
+          "sample_count": 5,
+          "median_us": 100,
+          "p90_us": 100.6,
+          "samples_artifact_ref": "run-demo-baseline-samples"
+        },
+        "analysis_metrics": [
+          {
+            "name": "register_spill_vmem_static_bytes",
+            "status": "not_collected",
+            "value": null,
+            "unit": "bytes",
+            "kind": "static_estimate",
+            "scope": "compiled_kernel",
+            "source_artifact_ref": null,
+            "parser_id": null,
+            "parser_version": null,
+            "definition": "Placeholder semantic name; no real LLO parser or report was supplied."
+          }
+        ],
+        "analysis_conclusion": null,
+        "artifacts": [
+          {
+            "artifact_id": "run-demo-baseline-samples",
+            "kind": "latency_samples",
+            "uri": "examples/artifacts/run-demo-baseline-samples.json",
+            "sha256": "sha256:de22a7a357a8f8f2f2d9ba19669440b2169993752f60490855a5f628ff230856",
+            "size_bytes": 114,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          },
+          {
+            "artifact_id": "run-demo-baseline-correctness",
+            "kind": "correctness_report",
+            "uri": "examples/artifacts/run-demo-baseline-correctness.json",
+            "sha256": "sha256:22bbfc356b4840daa262ba07890e33b100f11da6ae5e28ec49182c5b6f954dd0",
+            "size_bytes": 105,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          }
+        ],
+        "comparison_key": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b",
+        "session_id": "session-1",
+        "pair_id": "pair-1",
+        "role_in_pair": "baseline"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "run",
+      "record_id": "run-demo-a",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "subject_ref": "commit-demo-a",
+        "config_ref": "cfg-demo",
+        "request_id": "request-run-demo-a",
+        "attempt_no": 1,
+        "rerun_of": null,
+        "stage": "benchmark",
+        "provenance": "fixture",
+        "source": {
+          "repo_uid": "github:github.com:repo:900001",
+          "target_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000002"
+          },
+          "tested_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000002"
+          },
+          "tested_tree": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000066"
+          },
+          "checkout_mode": "exact_commit",
+          "merge_parent_oids": [],
+          "dirty": false,
+          "patch_digest": null,
+          "source_digest": "sha256:cac26818d6cbd1a8d03799acca368bd50865e249e4cdf008a9873f4b73b5b485",
+          "entrypoint": "demo.fixture:never_execute",
+          "implementation_overrides": {},
+          "variant_digest": "sha256:b8cbf33a9b434e625797495f025a978dd36c05d9de242fb0ee4265e1e0ef1174"
+        },
+        "environment": {
+          "backend": "mock",
+          "accelerator_model": "MOCK-NO-HARDWARE",
+          "device_count": 1,
+          "topology": "single",
+          "software": {
+            "runner": "fixture-v1"
+          },
+          "execution_flags": {},
+          "host_timer_environment": {},
+          "unknown_required_fields": [],
+          "environment_hash": "sha256:24c29a6bc6a2bf01f55efe635f3ebb9a81c6b121020ba42d3f1446268d0c1021"
+        },
+        "protocol": {
+          "protocol_id": "fixture-bench-v1",
+          "measurement_scope": "fixture_only",
+          "timing_method": "mock",
+          "include_compile": false,
+          "include_transfers": false,
+          "warmup": 0,
+          "repetitions": 5,
+          "statistic": "median",
+          "quantile_method": "linear",
+          "input_suite_hash": "sha256:aeeb6728da1fc3f5522cb9905b4877492e25d7ffee5e5b4e8ec2aff85130bb7e",
+          "capture_profile": false,
+          "protocol_hash": "sha256:a827b0c81614fd7748d5d225c4b794298acf4c8e0161f0d9cdc74185aa90f3b0"
+        },
+        "verifier": {
+          "verifier_id": "fixture-verifier-v1",
+          "reference_source_hash": "sha256:c00cd32ad8dc67fd45ffd16aa76bbcd9ca03ffd0b444cee8ecb539b8809d5930",
+          "suite_hash": "sha256:5296888f5d931bdb1c55f2d36b3379e1c40f8e711c8f55d94bac00042a281afa",
+          "tolerances": {
+            "atol": "0",
+            "rtol": "0"
+          },
+          "nonfinite_policy": "reject_unexpected",
+          "verifier_hash": "sha256:8148bbe92451462c7887eaa2b3763dde62a33012dbd2784086801d4e0ada0870"
+        },
+        "execution_status": "succeeded",
+        "failure_reason": null,
+        "correctness": {
+          "status": "pass",
+          "cases_total": 1,
+          "cases_passed": 1,
+          "max_abs_error": 0,
+          "max_rel_error": 0,
+          "report_artifact_ref": "run-demo-a-correctness"
+        },
+        "timing": {
+          "status": "recorded",
+          "sample_count": 5,
+          "median_us": 90,
+          "p90_us": 90.6,
+          "samples_artifact_ref": "run-demo-a-samples"
+        },
+        "analysis_metrics": [
+          {
+            "name": "register_spill_vmem_static_bytes",
+            "status": "not_collected",
+            "value": null,
+            "unit": "bytes",
+            "kind": "static_estimate",
+            "scope": "compiled_kernel",
+            "source_artifact_ref": null,
+            "parser_id": null,
+            "parser_version": null,
+            "definition": "Placeholder semantic name; no real LLO parser or report was supplied."
+          }
+        ],
+        "analysis_conclusion": null,
+        "artifacts": [
+          {
+            "artifact_id": "run-demo-a-samples",
+            "kind": "latency_samples",
+            "uri": "examples/artifacts/run-demo-a-samples.json",
+            "sha256": "sha256:bc4765c6583b012674d7bb07cde3f1c37b37e01773d3349c33cb95aec11820c5",
+            "size_bytes": 110,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          },
+          {
+            "artifact_id": "run-demo-a-correctness",
+            "kind": "correctness_report",
+            "uri": "examples/artifacts/run-demo-a-correctness.json",
+            "sha256": "sha256:22bbfc356b4840daa262ba07890e33b100f11da6ae5e28ec49182c5b6f954dd0",
+            "size_bytes": 105,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          }
+        ],
+        "comparison_key": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b",
+        "session_id": "session-1",
+        "pair_id": "pair-1",
+        "role_in_pair": "candidate"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "run",
+      "record_id": "run-demo-c",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "subject_ref": "commit-demo-c",
+        "config_ref": "cfg-demo",
+        "request_id": "request-run-demo-c",
+        "attempt_no": 1,
+        "rerun_of": null,
+        "stage": "benchmark",
+        "provenance": "fixture",
+        "source": {
+          "repo_uid": "github:github.com:repo:900001",
+          "target_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000004"
+          },
+          "tested_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000004"
+          },
+          "tested_tree": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000068"
+          },
+          "checkout_mode": "exact_commit",
+          "merge_parent_oids": [],
+          "dirty": false,
+          "patch_digest": null,
+          "source_digest": "sha256:5741e445415ce630e346f69dfe270cd7208d4eadfe4cfd4bf087f7a859ac4c95",
+          "entrypoint": "demo.fixture:never_execute",
+          "implementation_overrides": {},
+          "variant_digest": "sha256:21201727dcc4c6d3aaaad5936fb5e36a4aa7a2b49ea1f89ecf3c1545f05b67df"
+        },
+        "environment": {
+          "backend": "mock",
+          "accelerator_model": "MOCK-NO-HARDWARE",
+          "device_count": 1,
+          "topology": "single",
+          "software": {
+            "runner": "fixture-v1"
+          },
+          "execution_flags": {},
+          "host_timer_environment": {},
+          "unknown_required_fields": [],
+          "environment_hash": "sha256:24c29a6bc6a2bf01f55efe635f3ebb9a81c6b121020ba42d3f1446268d0c1021"
+        },
+        "protocol": {
+          "protocol_id": "fixture-bench-v1",
+          "measurement_scope": "fixture_only",
+          "timing_method": "mock",
+          "include_compile": false,
+          "include_transfers": false,
+          "warmup": 0,
+          "repetitions": 5,
+          "statistic": "median",
+          "quantile_method": "linear",
+          "input_suite_hash": "sha256:aeeb6728da1fc3f5522cb9905b4877492e25d7ffee5e5b4e8ec2aff85130bb7e",
+          "capture_profile": false,
+          "protocol_hash": "sha256:a827b0c81614fd7748d5d225c4b794298acf4c8e0161f0d9cdc74185aa90f3b0"
+        },
+        "verifier": {
+          "verifier_id": "fixture-verifier-v1",
+          "reference_source_hash": "sha256:c00cd32ad8dc67fd45ffd16aa76bbcd9ca03ffd0b444cee8ecb539b8809d5930",
+          "suite_hash": "sha256:5296888f5d931bdb1c55f2d36b3379e1c40f8e711c8f55d94bac00042a281afa",
+          "tolerances": {
+            "atol": "0",
+            "rtol": "0"
+          },
+          "nonfinite_policy": "reject_unexpected",
+          "verifier_hash": "sha256:8148bbe92451462c7887eaa2b3763dde62a33012dbd2784086801d4e0ada0870"
+        },
+        "execution_status": "succeeded",
+        "failure_reason": null,
+        "correctness": {
+          "status": "pass",
+          "cases_total": 1,
+          "cases_passed": 1,
+          "max_abs_error": 0,
+          "max_rel_error": 0,
+          "report_artifact_ref": "run-demo-c-correctness"
+        },
+        "timing": {
+          "status": "recorded",
+          "sample_count": 5,
+          "median_us": 88,
+          "p90_us": 88.6,
+          "samples_artifact_ref": "run-demo-c-samples"
+        },
+        "analysis_metrics": [
+          {
+            "name": "register_spill_vmem_static_bytes",
+            "status": "observed",
+            "value": 65536,
+            "unit": "bytes",
+            "kind": "static_estimate",
+            "scope": "compiled_kernel",
+            "source_artifact_ref": "mock-spill-report",
+            "parser_id": "mock-spill",
+            "parser_version": "1",
+            "definition": "Synthetic metric with explicit scope; not a real TPU LLO result."
+          }
+        ],
+        "analysis_conclusion": "Synthetic fixture: successful run with a nonzero spill metric. This is not an execution failure.",
+        "artifacts": [
+          {
+            "artifact_id": "run-demo-c-samples",
+            "kind": "latency_samples",
+            "uri": "examples/artifacts/run-demo-c-samples.json",
+            "sha256": "sha256:9fb5169d6ffd3ac4915a612be75c08d3661fbde78b54cdc9e14b801c420d70be",
+            "size_bytes": 110,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          },
+          {
+            "artifact_id": "run-demo-c-correctness",
+            "kind": "correctness_report",
+            "uri": "examples/artifacts/run-demo-c-correctness.json",
+            "sha256": "sha256:22bbfc356b4840daa262ba07890e33b100f11da6ae5e28ec49182c5b6f954dd0",
+            "size_bytes": 105,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          },
+          {
+            "artifact_id": "mock-spill-report",
+            "kind": "mock_analysis",
+            "uri": "examples/artifacts/mock-spill-report.json",
+            "sha256": "sha256:b81d0f5669f11ae580aaed77b54c2494f2fa5cc416699631b5bb1cd89c8c73db",
+            "size_bytes": 99,
+            "media_type": "application/json",
+            "retention": "permanent",
+            "availability": "present"
+          }
+        ],
+        "comparison_key": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b",
+        "session_id": "session-2",
+        "pair_id": "pair-2",
+        "role_in_pair": "candidate"
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "run",
+      "record_id": "run-demo-c-failure",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "subject_ref": "commit-demo-c",
+        "config_ref": "cfg-demo",
+        "request_id": "request-run-demo-c-failure",
+        "attempt_no": 1,
+        "rerun_of": null,
+        "stage": "benchmark",
+        "provenance": "fixture",
+        "source": {
+          "repo_uid": "github:github.com:repo:900001",
+          "target_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000004"
+          },
+          "tested_commit": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000004"
+          },
+          "tested_tree": {
+            "algorithm": "sha1",
+            "hex": "0000000000000000000000000000000000000068"
+          },
+          "checkout_mode": "exact_commit",
+          "merge_parent_oids": [],
+          "dirty": false,
+          "patch_digest": null,
+          "source_digest": "sha256:5741e445415ce630e346f69dfe270cd7208d4eadfe4cfd4bf087f7a859ac4c95",
+          "entrypoint": "demo.fixture:never_execute",
+          "implementation_overrides": {},
+          "variant_digest": "sha256:21201727dcc4c6d3aaaad5936fb5e36a4aa7a2b49ea1f89ecf3c1545f05b67df"
+        },
+        "environment": {
+          "backend": "mock",
+          "accelerator_model": "MOCK-NO-HARDWARE",
+          "device_count": 1,
+          "topology": "single",
+          "software": {
+            "runner": "fixture-v1"
+          },
+          "execution_flags": {},
+          "host_timer_environment": {},
+          "unknown_required_fields": [],
+          "environment_hash": "sha256:24c29a6bc6a2bf01f55efe635f3ebb9a81c6b121020ba42d3f1446268d0c1021"
+        },
+        "protocol": {
+          "protocol_id": "fixture-bench-v1",
+          "measurement_scope": "fixture_only",
+          "timing_method": "mock",
+          "include_compile": false,
+          "include_transfers": false,
+          "warmup": 0,
+          "repetitions": 5,
+          "statistic": "median",
+          "quantile_method": "linear",
+          "input_suite_hash": "sha256:aeeb6728da1fc3f5522cb9905b4877492e25d7ffee5e5b4e8ec2aff85130bb7e",
+          "capture_profile": false,
+          "protocol_hash": "sha256:a827b0c81614fd7748d5d225c4b794298acf4c8e0161f0d9cdc74185aa90f3b0"
+        },
+        "verifier": {
+          "verifier_id": "fixture-verifier-v1",
+          "reference_source_hash": "sha256:c00cd32ad8dc67fd45ffd16aa76bbcd9ca03ffd0b444cee8ecb539b8809d5930",
+          "suite_hash": "sha256:5296888f5d931bdb1c55f2d36b3379e1c40f8e711c8f55d94bac00042a281afa",
+          "tolerances": {
+            "atol": "0",
+            "rtol": "0"
+          },
+          "nonfinite_policy": "reject_unexpected",
+          "verifier_hash": "sha256:8148bbe92451462c7887eaa2b3763dde62a33012dbd2784086801d4e0ada0870"
+        },
+        "execution_status": "compile_error",
+        "failure_reason": "Synthetic compile failure.",
+        "correctness": {
+          "status": "not_run",
+          "cases_total": 0,
+          "cases_passed": 0,
+          "max_abs_error": null,
+          "max_rel_error": null,
+          "report_artifact_ref": null
+        },
+        "timing": {
+          "status": "not_run",
+          "sample_count": 0,
+          "median_us": null,
+          "p90_us": null,
+          "samples_artifact_ref": null
+        },
+        "analysis_metrics": [
+          {
+            "name": "register_spill_vmem_static_bytes",
+            "status": "not_collected",
+            "value": null,
+            "unit": "bytes",
+            "kind": "static_estimate",
+            "scope": "compiled_kernel",
+            "source_artifact_ref": null,
+            "parser_id": null,
+            "parser_version": null,
+            "definition": "Placeholder semantic name; no real LLO parser or report was supplied."
+          }
+        ],
+        "analysis_conclusion": null,
+        "artifacts": [],
+        "comparison_key": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b",
+        "session_id": null,
+        "pair_id": null,
+        "role_in_pair": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "decision",
+      "record_id": "decision-demo-blocked",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "config_ref": "cfg-demo",
+        "comparison_key": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b",
+        "candidate_subject_ref": "commit-demo-a",
+        "candidate_run_refs": [
+          "run-demo-a"
+        ],
+        "baseline_run_refs": [
+          "run-demo-baseline"
+        ],
+        "policy": {
+          "policy_id": "default-confirm-v1",
+          "min_confirm_pairs": 3,
+          "min_pair_speedup": "1.02",
+          "max_normalized_iqr": "0.05",
+          "max_baseline_drift_ratio": "1.05",
+          "hard_resource_constraints": [],
+          "require_trusted_worker": true,
+          "allow_fixture": false
+        },
+        "policy_hash": "sha256:4c214e453dadb52cf291a03a05079c5e9d0f4c501a67056c4f484b97cf3127a2",
+        "outcome": "blocked",
+        "reason_codes": [
+          "FIXTURE_NOT_ELIGIBLE",
+          "INSUFFICIENT_CONFIRMATION_PAIRS"
+        ],
+        "is_production": false,
+        "evaluated_by": "program",
+        "supersedes_decision_ref": null
+      }
+    },
+    {
+      "schema_version": "0.2.0",
+      "record_type": "annotation",
+      "record_id": "annotation-demo-grouped",
+      "created_at": "2026-09-08T00:00:00Z",
+      "payload": {
+        "target_ref": "commit-demo-c",
+        "category": "lesson",
+        "text": "The synthetic combined change is faster in a fixture. No individual change effect is established, and no production measurement exists.",
+        "author_kind": "agent",
+        "evidence_refs": [
+          "run-demo-c"
+        ],
+        "confidence": "unverified",
+        "supersedes_ref": null
+      }
+    }
+  ]
+}

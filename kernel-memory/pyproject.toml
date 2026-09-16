@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kernel-memory"
+version = "0.2.0"
+description = "Kernel Memory: authoritative JSON memory, PR/commit/run trajectories, and budgeted optimization orchestration for kernel-optimization agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dependencies = [
+    "jsonschema>=4.18,<5",
+]
+
+[project.optional-dependencies]
+cpu-demo = ["numpy>=1.26"]
+jax = ["jax>=0.4.30"]
+yaml = ["PyYAML>=6.0"]
+dev = ["pytest>=7.4", "numpy>=1.26"]
+
+[project.scripts]
+kmem = "kernel_memory.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kernel_memory = ["contracts/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "integration: environment-dependent integration tests (may be skipped; a skip is not a pass)",
+    "slow: slower tests",
+]

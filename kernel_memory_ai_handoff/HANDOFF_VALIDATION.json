@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "scope": "handoff schemas and synthetic fixtures only",
+  "production_system_implemented": false,
+  "real_cpu_benchmark_executed": false,
+  "tpu_benchmark_executed": false,
+  "github_live_collection_executed": false,
+  "llo_real_parser_validated": false,
+  "schema_records_validated": 18,
+  "runs_validated": 4,
+  "artifact_checks": 7,
+  "latency_summary_checks": 6,
+  "golden_hash_vectors": 4,
+  "illustrative_speedup": 1.1111111111111112,
+  "illustrative_latency_reduction_pct": 9.999999999999998,
+  "invalid_mla_draft_correctly_rejected": true,
+  "all_runs_are_explicit_fixtures": true
+}

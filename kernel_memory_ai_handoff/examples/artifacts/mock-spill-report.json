@@ -1,0 +1,5 @@
+{
+  "format": "mock-spill-v1",
+  "is_fixture": true,
+  "register_spill_vmem_static_bytes": 65536
+}

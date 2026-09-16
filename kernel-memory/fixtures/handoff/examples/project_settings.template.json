@@ -1,0 +1,41 @@
+{
+  "template_only": true,
+  "settings_version": "0.2.0",
+  "project_root": "RESOLVE_FROM_AUTHORIZED_WORKSPACE",
+  "memory_root": "./memory",
+  "source_repository": null,
+  "kernel_id": "mla_forward",
+  "kernel_entrypoint": null,
+  "problem_schema_path": null,
+  "trusted_reference_entrypoint": null,
+  "approved_verifier_path": null,
+  "github_repository": null,
+  "github_token_env_name": "GITHUB_TOKEN",
+  "model_provider": null,
+  "model_api_key_env_name": null,
+  "llo_adapter": null,
+  "permissions": {
+    "allow_project_code_write": true,
+    "allow_local_cpu_tests": true,
+    "allow_network": false,
+    "allow_dependency_install": false,
+    "allow_candidate_code_write": false,
+    "allow_local_candidate_commit": false,
+    "allow_remote_write": false,
+    "allow_tpu_execution": false,
+    "allow_model_api_calls": false
+  },
+  "budget": {
+    "max_candidates": 8,
+    "max_execution_attempts": 24,
+    "max_model_calls": 12,
+    "max_wall_time_seconds": 1800,
+    "max_concurrent_runners": 1
+  },
+  "notes": [
+    "This is an implementation starting point, not an accepted runtime configuration or a complete schema.",
+    "Do not infer repository paths, MLA ABI, TPU availability, LLO format, or credentials.",
+    "Enabling network access does not authorize remote writes or paid execution.",
+    "No secret value belongs in this file. Environment-variable names are not credentials."
+  ]
+}

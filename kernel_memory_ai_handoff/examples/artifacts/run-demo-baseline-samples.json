@@ -1,0 +1,11 @@
+{
+  "is_fixture": true,
+  "samples": [
+    100,
+    101,
+    100,
+    99,
+    100
+  ],
+  "unit": "microseconds"
+}

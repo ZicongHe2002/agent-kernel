@@ -1,0 +1,79 @@
+{
+  "scope": "handoff checker only, not production-system acceptance tests",
+  "status": "passed",
+  "negative_cases_executed": 12,
+  "results": [
+    {
+      "case": "unknown_record_field",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValidationError"
+    },
+    {
+      "case": "tested_source_mismatch",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "unknown_spill_filled_with_zero",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "incorrect_latency_summary",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "fixture_claiming_trusted_worker",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "artifact_tampering",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "wrong_config_hash",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "cross_pr_membership_error",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "duplicate_record_id",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "artifact_path_traversal",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    },
+    {
+      "case": "invalid_boolean_dimension",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValidationError"
+    },
+    {
+      "case": "duplicate_json_key",
+      "expected": "reject",
+      "actual": "rejected",
+      "exception_type": "ValueError"
+    }
+  ]
+}

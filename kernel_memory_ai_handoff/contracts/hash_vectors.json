@@ -1,0 +1,85 @@
+{
+  "hash_version": "jcs-sha256-v1",
+  "fixture_domain": "ASCII strings and keys; integers, booleans, null, arrays, objects only. Production must use a complete JCS implementation.",
+  "vectors": [
+    {
+      "name": "demo_problem_schema",
+      "payload": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "urn:kernel-memory:problem:demo-vector-add:v1",
+        "title": "CPU demo vector addition problem (not an MLA contract)",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "n": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dtype": {
+            "enum": [
+              "float32"
+            ]
+          },
+          "operation": {
+            "const": "vector_add"
+          },
+          "outputs": {
+            "const": [
+              "y"
+            ]
+          }
+        },
+        "required": [
+          "n",
+          "dtype",
+          "operation",
+          "outputs"
+        ]
+      },
+      "digest": "sha256:cdd22559a450d844802382bf42c4d5a56545918f4e961c4fe87446ccc9687928"
+    },
+    {
+      "name": "config_identity",
+      "payload": {
+        "hash_version": "jcs-sha256-v1",
+        "kernel_id": "demo_vector_add",
+        "problem_schema_id": "urn:kernel-memory:problem:demo-vector-add:v1",
+        "problem_schema_digest": "sha256:cdd22559a450d844802382bf42c4d5a56545918f4e961c4fe87446ccc9687928",
+        "problem": {
+          "n": 16,
+          "dtype": "float32",
+          "operation": "vector_add",
+          "outputs": [
+            "y"
+          ]
+        }
+      },
+      "digest": "sha256:f93d42a53c9f6bcdab1fa855d9b3e5727e65601ff355aa96dc16142a282c1915"
+    },
+    {
+      "name": "comparison_identity",
+      "payload": {
+        "config_hash": "sha256:f93d42a53c9f6bcdab1fa855d9b3e5727e65601ff355aa96dc16142a282c1915",
+        "environment_hash": "sha256:24c29a6bc6a2bf01f55efe635f3ebb9a81c6b121020ba42d3f1446268d0c1021",
+        "protocol_hash": "sha256:a827b0c81614fd7748d5d225c4b794298acf4c8e0161f0d9cdc74185aa90f3b0",
+        "verifier_hash": "sha256:8148bbe92451462c7887eaa2b3763dde62a33012dbd2784086801d4e0ada0870",
+        "checkout_mode": "exact_commit"
+      },
+      "digest": "sha256:aa3a0cc18786750f67c6c00777cd916928158ba70b78f052374437d9083b702b"
+    },
+    {
+      "name": "promotion_policy",
+      "payload": {
+        "policy_id": "default-confirm-v1",
+        "min_confirm_pairs": 3,
+        "min_pair_speedup": "1.02",
+        "max_normalized_iqr": "0.05",
+        "max_baseline_drift_ratio": "1.05",
+        "hard_resource_constraints": [],
+        "require_trusted_worker": true,
+        "allow_fixture": false
+      },
+      "digest": "sha256:4c214e453dadb52cf291a03a05079c5e9d0f4c501a67056c4f484b97cf3127a2"
+    }
+  ]
+}
