@@ -369,6 +369,20 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
+def _is_true(value: Any) -> bool:
+    """Exactly a boolean true (Python or numpy); never a truthy number or string."""
+    return isinstance(value, (bool, np.bool_)) and bool(value)
+
+
+def _numeric_or_none(value: Any) -> float | None:
+    """A real number (Python or numpy, never a boolean) as float; anything else is None."""
+    if isinstance(value, (bool, np.bool_)):
+        return None
+    if isinstance(value, (int, float, np.integer, np.floating)):
+        return float(value)
+    return None
+
+
 def correctness_report_bytes(
     *,
     status: str,
@@ -384,8 +398,10 @@ def correctness_report_bytes(
     for key in ("kind", "status", "cases", "tolerances", "nonfinite_policy", "reference_id", "is_fixture"):
         if key in meta:
             raise InputError(f"metadata key {key!r} is reserved in a correctness report", code="RESERVED_KEY")
-    abs_errors = [c.get("max_abs_error") for c in cases if isinstance(c.get("max_abs_error"), (int, float))]
-    rel_errors = [c.get("max_rel_error") for c in cases if isinstance(c.get("max_rel_error"), (int, float))]
+    # Header counts/maxima must agree with the serialised cases: numpy scalars (np.bool_,
+    # np.float32, ...) count exactly like the Python values they are written as.
+    abs_errors = [v for v in (_numeric_or_none(c.get("max_abs_error")) for c in cases) if v is not None]
+    rel_errors = [v for v in (_numeric_or_none(c.get("max_rel_error")) for c in cases) if v is not None]
     document: dict[str, Any] = {
         "kind": "correctness_report",
         "status": status,
@@ -395,7 +411,7 @@ def correctness_report_bytes(
         "rel_error_epsilon": rel_error_epsilon,
         "reference_id": reference_id,
         "cases_total": len(cases),
-        "cases_passed": sum(1 for c in cases if c.get("passed") is True),
+        "cases_passed": sum(1 for c in cases if _is_true(c.get("passed"))),
         "max_abs_error": max(abs_errors) if abs_errors else None,
         "max_rel_error": max(rel_errors) if rel_errors else None,
         "cases": [_json_safe(c) for c in cases],

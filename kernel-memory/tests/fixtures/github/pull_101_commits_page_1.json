@@ -1,0 +1,34 @@
+{
+  "status": 200,
+  "headers": {
+    "Link": "<https://api.github.com/repos/acme/kernels/pulls/101/commits?per_page=1&page=2>; rel=\"next\", <https://api.github.com/repos/acme/kernels/pulls/101/commits?per_page=1&page=3>; rel=\"last\""
+  },
+  "body": [
+    {
+      "sha": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "node_id": "C_c1c1c1c1",
+      "commit": {
+        "message": "Introduce tiled loop skeleton\n\nFirst commit of the fixture PR.",
+        "author": {
+          "name": "Fixture Author",
+          "email": "fixture@example.invalid",
+          "date": "2026-09-09T10:00:00Z"
+        },
+        "committer": {
+          "name": "Fixture Author",
+          "email": "fixture@example.invalid",
+          "date": "2026-09-09T10:00:00Z"
+        },
+        "tree": {
+          "sha": "7ec1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
+        }
+      },
+      "parents": [
+        {
+          "sha": "ba5eba5eba5eba5eba5eba5eba5eba5eba5eba5e"
+        }
+      ],
+      "html_url": "https://github.com/acme/kernels/commit/c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
+    }
+  ]
+}

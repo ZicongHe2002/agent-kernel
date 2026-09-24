@@ -65,9 +65,14 @@ def speedup(baseline_median: float, candidate_median: float) -> float:
 
 
 def latency_reduction_pct(baseline_median: float, candidate_median: float) -> float:
+    """``100 * (1 - T_candidate / T_baseline)`` (specification 11.2).
+
+    Evaluated as ``100 * (T_baseline - T_candidate) / T_baseline``: algebraically identical but
+    exact when the medians divide cleanly (100 us -> 90 us is exactly 10.0, not 9.999999999999998).
+    """
     _check_positive(baseline_median, "baseline median")
     _check_positive(candidate_median, "candidate median")
-    return 100.0 * (1.0 - candidate_median / baseline_median)
+    return 100.0 * (float(baseline_median) - float(candidate_median)) / float(baseline_median)
 
 
 def _check_positive(value: float, what: str) -> None:

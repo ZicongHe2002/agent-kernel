@@ -1,0 +1,64 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "status": "ahead",
+    "ahead_by": 2,
+    "behind_by": 0,
+    "total_commits": 2,
+    "commits": [
+      {
+        "sha": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+        "node_id": "C_c1c1c1c1",
+        "commit": {
+          "message": "Introduce tiled loop skeleton",
+          "author": {
+            "name": "Fixture Author",
+            "email": "fixture@example.invalid",
+            "date": "2026-09-09T10:00:00Z"
+          },
+          "committer": {
+            "name": "Fixture Author",
+            "email": "fixture@example.invalid",
+            "date": "2026-09-09T10:00:00Z"
+          },
+          "tree": {
+            "sha": "7ec1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
+          }
+        },
+        "parents": [
+          {
+            "sha": "ba5eba5eba5eba5eba5eba5eba5eba5eba5eba5e"
+          }
+        ],
+        "html_url": "https://github.com/acme/kernels/commit/c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
+      },
+      {
+        "sha": "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+        "node_id": "C_c2c2c2c2",
+        "commit": {
+          "message": "Vectorize the tile body",
+          "author": {
+            "name": "Fixture Author",
+            "email": "fixture@example.invalid",
+            "date": "2026-09-09T11:00:00Z"
+          },
+          "committer": {
+            "name": "Fixture Author",
+            "email": "fixture@example.invalid",
+            "date": "2026-09-09T11:00:00Z"
+          },
+          "tree": {
+            "sha": "7ec2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2"
+          }
+        },
+        "parents": [
+          {
+            "sha": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1"
+          }
+        ],
+        "html_url": "https://github.com/acme/kernels/commit/c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2"
+      }
+    ]
+  }
+}

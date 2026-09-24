@@ -20,15 +20,14 @@ Public API
       arguments are passed through to the coordinator (tests inject stubs; production
       leaves them ``None`` so the coordinator lazily wires ``services.compare``,
       ``services.decide`` and ``services.context``).
-``default_adapter_registry(backend) -> AdapterRegistry``  best-effort registration of the
-    project's adapter for ``backend`` (``kernel_memory.adapters.<module>``); an empty
-    registry makes the runner report ``BACKEND_UNAVAILABLE`` rather than guessing.
+``default_adapter_registry(backend) -> AdapterRegistry``  delegates to
+    ``kernel_memory.adapters.registry.default_adapter_registry(backend)``: the project's
+    adapter for ``backend`` plus the analysis adapters; an empty kernel registry makes the
+    runner report ``BACKEND_UNAVAILABLE`` rather than guessing.
 ``PLANNERS``  names accepted by ``planner_name``.
 """
 from __future__ import annotations
 
-import importlib
-import inspect
 import uuid
 from typing import Any, Callable
 
@@ -45,11 +44,6 @@ from ..storage.store import MemoryStore
 
 PLANNERS: tuple[str, ...] = ("mock", "model")
 MOCK_PLANNER_NOTE = "MockPlanner exercises orchestration only; not evidence of optimization effectiveness"
-_BACKEND_MODULES: dict[str, tuple[str, ...]] = {
-    "mock": ("kernel_memory.adapters.mock",),
-    "cpu": ("kernel_memory.adapters.cpu_demo",),
-    "jax_tpu": ("kernel_memory.adapters.jax_tpu",),
-}
 
 
 def make_planner(planner_name: str) -> Any:
@@ -61,22 +55,15 @@ def make_planner(planner_name: str) -> Any:
 
 
 def default_adapter_registry(backend: str) -> AdapterRegistry:
-    """Register the project adapter for ``backend`` if its module exists; never substitute another backend."""
-    registry = AdapterRegistry()
-    for module_name in _BACKEND_MODULES.get(backend, ()):
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError:
-            continue
-        for _, candidate in inspect.getmembers(module, inspect.isclass):
-            if candidate.__module__ != module.__name__ or getattr(candidate, "backend", None) != backend:
-                continue
-            try:
-                registry.register_kernel_adapter(candidate())
-            except TypeError:
-                continue  # needs constructor arguments; the CLI must build it explicitly
-            break
-    return registry
+    """Register the project adapter for ``backend`` (plus the analysis adapters); never substitute another backend.
+
+    Delegates to ``kernel_memory.adapters.registry.default_adapter_registry``; an unknown or
+    unimportable backend yields a registry with no kernel adapter, so the runner reports
+    ``BACKEND_UNAVAILABLE``.
+    """
+    from ..adapters.registry import default_adapter_registry as _default
+
+    return _default(backend)
 
 
 def _as_git_oid(value: GitOid | dict[str, Any]) -> GitOid:

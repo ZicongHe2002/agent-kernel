@@ -166,3 +166,32 @@ def test_replay_rejects_corrupt_entries() -> None:
     with pytest.raises(InputError):
         replay_usage([{"kind": "unknown", "delta": 1}])
     assert stop_reason_for(Budget(), BudgetUsage()) is None
+
+
+def test_zero_model_call_allowance_is_not_pre_exhausted(store: MemoryStore) -> None:
+    """A planner that never calls a model (MockPlanner) must run under max_model_calls=0."""
+    ledger = BudgetLedger(store, "job-zero-model", Budget(max_model_calls=0))
+    assert ledger.stop_reason() is None
+    ledger.check()  # must not raise
+    assert stop_reason_for(Budget(max_model_calls=0), BudgetUsage()) is None
+
+
+def test_zero_model_call_allowance_refuses_the_first_call(store: MemoryStore) -> None:
+    ledger = BudgetLedger(store, "job-zero-model-2", Budget(max_model_calls=0))
+    with pytest.raises(BudgetExhausted) as excinfo:
+        ledger.record_model_call()
+    assert excinfo.value.details["stop_reason"] == "BUDGET_MODEL_CALLS_EXHAUSTED"
+    assert ledger.usage().model_calls == 0  # nothing was consumed
+    assert ledger.stop_reason() is None
+    # A call recorded despite a zero allowance (e.g. replayed from an older ledger) is reported.
+    assert stop_reason_for(Budget(max_model_calls=0), BudgetUsage(model_calls=1)) == "BUDGET_MODEL_CALLS_EXHAUSTED"
+
+
+def test_model_call_budget_is_reserved_before_consumption(store: MemoryStore) -> None:
+    ledger = BudgetLedger(store, "job-model-2", Budget(max_model_calls=2))
+    ledger.record_model_call()
+    ledger.record_model_call()
+    assert ledger.stop_reason() == "BUDGET_MODEL_CALLS_EXHAUSTED"
+    with pytest.raises(BudgetExhausted):
+        ledger.record_model_call()
+    assert ledger.usage().model_calls == 2

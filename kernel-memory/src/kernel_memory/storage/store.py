@@ -126,6 +126,7 @@ class MemoryStore:
         self._index: dict[str, IndexEntry] | None = None
         self._kernel_index: dict[str, str] = {}
         self._record_cache: dict[str, Record] = {}
+        self._index_journal_stamp: tuple[int, int] | None = None
 
     # ------------------------------------------------------------------ lifecycle
     @classmethod
@@ -166,8 +167,7 @@ class MemoryStore:
         store._check_manifest()
         if recover:
             with store.lock():
-                if store._pending_manifests():
-                    store.recover()
+                store.recover_if_pending()
         return store
 
     def _check_manifest(self) -> dict[str, Any]:
@@ -220,13 +220,33 @@ class MemoryStore:
     # ------------------------------------------------------------------ index
     def _ensure_index(self) -> dict[str, IndexEntry]:
         if self._index is None:
+            stamp = self._journal_stamp()
             self._index, self._kernel_index, self._record_cache = self._scan_records()
+            self._index_journal_stamp = stamp
         return self._index
 
     def invalidate_index(self) -> None:
         self._index = None
         self._kernel_index = {}
         self._record_cache = {}
+        self._index_journal_stamp = None
+
+    def _journal_stamp(self) -> tuple[int, int] | None:
+        """(size, mtime_ns) of the publication journal; every publication appends to it."""
+        try:
+            st = self._journal_path().stat()
+        except OSError:
+            return None
+        return (st.st_size, st.st_mtime_ns)
+
+    def _refresh_index_if_journal_changed(self) -> None:
+        """Drop the in-memory index when another writer published since it was scanned.
+
+        Called under the store lock before mutation so that a second process's records are
+        visible for reference resolution and idempotency checks (one machine, one lock).
+        """
+        if self._index is not None and self._journal_stamp() != self._index_journal_stamp:
+            self.invalidate_index()
 
     def _scan_records(self) -> tuple[dict[str, IndexEntry], dict[str, str], dict[str, Record]]:
         index: dict[str, IndexEntry] = {}
@@ -328,6 +348,7 @@ class MemoryStore:
         outcome = PublishOutcome(txn_id=txn_id)
         with self.lock():
             self.recover_if_pending()
+            self._refresh_index_if_journal_changed()
             index = self._ensure_index()
             # 1. Collapse identical duplicates, reject conflicting duplicates and stored conflicts.
             by_id: dict[str, Record] = {}
@@ -378,11 +399,33 @@ class MemoryStore:
             for record in ordered:
                 rel = layout.record_relpath(record, resolver, kernel_resolver)
                 dest = self._abs(rel)
+                digest = record.canonical_digest()
                 if dest.exists():
-                    raise IdConflictError(
-                        f"destination {rel} already exists for a different record id", details={"path": str(rel)}
-                    )
-                plan.append((record, rel, record.canonical_digest()))
+                    try:
+                        existing_record = Record.from_dict(load_json_file(dest))
+                    except Exception as exc:
+                        raise IdConflictError(
+                            f"destination {rel} already exists and is not a readable record: {exc}",
+                            details={"path": str(rel), "record_id": record.record_id},
+                        ) from exc
+                    if existing_record.record_id != record.record_id:
+                        raise IdConflictError(
+                            f"destination {rel} already exists for a different record id",
+                            details={"path": str(rel), "record_id": record.record_id, "existing_record_id": existing_record.record_id},
+                        )
+                    if existing_record.canonical_digest() != digest:
+                        raise IdConflictError(
+                            f"record {record.record_id!r} already exists with different content; published records are immutable",
+                            details={"record_id": record.record_id, "existing_digest": existing_record.canonical_digest(), "new_digest": digest},
+                        )
+                    # Same id, same content, already in place: idempotent.
+                    outcome.idempotent.append(record.record_id)
+                    index[record.record_id] = IndexEntry(record.record_id, record.record_type, str(rel), digest)
+                    self._record_cache[record.record_id] = existing_record
+                    if record.record_type == "kernel":
+                        self._kernel_index[record.payload.kernel_id] = record.record_id
+                    continue
+                plan.append((record, rel, digest))
             if not plan:
                 for ref in pending_artifact_refs.values():
                     if self.register_artifact_ref(ref):
@@ -506,6 +549,8 @@ class MemoryStore:
             fh.write(line.encode("utf-8") + b"\n")
             fh.flush()
             os.fsync(fh.fileno())
+        if self._index is not None:
+            self._index_journal_stamp = self._journal_stamp()
 
     def _journal_entries(self) -> list[dict[str, Any]]:
         journal = self._journal_path()

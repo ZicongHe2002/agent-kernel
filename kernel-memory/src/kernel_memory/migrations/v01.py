@@ -537,8 +537,12 @@ class _Migration:
                 self._reject("kernel", v01_id, "kernel", f"duplicate kernel_id {kernel_id!r}; first occurrence kept")
                 continue
             self._retain("kernels", "kernel_id", "kernel.kernel_id / record id kernel-<kernel_id>")
+            record_id = f"kernel-{kernel_id}"
             existing = self.store.kernel_by_kernel_id(kernel_id) if self.store is not None else None
-            if existing is not None:
+            if existing is not None and existing.record_id != record_id:
+                # T01 reuse applies to a *foreign* store kernel carrying this kernel_id.  When the store already holds
+                # this migration's own record (the id minted below), fall through and mint it again: identical id +
+                # identical content is idempotent (spec 15) and a changed input surfaces as IdConflictError at publish.
                 self.kernel_record_ids[kernel_id] = existing.record_id
                 self._map("kernel", v01_id, "kernel", existing.record_id, "mapped")
                 self._note(f"kernel {kernel_id!r}: reused existing store record {existing.record_id!r}; v0.1 display_name/adapter_id not applied")
@@ -562,7 +566,6 @@ class _Migration:
                 self._retain("kernels", "adapter_id", "kernel.adapter_id (unverified)")
             else:
                 self._note(f"kernel {kernel_id!r}: no adapter_id in v0.1; using {DEFAULT_ADAPTER_ID!r}")
-            record_id = f"kernel-{kernel_id}"
             payload = KernelPayload(
                 kernel_id=kernel_id,
                 display_name=display_name or kernel_id,
@@ -613,13 +616,16 @@ class _Migration:
                 self._reject("config", v01_id, "config", f"problem rejected by the {kernel_id!r} normalizer: {exc.message}")
                 continue
             self.config_kernel[config_id] = kernel_id
-            existing = self.store.configs_by_hash(normalized.config_hash) if self.store is not None else []
-            if existing:
-                self.config_record_ids[config_id] = existing[0].record_id
-                self._map("config", v01_id, "config", existing[0].record_id, "mapped")
-                self._note(f"config {config_id!r}: same config_hash as existing store record {existing[0].record_id!r}; reused (T01)")
-                continue
             record_id = f"cfg-{normalized.config_id_hint}-{normalized.config_hash[len('sha256:'):][:12]}"
+            same_hash = self.store.configs_by_hash(normalized.config_hash) if self.store is not None else []
+            if same_hash and all(e.record_id != record_id for e in same_hash):
+                # T01 reuse applies to a *foreign* store config with this config_hash.  When the store already holds
+                # this migration's own record (the id minted above), fall through and mint it again: identical id +
+                # identical content is idempotent (spec 15) and a changed input surfaces as IdConflictError at publish.
+                self.config_record_ids[config_id] = same_hash[0].record_id
+                self._map("config", v01_id, "config", same_hash[0].record_id, "mapped")
+                self._note(f"config {config_id!r}: same config_hash as existing store record {same_hash[0].record_id!r}; reused (T01)")
+                continue
             try:
                 validate_record_id(record_id)
             except InputError as exc:

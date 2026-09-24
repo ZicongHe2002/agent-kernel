@@ -676,9 +676,16 @@ def test_t06_origin_cycle_via_relations(bundle_dicts: list[dict], blobs: dict[st
 
 def test_t06_origin_cycle_via_pr_origin_refs(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
     # PR 102 branches from commit A (of PR 101); making PR 101 branch from commit C (of PR 102) closes a loop.
+    # The mutation creates two overlapping cycles: A -> C -> PR101 -> A (through the optimization_origin
+    # relation) and the longer A -> PR102 -> C -> PR101 -> A. The validator must reject the graph with one
+    # deterministic prohibited cycle (spec section 14); the shorter one is a correct answer, so only its
+    # members are required. PR 102 sits on the longer loop and need not be named.
     report = validate(mutated(bundle_dicts, "pr-demo-101", lambda d: d["payload"].update(origin_ref="commit-demo-c")), blobs)
     issue = next(i for i in report.errors if i.code == "ORIGIN_CYCLE")
-    assert {"pr-demo-101", "pr-demo-102", "commit-demo-a", "commit-demo-c"} <= set(issue.details["cycle"])
+    assert issue.severity == ERROR
+    cycle = issue.details["cycle"]
+    assert cycle[0] == cycle[-1]  # a closed path, as find_cycle promises
+    assert {"pr-demo-101", "commit-demo-a", "commit-demo-c"} <= set(cycle)
 
 
 def test_git_parent_cycle(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:

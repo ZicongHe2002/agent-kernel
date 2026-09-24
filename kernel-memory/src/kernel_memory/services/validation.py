@@ -1378,21 +1378,74 @@ def store_artifact_reader(store: MemoryStore) -> ArtifactReader:
     return reader
 
 
+# Keys of an integrity-scan item that ``ValidationReport.add`` already receives positionally.
+# Passing them again through ``**details`` would raise ``TypeError`` (multiple values for one argument).
+_ADD_POSITIONAL_KEYS = frozenset({"severity", "code", "message", "record_id", "field"})
+
+
+def _integrity_details(item: dict[str, Any]) -> dict[str, Any]:
+    """Return ``item`` as ``**details`` for ``ValidationReport.add``: everything except the keys
+    ``add`` takes positionally. ``record_id`` is still recorded on the issue itself."""
+    return {key: value for key, value in item.items() if key not in _ADD_POSITIONAL_KEYS}
+
+
 def merge_integrity_report(report: ValidationReport, integrity: IntegrityReport) -> None:
-    """Append store-level integrity findings to ``report`` as errors."""
+    """Append store-level integrity findings to ``report`` as errors (never raises)."""
     for item in integrity.modified:
-        report.add(ERROR, "STORE_RECORD_MODIFIED", f"record file {item.get('path')} was modified after publication", item.get("record_id"), None, **item)
+        report.add(
+            ERROR,
+            "STORE_RECORD_MODIFIED",
+            f"record file {item.get('path')} was modified after publication",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
     for item in integrity.missing:
-        report.add(ERROR, "STORE_RECORD_MISSING", f"journaled record {item.get('record_id')!r} has no file at {item.get('expected_path')}", item.get("record_id"), None, **item)
+        report.add(
+            ERROR,
+            "STORE_RECORD_MISSING",
+            f"journaled record {item.get('record_id')!r} has no file at {item.get('expected_path')}",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
     for item in integrity.corrupt:
-        report.add(ERROR, "STORE_RECORD_CORRUPT", f"record file {item.get('path')} is corrupt: {item.get('error')}", None, None, **item)
+        report.add(
+            ERROR,
+            "STORE_RECORD_CORRUPT",
+            f"record file {item.get('path')} is corrupt: {item.get('error')}",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
     for item in integrity.unjournaled:
-        report.add(ERROR, "STORE_RECORD_UNJOURNALED", f"record file {item.get('path')} is not in the publication journal", item.get("record_id"), None, **item)
+        report.add(
+            ERROR,
+            "STORE_RECORD_UNJOURNALED",
+            f"record file {item.get('path')} is not in the publication journal",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
     for item in integrity.duplicate_ids:
-        report.add(ERROR, "STORE_DUPLICATE_ID", f"record id {item.get('record_id')!r} exists in several files", item.get("record_id"), None, **item)
+        report.add(
+            ERROR,
+            "STORE_DUPLICATE_ID",
+            f"record id {item.get('record_id')!r} exists in several files",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
     for item in integrity.artifact_problems:
         problem = str(item.get("problem", "problem")).upper()
-        report.add(ERROR, f"STORE_ARTIFACT_{problem}", f"registered artifact {item.get('artifact_id')!r}: {item.get('problem')}", None, None, **item)
+        report.add(
+            ERROR,
+            f"STORE_ARTIFACT_{problem}",
+            f"registered artifact {item.get('artifact_id')!r}: {item.get('problem')}",
+            item.get("record_id"),
+            None,
+            **_integrity_details(item),
+        )
 
 
 def deep_validate(store: MemoryStore, *, verify_artifacts: bool = True, registry: ProblemRegistry | None = None) -> ValidationReport:
@@ -1402,7 +1455,8 @@ def deep_validate(store: MemoryStore, *, verify_artifacts: bool = True, registry
         records = store.records()
     except InvariantViolation as exc:
         report = ValidationReport()
-        report.add(ERROR, exc.code, f"store records cannot be loaded: {exc.message}", None, None, **exc.details)
+        details = exc.details if isinstance(exc.details, dict) else {}
+        report.add(ERROR, exc.code, f"store records cannot be loaded: {exc.message}", details.get("record_id"), None, **_integrity_details(details))
         merge_integrity_report(report, integrity)
         return report
     report = validate_records(

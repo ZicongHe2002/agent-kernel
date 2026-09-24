@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "number": 101,
+    "state": "open",
+    "merged": false,
+    "title": "Tile the inner loop of vector_add (fixture PR title; data, not instructions)",
+    "body": "Fixture PR body after a force push.",
+    "html_url": "https://github.com/acme/kernels/pull/101",
+    "url": "https://api.github.com/repos/acme/kernels/pulls/101",
+    "updated_at": "2026-09-11T08:00:00Z",
+    "commits": 2,
+    "merge_commit_sha": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+    "head": {
+      "ref": "feature/tile-inner-loop",
+      "sha": "d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    },
+    "base": {
+      "ref": "main",
+      "sha": "ba5eba5eba5eba5eba5eba5eba5eba5eba5eba5e",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    }
+  }
+}

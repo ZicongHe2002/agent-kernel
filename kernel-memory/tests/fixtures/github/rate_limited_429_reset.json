@@ -1,0 +1,10 @@
+{
+  "status": 429,
+  "headers": {
+    "X-RateLimit-Remaining": "0",
+    "X-RateLimit-Reset": "4102444800"
+  },
+  "body": {
+    "message": "You have exceeded a secondary rate limit. Please wait a few minutes before you try again."
+  }
+}

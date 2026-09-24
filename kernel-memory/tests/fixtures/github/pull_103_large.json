@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "number": 103,
+    "state": "open",
+    "merged": false,
+    "title": "Long-running branch with hundreds of commits",
+    "body": "",
+    "html_url": "https://github.com/acme/kernels/pull/103",
+    "url": "https://api.github.com/repos/acme/kernels/pulls/103",
+    "updated_at": "2026-09-13T08:00:00Z",
+    "commits": 300,
+    "merge_commit_sha": null,
+    "head": {
+      "ref": "feature/long-branch",
+      "sha": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    },
+    "base": {
+      "ref": "main",
+      "sha": "ba5eba5eba5eba5eba5eba5eba5eba5eba5eba5e",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    }
+  }
+}

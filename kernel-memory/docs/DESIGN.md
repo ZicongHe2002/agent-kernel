@@ -167,8 +167,22 @@ Short SHAs are display-only; never pad or guess.
 ## 8. Testing conventions
 
 * `pytest` from the project root using `.venv/bin/python -m pytest`. Tests live in `tests/test_<area>.py`.
-* Shared fixtures in `tests/conftest.py`: `handoff_root`, `bundle_path`, `bundle_records`, `store` (empty, tmp),
-  `demo_store` (bundle imported + artifacts stored), `artifact_root`.
+* Shared fixtures in `tests/conftest.py` (session-scoped paths, per-test stores): `project_root`, `fixtures_root`
+  (`fixtures/handoff`, the project's own copy; the handoff directory itself is never read), `bundle_path`
+  (`examples/demo_bundle.json`), `artifact_root` (bundle artifact URIs resolve against it), `bundle_dicts` (the 18
+  bundle records as fresh dicts), `bundle_records` (as `Record`s), `store` (empty `MemoryStore` under `tmp_path`),
+  `demo_store` (bundle published + its artifacts stored). Helpers, imported with `from conftest import ...`:
+  `import_demo_bundle(store, records, artifact_root)` and `record_dict(bundle_dicts, record_id)` (deep copy of one
+  bundle record).
+* Synthetic *trusted* runs come from `tests/synthetic_runs.py` (`from synthetic_runs import ...`), which drives the
+  real `LocalRunner` with an in-test `SyntheticAdapter` so hashes and comparison keys are derived exactly as in
+  production: `trusted_run(store, *, request_id, subject_ref, session_id, pair_id, role, samples=..., overrides=...,
+  protocol=..., verifier=..., environment_overrides=..., checkout_mode=...)` -> published `run` with
+  `provenance=trusted_worker`; `trusted_pairs(store, *, n=3, ...)` -> `[{"candidate_run", "baseline_run"}, ...]`
+  with distinct session/pair ids; `cloned_run_dict(bundle_dicts, run_id, **field__overrides)` clones a fixture run
+  (hashes reconciled via `domain.hashing` unless `reconcile=False`) for `imported_unverified`/inconsistent cases;
+  building blocks `reconcile_run_hashes`, `set_path`, `publish_dict`, `bundle_config_hash`. Local adapters for
+  other suites follow `tests/test_runner.py` (`StubAdapter`, `registry_with`, `make_spec`, `make_runner`, `FakeClock`).
 * Environment-dependent tests are marked `@pytest.mark.integration` and must *skip with an explicit reason*
   when the prerequisite is missing. A skip is reported as unexecuted, never as a pass.
 * Negative tests are mandatory for every gate listed in the specification's acceptance table (T01–T32). Name

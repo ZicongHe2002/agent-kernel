@@ -438,7 +438,12 @@ class OptimizationCoordinator:
                     report.stop_reason = "MODEL_API_NOT_AUTHORIZED"
                     report.notes.append("planner requires a model API but allow_model_api_calls is false")
                     break
-                ledger.record_model_call()
+                try:
+                    ledger.record_model_call()
+                except BudgetExhausted as exc:
+                    report.status = "stopped" if not self._dry_run else "dry_run"
+                    report.stop_reason = str(exc.details.get("stop_reason", "BUDGET_MODEL_CALLS_EXHAUSTED"))
+                    break
             try:
                 proposal = self._planner.propose(context, self._budget, ledger.usage())
             except PrerequisiteMissingError as exc:
@@ -519,6 +524,7 @@ class OptimizationCoordinator:
             elif stop_after_round is None and round_report.error is None:
                 round_report.outcome_note = round_report.outcome_note or "request finished without a run"
                 ledger.record_execution_result(False)
+            round_report.improved = improved  # must precede _finish_round, which persists round_report.to_dict()
             ledger.record_round(improved)
             self._finish_round(report, round_report, ledger)
             round_no += 1
@@ -644,17 +650,28 @@ class OptimizationCoordinator:
             round_report.notes.append(f"annotation not recorded: {type(exc).__name__}: {exc}")
         improved = False
         if success and baseline_run is not None:
-            pairs = self._eligible_pairs(run, baseline_run)
-            if len(pairs) >= min_pairs:
+            pairs, distinct_pairs = self._eligible_pairs(run, baseline_run)
+            if distinct_pairs >= min_pairs:
                 improved = self._decide(run, baseline_run, pairs, round_report)
             else:
-                ledger_note += f"; pairs={len(pairs)}/{min_pairs} (no decision yet)"
+                ledger_note += f"; pairs={distinct_pairs}/{min_pairs} (no decision yet)"
+                if len(pairs) != distinct_pairs:
+                    ledger_note += f"; {len(pairs)} eligible run(s) share (session_id, pair_id) or lack them: repeats are not independent"
         round_report.outcome_note = (round_report.outcome_note + "; " if round_report.outcome_note else "") + ledger_note
         return improved
 
-    def _eligible_pairs(self, run: Record, baseline_run: Record) -> list[tuple[str, str]]:
+    def _eligible_pairs(self, run: Record, baseline_run: Record) -> tuple[list[tuple[str, str]], int]:
+        """Eligible ``(candidate_ref, baseline_ref)`` pairs for this run's variant plus the DISTINCT pair count.
+
+        The confirmation gate (spec 12.2, DESIGN 6) requires ``min_confirm_pairs`` *distinct* baseline/candidate
+        session pairs; repeated measurements of one ``(session_id, pair_id)`` are not independent experiments and a
+        run lacking either identifier cannot be counted as a confirmation pair. This mirrors the distinct-pair
+        counting in ``services.decide`` so the coordinator never invokes the decider on evidence it would refuse.
+        Every eligible run is still handed to the decider, which records repeats with its own reason codes.
+        """
         variant = run.payload.source.variant_digest
         pairs: list[tuple[str, str]] = []
+        distinct: set[tuple[str, str]] = set()
         for candidate in runs_for_subject(self._store, run.payload.subject_ref):
             p = candidate.payload
             if (
@@ -665,7 +682,9 @@ class OptimizationCoordinator:
                 and p.provenance == "trusted_worker"
             ):
                 pairs.append((candidate.record_id, baseline_run.record_id))
-        return pairs
+                if isinstance(p.session_id, str) and p.session_id and isinstance(p.pair_id, str) and p.pair_id:
+                    distinct.add((p.session_id, p.pair_id))
+        return pairs, len(distinct)
 
     def _decide(self, run: Record, baseline_run: Record, pairs: list[tuple[str, str]], round_report: RoundReport) -> bool:
         candidate_refs = sorted({c for c, _ in pairs})

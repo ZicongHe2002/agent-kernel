@@ -68,7 +68,7 @@ Prerequisites, all checked explicitly and reported as `BackendUnavailable` / `Au
 
 Benchmarks exclude compilation, call `jax.block_until_ready` on the whole output pytree, and consume all
 required outputs. Profiling (`device_profiler`) runs as a separate protocol/scope, never mixed with host timing.
-Status today: **unexecuted** (no TPU, no MLA source/ABI, no authorization). This machine has CPU-only JAX 0.4.35,
+Status today: **unexecuted** (no TPU, no MLA source/ABI, no authorization). This machine has CPU-only JAX 0.10.2,
 and the adapter reports exactly that.
 
 ## 5. Analysis / LLO
@@ -78,6 +78,10 @@ kind (`measurement` / `static_estimate` / `derived`), scope, source artifact, pa
 definition. `LloAnalysisAdapter` accepts `llo_dump` artifacts and raises `UnsupportedFormat`: no LLO format
 specification or sample exists, so no parser was invented. Supplying a format sample means implementing a new
 adapter with its own `parser_version`; existing metrics are never rewritten, only re-annotated.
+`MockSpillAnalysisAdapter` (`adapter_id=mock-spill`) parses only the fixture format `mock-spill-v1` used by the
+synthetic bundle's spill report; it exists to exercise the metric pipeline offline, not to analyse real kernels. Its
+one metric, `register_spill_vmem_static_bytes`, is a compiler-side *static estimate* (`kind=static_estimate`), not a
+measurement of HBM traffic, and `0` is reported only when the report literally says `0`.
 
 ## 6. Model-driven planner
 
@@ -103,4 +107,7 @@ If `.venv/bin/python -c "import kernel_memory"` fails with `ModuleNotFoundError`
 chflags nohidden .venv/lib/python3.11/site-packages/*.pth
 ```
 
-`tests/conftest.py` also adds `src/` to `sys.path` as a fallback so the test suite is unaffected.
+`tests/conftest.py` also adds `src/` to `sys.path` as a fallback so the test suite is unaffected. Because the flag
+was observed to reappear, a `.pth`-independent fallback is also installed: a symlink
+`.venv/lib/python3.11/site-packages/kernel_memory -> ../../../../src/kernel_memory` (recreate it with `ln -s` after
+rebuilding the venv), and the demo scripts export `PYTHONPATH=$HERE/src`.

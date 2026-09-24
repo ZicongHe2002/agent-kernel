@@ -427,7 +427,16 @@ class JaxAdapter:
                     ) from None
             else:
                 rel = "/".join(path.parts[-3:]) if len(path.parts) >= 3 else path.name
-            manifest.append((rel, sha256_bytes(path.read_bytes())))
+            try:
+                content = path.read_bytes()
+            except OSError as exc:
+                # A declared source file that cannot be read means the tested source is unknown: refuse, never guess.
+                raise PrerequisiteMissingError(
+                    f"declared source file {path} cannot be read: {type(exc).__name__}: {exc}",
+                    code="SOURCE_MANIFEST_UNAVAILABLE",
+                    details={"entrypoint": spec.entrypoint, "file": str(path)},
+                ) from exc
+            manifest.append((rel, sha256_bytes(content)))
         digest = source_digest(manifest)
         if repo_root is None:
             tested = spec.target_commit

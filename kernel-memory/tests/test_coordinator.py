@@ -505,6 +505,86 @@ def test_default_policy_needs_three_pairs_so_decider_is_not_called(demo_store: M
     assert "pairs=1/3" in report.rounds[0].outcome_note
 
 
+def test_gate_counts_distinct_session_pairs_not_eligible_runs(demo_store: MemoryStore) -> None:
+    """Spec 12.2 / DESIGN 6: ``min_confirm_pairs`` counts DISTINCT (session_id, pair_id) pairs, never candidate runs.
+
+    Three eligible runs of one variant that repeat a single pair are re-measurements of one experiment, not independent
+    confirmations, so the decider must not run; three distinct pairs of the same variant must reach it. This mirrors
+    the distinct-pair counting in ``services.decide`` so the coordinator never invokes it on evidence it would refuse.
+    """
+    job = "job-shared"
+
+    def shared_pair_factory(proposal: Proposal, round_no: int, subject_ref: str) -> RunRequestSpec:
+        overrides = dict(proposal.implementation_overrides)
+        return RunRequestSpec(
+            request_id=f"request-{job}-r{round_no}",
+            idempotency_key=hashing.jcs_digest({"job": job, "round": round_no, "overrides": overrides}),
+            subject_ref=subject_ref,
+            config_ref="cfg-demo",
+            backend="mock",
+            stage="benchmark",
+            protocol=dict(PROTOCOL),
+            verifier=dict(VERIFIER),
+            source=SourceSpec(repo_uid=REPO_UID, target_commit=BASELINE_OID, entrypoint=ENTRYPOINT, implementation_overrides=overrides),
+            session_id=job,
+            pair_id=f"{job}-p1",  # every round repeats ONE (session_id, pair_id)
+            role_in_pair="candidate",
+        )
+
+    adapter = StubAdapter()
+    shared = Collab(decision_outcome="accepted")
+    policy = dict(golden_policy(), min_confirm_pairs=3)
+    report = OptimizationCoordinator(
+        demo_store,
+        runner=LocalRunner(demo_store, adapters=registry_with(adapter)),
+        planner=MockPlanner(overrides_sequence=[{"chunk": 8}, {"chunk": 8}, {"chunk": 8}]),
+        budget=Budget(),
+        policy=policy,
+        job_id=job,
+        config_ref="cfg-demo",
+        permissions={},
+        request_factory=shared_pair_factory,
+        baseline_run_ref="run-demo-baseline",
+        comparator=shared.comparator,
+        decider=shared.decider,
+        context_exporter=shared.context_exporter,
+    ).run()
+    assert report.status == "completed" and len(report.rounds) == 3
+    assert [r.decision_ref for r in report.rounds] == [None, None, None]
+    assert shared.decide_calls == []
+    assert all(r.improved is False for r in report.rounds)
+    assert report.usage["rounds_without_improvement"] == 3
+    runs = [demo_store.require(r.run_ref, "run") for r in report.rounds]
+    # All three runs are individually eligible evidence and share one pair: the gate must see 1 distinct pair, not 3.
+    assert all(run.payload.execution_status == "succeeded" and run.payload.correctness.status == "pass" for run in runs)
+    assert all(run.payload.timing.status == "recorded" and run.payload.provenance == "trusted_worker" for run in runs)
+    assert len({run.payload.source.variant_digest for run in runs}) == 1
+    assert {(run.payload.session_id, run.payload.pair_id) for run in runs} == {(job, f"{job}-p1")}
+    assert "pairs=1/3" in report.rounds[2].outcome_note and "3 eligible run(s)" in report.rounds[2].outcome_note
+    for r in report.rounds:
+        assert "not a confirmed improvement" in demo_store.require(r.annotation_ref, "annotation").payload.text
+
+    # Control: three distinct pairs of one variant (a different variant, so the shared runs above do not mix in)
+    # accumulate 1, 2, 3 and the decider runs exactly once, on the third round, over all three runs.
+    distinct = Collab(decision_outcome="accepted")
+    report2 = make_coordinator(
+        demo_store,
+        StubAdapter(),
+        job="job-distinct",
+        collab=distinct,
+        decider=distinct.decider,
+        policy=policy,
+        planner=MockPlanner(overrides_sequence=[{"chunk": 64}, {"chunk": 64}, {"chunk": 64}]),
+    ).run()
+    assert [r.decision_ref for r in report2.rounds] == [None, None, "decision-stub-1"]
+    assert [r.improved for r in report2.rounds] == [False, False, True]
+    assert len(distinct.decide_calls) == 1
+    assert sorted(distinct.decide_calls[0]["candidate_run_refs"]) == [f"run-request-job-distinct-r{i}-a1" for i in (1, 2, 3)]
+    assert distinct.decide_calls[0]["policy"]["min_confirm_pairs"] == 3
+    assert "pairs=2/3" in report2.rounds[1].outcome_note and "eligible run(s)" not in report2.rounds[1].outcome_note
+    assert report2.usage["rounds_without_improvement"] == 0
+
+
 def test_backend_unavailable_stops_the_job(demo_store: MemoryStore) -> None:
     adapter = StubAdapter(env_error=BackendUnavailable("no devices", details={"backend": "mock"}))
     report = make_coordinator(demo_store, adapter, job="job-nobackend").run()
@@ -696,3 +776,25 @@ def test_run_optimization_without_registered_backend_reports_unavailable(demo_st
     )
     assert report["status"] == "stopped" and report["stop_reason"] == "BACKEND_UNAVAILABLE"
     assert len(report["rounds"]) == 1 and report["rounds"][0]["run_ref"] is None
+
+
+def test_zero_model_call_budget_stops_model_planner_before_any_call(demo_store: MemoryStore) -> None:
+    """max_model_calls=0 forbids model calls: an authorized model planner stops immediately with the
+    budget reason and consumes nothing, while the MockPlanner (no model calls) is unaffected."""
+    coordinator = make_coordinator(
+        demo_store,
+        StubAdapter(),
+        job="job-zero-model-budget",
+        budget=Budget(max_model_calls=0, max_candidates=2, max_execution_attempts=2),
+        planner=UnavailableModelPlanner(),
+        permissions={"allow_model_api_calls": True},
+    )
+    report = coordinator.run()
+    assert report.status == "stopped"
+    assert report.stop_reason == "BUDGET_MODEL_CALLS_EXHAUSTED"
+    assert report.rounds == [] and report.usage["model_calls"] == 0
+
+    mock = make_coordinator(demo_store, StubAdapter(), job="job-zero-model-budget-mock", budget=Budget(max_model_calls=0, max_candidates=2, max_execution_attempts=2))
+    mock_report = mock.run()
+    assert mock_report.stop_reason == "BUDGET_CANDIDATES_EXHAUSTED"
+    assert len(mock_report.rounds) == 2 and mock_report.usage["model_calls"] == 0

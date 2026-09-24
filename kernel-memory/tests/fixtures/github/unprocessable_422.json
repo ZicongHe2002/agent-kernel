@@ -1,0 +1,13 @@
+{
+  "status": 422,
+  "headers": {},
+  "body": {
+    "message": "Validation Failed",
+    "errors": [
+      {
+        "resource": "PullRequest",
+        "code": "invalid"
+      }
+    ]
+  }
+}

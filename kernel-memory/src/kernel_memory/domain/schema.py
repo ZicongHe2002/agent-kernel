@@ -102,6 +102,10 @@ def validate_record_dict(data: Any) -> str:
 
 def validate_nested(def_name: str, data: Any) -> None:
     """Validate a nested contract object (Environment, Protocol, Verifier, Policy, ...)."""
+    if def_name not in record_schema()["$defs"]:
+        raise SchemaValidationError(
+            f"unknown contract definition {def_name!r}", details={"known": sorted(record_schema()["$defs"])}
+        )
     errors = list(_nested_validator(def_name).iter_errors(data))
     if errors:
         raise SchemaValidationError(f"{def_name} is invalid: {best_error(errors)}")

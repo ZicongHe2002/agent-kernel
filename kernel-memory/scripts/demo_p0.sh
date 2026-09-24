@@ -5,6 +5,7 @@
 # not measurements.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}"
 ROOT="${1:-$HERE/.demo/p0-memory}"
 KMEM="$HERE/.venv/bin/kmem"
 if [ ! -x "$KMEM" ]; then KMEM="$HERE/.venv/bin/python -m kernel_memory.cli.main"; fi

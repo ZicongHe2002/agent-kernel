@@ -240,7 +240,16 @@ def test_non_hex_sha_is_rejected_not_unresolved(tmp_path: Path) -> None:
     report = run(write_single(tmp_path, data))
     rejected = [r for r in report.rejections if r["v01_kind"] == "revision" and r["v01_id"] == "rev-1"]
     assert len(rejected) == 1 and "not hexadecimal" in rejected[0]["reason"]
-    assert FULL_1 not in json.dumps(report.records)
+    # rev-1 is rejected: no commit is minted under its identity and nothing is guessed in its place.  FULL_1 may still
+    # legitimately appear as rev-2's git_parent_oids (the synthetic input names it as parent_sha; spec 20 retains the
+    # original value), so the check is on commit identities, not on the serialized report text.
+    commits = by_type(report, "commit")
+    assert all(c["payload"]["commit_oid"]["hex"] != FULL_1 for c in commits)
+    assert commits, "the resolvable sibling revision must still be migrated"
+    for commit in commits:
+        oid_hex = commit["payload"]["commit_oid"]["hex"]
+        assert len(oid_hex) in (40, 64) and oid_hex != "not-a-sha"
+        assert "0000" not in oid_hex  # a rejected or short sha is never zero-padded into a full oid (spec 20)
 
 
 # --------------------------------------------------------------------------------------

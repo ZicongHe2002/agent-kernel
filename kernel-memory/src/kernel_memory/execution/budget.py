@@ -84,7 +84,11 @@ def stop_reason_for(budget: Budget, usage: BudgetUsage) -> str | None:
         return "BUDGET_CANDIDATES_EXHAUSTED"
     if usage.execution_attempts >= budget.max_execution_attempts:
         return "BUDGET_EXECUTIONS_EXHAUSTED"
-    if usage.model_calls >= budget.max_model_calls:
+    # A zero model-call allowance forbids model calls; it is not "already exhausted" for a planner
+    # (such as MockPlanner) that never makes one. The limit is consumed only by actual calls.
+    if budget.max_model_calls > 0 and usage.model_calls >= budget.max_model_calls:
+        return "BUDGET_MODEL_CALLS_EXHAUSTED"
+    if budget.max_model_calls == 0 and usage.model_calls > 0:
         return "BUDGET_MODEL_CALLS_EXHAUSTED"
     if usage.wall_time_seconds >= budget.max_wall_time_seconds:
         return "BUDGET_WALL_TIME_EXHAUSTED"
@@ -212,6 +216,23 @@ class BudgetLedger:
         return self._append("candidate", 1, None)
 
     def record_model_call(self) -> dict[str, Any]:
+        """Reserve one model call.
+
+        Raises ``BudgetExhausted`` *before* consuming when the allowance is used up, so a zero
+        allowance refuses the first call instead of pre-empting planners that never call a model.
+        """
+        usage = self.usage()
+        if usage.model_calls >= self._budget.max_model_calls:
+            raise BudgetExhausted(
+                f"model-call budget exhausted: {usage.model_calls} of {self._budget.max_model_calls} calls used",
+                details={
+                    "limit": "max_model_calls",
+                    "used": usage.model_calls,
+                    "max": self._budget.max_model_calls,
+                    "stop_reason": "BUDGET_MODEL_CALLS_EXHAUSTED",
+                    "usage": usage.to_dict(),
+                },
+            )
         return self._append("model_call", 1, None)
 
     def add_wall_time(self, seconds: float) -> dict[str, Any] | None:

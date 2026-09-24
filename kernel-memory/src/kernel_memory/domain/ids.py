@@ -16,7 +16,8 @@ _UNSAFE_CHARS = re.compile(r"[^a-z0-9._-]+")
 
 
 def validate_record_id(value: str, *, what: str = "record_id") -> str:
-    if not isinstance(value, str) or not RECORD_ID_PATTERN.match(value):
+    # fullmatch: `$` in re.match would accept a trailing newline ("a\n"), which must be rejected.
+    if not isinstance(value, str) or not RECORD_ID_PATTERN.fullmatch(value):
         raise InputError(f"invalid {what}: {value!r}", code="INVALID_ID")
     return value
 
@@ -31,7 +32,7 @@ def slug_for_id(value: str) -> str:
     if not isinstance(value, str) or not value:
         raise InputError("cannot slugify an empty identifier", code="INVALID_ID")
     lowered = value.lower()
-    if _SAFE_SLUG.match(lowered) and lowered == value and ".." not in value:
+    if _SAFE_SLUG.fullmatch(lowered) and lowered == value and ".." not in value:
         return value
     sanitized = _UNSAFE_CHARS.sub("-", lowered).strip("-.") or "id"
     sanitized = sanitized[:100]

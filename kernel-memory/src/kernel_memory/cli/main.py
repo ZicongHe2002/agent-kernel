@@ -11,6 +11,7 @@ Commands never edit published records; they append new ones.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import sys
@@ -19,7 +20,7 @@ from typing import Any, Callable
 
 from ..domain.errors import InputError, KernelMemoryError, NotComparableError, PrerequisiteMissingError
 from ..domain.jsonio import load_json_file, loads_strict
-from ..domain.models import GitOid
+from ..domain.models import GitOid, to_json
 from ..storage import MemoryStore
 
 CommandResult = dict[str, Any] | tuple[dict[str, Any], int]
@@ -97,8 +98,11 @@ def _git_oid(value: str) -> GitOid:
 
 
 def _to_dict(obj: Any) -> Any:
+    """JSON-ready view of service results: to_dict() when offered, dataclasses via models.to_json."""
     if hasattr(obj, "to_dict"):
         return obj.to_dict()
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return to_json(obj)
     if isinstance(obj, dict):
         return obj
     return json.loads(json.dumps(obj, default=str))
@@ -338,7 +342,7 @@ def cmd_run(args: argparse.Namespace) -> CommandResult:
     from ..adapters.registry import default_adapter_registry
     from ..domain.hashing import jcs_digest
     from ..domain.problems import default_registry
-    from ..execution.runner import LocalRunner, describe_unavailable
+    from ..execution.runner import LocalRunner
     from ..domain.errors import BackendUnavailable
 
     store = _open_store(args)
@@ -390,7 +394,7 @@ def cmd_run(args: argparse.Namespace) -> CommandResult:
     try:
         outcome, run = runner.submit_and_execute(spec)
     except BackendUnavailable as exc:
-        result = describe_unavailable(args.backend, exc)
+        result = LocalRunner.describe_unavailable(args.backend, exc)
         result["request_id"] = request_id
         return (result, exc.exit_code)
     result: dict[str, Any] = {"request": _to_dict(outcome), "run": None}
@@ -447,7 +451,7 @@ def cmd_trajectory(args: argparse.Namespace) -> CommandResult:
     if args.verify:
         return _to_dict(traj.verify_trajectory(store, args.config))
     if args.rebuild:
-        result = _to_dict(traj.rebuild_trajectory(store, args.config))
+        result = _to_dict(traj.rebuild_trajectory(store, args.config, force=args.force))
     else:
         result = _to_dict(traj.publish_trajectory(store, args.config, force=args.force))
     if args.print_view:
@@ -562,14 +566,33 @@ def cmd_migrate_v01(args: argparse.Namespace) -> CommandResult:
     from ..domain.problems import default_registry
     from ..migrations.v01 import MappingResolver, NullResolver, migrate_v01
 
-    store = None if args.dry_run else _open_store(args)
+    # A dry run still opens an existing store (read-only use: T01 reuse of existing kernels/configs and
+    # ID_CONFLICT pre-checks); a dry run against a non-existent root simply migrates without a store.
+    root = _root(args)
+    if args.dry_run:
+        store = _open_store(args) if (root / "manifest.json").is_file() else None
+    else:
+        store = _open_store(args)
     repo_uid_map = _json_arg(args.repo_uid_map, what="--repo-uid-map") or {}
+    if not isinstance(repo_uid_map, dict):
+        raise InputError("--repo-uid-map must be a JSON object mapping v0.1 repo names to repo_uid values")
     resolver: Any = NullResolver()
     if args.resolver:
         kind, _, value = args.resolver.partition(":")
         if kind == "map":
             mapping = _json_arg(value, what="--resolver map:@file")
-            resolver = MappingResolver({(k.split("|", 1)[0], k.split("|", 1)[1]): v for k, v in mapping.items()})
+            if not isinstance(mapping, dict):
+                raise InputError("--resolver map:@file must be a JSON object of \"repo_uid|shortsha\": full_hex")
+            pairs: dict[tuple[str, str], str] = {}
+            for key, full_hex in mapping.items():
+                if not isinstance(key, str) or "|" not in key or not isinstance(full_hex, str):
+                    raise InputError(
+                        f"invalid resolver mapping entry {key!r}: keys must be \"repo_uid|shortsha\" and values full hex",
+                        code="INVALID_RESOLVER_MAP",
+                    )
+                repo_uid, _, prefix = key.partition("|")
+                pairs[(repo_uid, prefix)] = full_hex
+            resolver = MappingResolver(pairs)
         elif kind == "git":
             from ..adapters.git_local import LocalGitRepo
 
@@ -592,7 +615,15 @@ def cmd_migrate_v01(args: argparse.Namespace) -> CommandResult:
             resolver = _GitResolver()
         else:
             raise InputError("--resolver must be map:@file.json or git:<repo path>")
-    report = migrate_v01(Path(args.path), store=store, registry=default_registry(), resolver=resolver, repo_uid_map=repo_uid_map, dry_run=args.dry_run)
+    report = migrate_v01(
+        Path(args.path),
+        store=store,
+        registry=default_registry(),
+        resolver=resolver,
+        repo_uid_map=repo_uid_map,
+        dry_run=args.dry_run,
+        created_at=args.created_at,
+    )
     return _to_dict(report)
 
 
@@ -815,6 +846,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--apply", dest="dry_run", action="store_false")
     p.add_argument("--repo-uid-map", help="inline JSON or @file mapping v0.1 repo names to repo_uid")
     p.add_argument("--resolver", help="map:@file.json (\"repo_uid|shortsha\": fullhex) or git:<repo path>")
+    p.add_argument("--created-at", help="fixed RFC 3339 UTC timestamp for all migrated records (re-applying with the same value is idempotent)")
     p.set_defaults(dry_run=True)
     add("status", cmd_status, "store counts and pending integrations")
     p = add("cpu-demo-defaults", cmd_cpu_demo_defaults, "write default CPU-demo protocol/verifier files and print the demo source commit")

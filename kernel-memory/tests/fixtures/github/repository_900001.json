@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "id": 900001,
+    "node_id": "R_kgDOAA24Cw",
+    "name": "kernels",
+    "full_name": "acme/kernels",
+    "private": false,
+    "default_branch": "main",
+    "html_url": "https://github.com/acme/kernels"
+  }
+}

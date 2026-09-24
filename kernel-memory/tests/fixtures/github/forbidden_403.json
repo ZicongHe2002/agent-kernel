@@ -1,0 +1,10 @@
+{
+  "status": 403,
+  "headers": {
+    "X-RateLimit-Remaining": "4999"
+  },
+  "body": {
+    "message": "Resource not accessible by integration",
+    "documentation_url": "https://docs.github.com/rest"
+  }
+}

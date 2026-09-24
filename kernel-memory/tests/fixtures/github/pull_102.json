@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "number": 102,
+    "state": "closed",
+    "merged": true,
+    "title": "Cherry-pick the loop skeleton onto a second PR",
+    "body": null,
+    "html_url": "https://github.com/acme/kernels/pull/102",
+    "url": "https://api.github.com/repos/acme/kernels/pulls/102",
+    "updated_at": "2026-09-12T08:00:00Z",
+    "commits": 2,
+    "merge_commit_sha": "3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f",
+    "head": {
+      "ref": "feature/skeleton-only",
+      "sha": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    },
+    "base": {
+      "ref": "main",
+      "sha": "ba5eba5eba5eba5eba5eba5eba5eba5eba5eba5e",
+      "repo": {
+        "id": 900001,
+        "full_name": "acme/kernels"
+      }
+    }
+  }
+}

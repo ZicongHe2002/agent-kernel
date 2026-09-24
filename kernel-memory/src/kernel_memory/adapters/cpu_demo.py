@@ -306,6 +306,15 @@ class CpuDemoAdapter:
         if not isinstance(problem, dict):
             raise InputError("problem must be a JSON object", code="INVALID_PROBLEM")
         validate_against(demo_problem_schema(), problem, what="CPU demo problem")
+        # JSON Schema treats 4.0 as an "integer"; the demo contract requires a real positive int
+        # (never a bool, never a float) because n sizes the input suite and is digested as such.
+        n = problem.get("n")
+        if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+            raise InputError(
+                f"CPU demo problem 'n' must be a positive integer, got {n!r}",
+                code="INVALID_PROBLEM",
+                details={"problem": problem},
+            )
         if problem.get("operation") != "vector_add" or problem.get("dtype") != "float32" or problem.get("outputs") != ["y"]:
             raise InputError(
                 "CPU demo adapter only executes {operation: vector_add, dtype: float32, outputs: [y]}",

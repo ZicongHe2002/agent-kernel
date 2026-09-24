@@ -4,8 +4,6 @@ jax==0.10.2
 jaxlib==0.10.2
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
-# Editable install with no version control (kernel-memory==0.2.0)
--e /Users/ziconghe/Desktop/company-project/kernel-agent/kernel-memory
 ml_dtypes==0.6.0
 numpy==2.4.6
 opt_einsum==3.4.0

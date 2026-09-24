@@ -118,18 +118,29 @@ class SqliteIndex:
         return sqlite3.connect(f"file:{self.path}?mode=ro", uri=True)
 
     def fingerprint(self) -> str | None:
+        """Fingerprint stored at rebuild time, or None when the cache is absent or unreadable.
+
+        A damaged cache file (truncated, overwritten, wrong format) is never an error: the
+        index holds no exclusive facts, so callers simply treat it as stale and rebuild.
+        """
         if not self.exists():
             return None
-        conn = self._connect()
+        try:
+            conn = self._connect()
+        except sqlite3.Error:
+            return None
         try:
             row = conn.execute("SELECT v FROM meta WHERE k='fingerprint'").fetchone()
+        except sqlite3.Error:
+            return None
         finally:
             conn.close()
         return row[0] if row else None
 
     def is_fresh(self, store: "MemoryStore") -> bool:
         expected = "\n".join(f"{e.record_id}:{e.digest}" for e in store.index_entries())
-        return self.fingerprint() == expected
+        fingerprint = self.fingerprint()
+        return fingerprint is not None and fingerprint == expected
 
     def record_ids(self, *, record_type: str | None = None, config_ref: str | None = None, subject_ref: str | None = None) -> list[str]:
         clauses: list[str] = []

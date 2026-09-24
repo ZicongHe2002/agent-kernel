@@ -29,7 +29,8 @@ Public API
          non-fixture bundle runs claiming ``trusted_worker`` are deterministically rewritten to
          ``imported_unverified`` unless ``trusted_source`` (recorded in ``provenance_downgraded``);
       5. artifact resolution for every run artifact with ``availability=present``: embedded blob,
-         ``artifact://sha256/<hex>`` (must already be in the CAS), or a relative path resolved with
+         ``artifact://sha256/<hex>`` (must already be in the CAS or carried as a digest-verified embedded
+         blob; a file-backed sibling ref sharing the digest never counts), or a relative path resolved with
          ``ids.resolve_inside(artifact_root or bundle directory, uri)`` (traversal/absolute ->
          ``UnsafePathError``, other URI schemes -> ``SecurityPolicyError``); bytes are verified
          against sha256 and size (``InvariantViolation`` ``ARTIFACT_CHECKSUM_MISMATCH`` /
@@ -326,11 +327,17 @@ def _resolve_artifacts(
             details=details,
         )
 
+    # Digests whose bytes came from a content-addressed source: a digest-verified embedded blob or the
+    # store's CAS. A relative-path ref only proves that *some file under the artifact root* hashes to the
+    # digest; that never satisfies an ``artifact://`` ref, which by contract resolves from the CAS alone
+    # (ADR-0002: evidence is resolved through sha256 in the blob store, never through the URI).
+    content_addressed: set[str] = set(embedded)
+
     for record, index, ref in _present_refs(records):
-        if ref.sha256 in resolved:
-            continue
         uri = ref.uri
         if uri.startswith(ARTIFACT_URI_PREFIX):
+            # Deliberately ahead of the digest dedupe below: an earlier file-backed sibling sharing this
+            # digest is not evidence that the blob exists in the content-addressed store.
             hexpart = uri[len(ARTIFACT_URI_PREFIX):]
             if f"sha256:{hexpart}" != ref.sha256:
                 raise InvariantViolation(
@@ -338,12 +345,18 @@ def _resolve_artifacts(
                     code="ARTIFACT_URI_MISMATCH",
                     details={"record_id": record.record_id, "artifact_id": ref.artifact_id, "uri": uri, "sha256": ref.sha256},
                 )
-            if store.has_artifact(ref.sha256):
+            if ref.sha256 in content_addressed:
+                blob = resolved[ref.sha256]
+            elif store.has_artifact(ref.sha256):
                 blob = store.read_artifact(ref.sha256)  # raises ARTIFACT_CORRUPT on a damaged blob
-                _check_size(record, ref, blob)
-                resolved[ref.sha256] = blob
             else:
                 missing_artifact(record, index, ref, "is not in the content-addressed store")
+                continue
+            _check_size(record, ref, blob)
+            resolved[ref.sha256] = blob
+            content_addressed.add(ref.sha256)
+            continue
+        if ref.sha256 in resolved:
             continue
         lowered = uri.lower()
         if "://" in uri or lowered.startswith(REFUSED_URI_SCHEMES):

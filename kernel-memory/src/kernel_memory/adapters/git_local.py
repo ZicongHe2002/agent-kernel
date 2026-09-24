@@ -19,7 +19,8 @@ Public API
       tree/author/message via ``git cat-file commit``). Message text is data.
     * ``rev_list(head, exclude) -> list[GitOid]`` (``git rev-list --topo-order --reverse
       HEAD --not EXCLUDE...``), oldest first.
-    * ``is_shallow()``, ``merge_base(a, b) -> GitOid | None``, ``has_object(oid) -> bool``,
+    * ``is_shallow()``, ``merge_base(a, b) -> GitOid | None``, ``has_object(oid) -> bool`` (full
+      object ids only; an abbreviation answers ``False`` rather than being resolved),
       ``tree_oid(commit)``, ``head_oid()``.
     * ``diff_patch(base, head) -> bytes`` (binary-safe, config-independent flags) and
       ``diff_numstat(base, head) -> list[{"path", "added", "deleted"}]`` (``None`` counts
@@ -233,11 +234,13 @@ class LocalGitRepo:
         return self.rev_parse("HEAD")
 
     def has_object(self, oid: GitOid | str) -> bool:
+        """True when the *full* object id is stored. Abbreviations are never resolved here (T31)."""
         try:
             arg = _oid_arg(oid)
+            algorithm = algorithm_for_hex(arg)
         except InputError:
             return False
-        if not _HEX_RE.match(arg):
+        if algorithm != self.object_format():
             return False
         proc = self._run(["cat-file", "-e", arg])
         return proc.returncode == 0

@@ -1,0 +1,25 @@
+# Python virtual environments (machine-specific absolute paths; never commit)
+.venv/
+venv/
+env/
+
+# Byte-code and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# macOS
+.DS_Store
+
+# Local demo stores and scratch output (regenerable)
+kernel-memory/.demo/
+kernel-memory/memory/
+*.sqlite
+
+# Local editor / agent settings
+.claude/settings.local.json
