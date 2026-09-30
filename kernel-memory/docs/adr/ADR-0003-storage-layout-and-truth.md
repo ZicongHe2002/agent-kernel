@@ -21,5 +21,6 @@
    problems. Hand-edited history is detected, not silently accepted.
 6. **SQLite index is disposable.** `.cache/index.sqlite` is rebuilt from JSON; `SqliteIndex.is_fresh` compares a
    fingerprint of all record digests. Nothing authoritative is written to SQLite.
-7. **Single-machine, single coordinating writer.** One `fcntl.flock` protocol for mutation, recovery, and
-   consistent reads. Network filesystems and multi-host writers are unsupported by design.
+7. **Single-machine, single coordinating writer.** One platform-native file-lock protocol for mutation,
+   recovery, and consistent reads (`fcntl.flock` on POSIX and `msvcrt.locking` on Windows). Network filesystems
+   and multi-host writers are unsupported by design.

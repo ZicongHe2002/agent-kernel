@@ -31,6 +31,16 @@ python3 -m venv .venv
 .venv/bin/python -m pytest tests -q
 ```
 
+Windows PowerShell：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,cpu-demo]"
+$env:PYTHONPATH = "$PWD\src"
+& .\.venv\Scripts\python.exe -m pytest tests -q
+& .\.venv\Scripts\python.exe -m kernel_memory.cli.main --help
+```
+
 macOS 注意事项：如果在虚拟环境中执行 `import kernel_memory` 失败，请运行
 `chflags nohidden .venv/lib/python3.11/site-packages/*.pth`（Python 会跳过隐藏的 `.pth` 文件），
 或使用不依赖 `.pth` 的备用方式：
@@ -61,4 +71,4 @@ macOS 注意事项：如果在虚拟环境中执行 `import kernel_memory` 失�
 
 `docs/README.md`（文档索引）、`docs/IMPLEMENTATION_STATUS.md`（已完成内容、实际执行记录和待办事项）、
 `docs/ACCEPTANCE.md`（验收场景 T01–T32 与实际执行测试的对应关系及状态）、`docs/DESIGN.md`、
-`docs/CONFIGURATION.md`、`docs/RECOVERY.md`、`docs/MIGRATION.md`、`docs/adr/`。
+`docs/CONFIGURATION.md`、`docs/RECOVERY.md`、`docs/MIGRATION.md`、`docs/MEMORY_GUIDE.zh-CN.md`、`docs/adr/`。

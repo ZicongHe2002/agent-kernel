@@ -499,6 +499,15 @@ class RequestLedger:
                     "current_worker": state.worker_id,
                 },
             )
+        if state.cancelled or state.kind == "cancelled":
+            raise LeaseLostError(
+                f"request {lease.request_id!r} was cancelled; lease for attempt {lease.attempt_no} is no longer valid",
+                details={
+                    "request_id": lease.request_id,
+                    "attempt_no": lease.attempt_no,
+                    "current_token": state.fencing_token,
+                },
+            )
         if state.kind == "lease_lost" and state.attempt_no == lease.attempt_no:
             raise LeaseLostError(
                 f"lease for request {lease.request_id!r} attempt {lease.attempt_no} was marked lost",
@@ -615,12 +624,20 @@ class RequestLedger:
                 )
             if state.cancelled:
                 return None
+            if lease is not None:
+                # A worker may cancel only the attempt it currently owns.  In
+                # particular, a stale worker must not be able to cancel a newer
+                # attempt after losing its fencing token.
+                self.require_lease(lease)
+            next_fencing_token = state.fencing_token + 1
             return self._append_event(
                 request_id,
                 "cancelled",
                 attempt_no=lease.attempt_no if lease else (state.attempt_no or None),
                 worker_id=lease.worker_id if lease else state.worker_id,
-                fencing_token=lease.fencing_token if lease else (state.fencing_token or None),
+                # Cancellation is terminal for the request and therefore fences
+                # any worker that may still be executing the current attempt.
+                fencing_token=next_fencing_token,
                 payload={"reason": str(reason), **(payload or {})},
             )
 

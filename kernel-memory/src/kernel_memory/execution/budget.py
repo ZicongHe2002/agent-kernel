@@ -221,19 +221,23 @@ class BudgetLedger:
         Raises ``BudgetExhausted`` *before* consuming when the allowance is used up, so a zero
         allowance refuses the first call instead of pre-empting planners that never call a model.
         """
-        usage = self.usage()
-        if usage.model_calls >= self._budget.max_model_calls:
-            raise BudgetExhausted(
-                f"model-call budget exhausted: {usage.model_calls} of {self._budget.max_model_calls} calls used",
-                details={
-                    "limit": "max_model_calls",
-                    "used": usage.model_calls,
-                    "max": self._budget.max_model_calls,
-                    "stop_reason": "BUDGET_MODEL_CALLS_EXHAUSTED",
-                    "usage": usage.to_dict(),
-                },
-            )
-        return self._append("model_call", 1, None)
+        # The check and append must share the store lock.  Otherwise two planner
+        # workers can both observe the same remaining allowance and publish two
+        # reservations for the last model-call slot.
+        with self._store.lock():
+            usage = self.usage()
+            if usage.model_calls >= self._budget.max_model_calls:
+                raise BudgetExhausted(
+                    f"model-call budget exhausted: {usage.model_calls} of {self._budget.max_model_calls} calls used",
+                    details={
+                        "limit": "max_model_calls",
+                        "used": usage.model_calls,
+                        "max": self._budget.max_model_calls,
+                        "stop_reason": "BUDGET_MODEL_CALLS_EXHAUSTED",
+                        "usage": usage.to_dict(),
+                    },
+                )
+            return self._append("model_call", 1, None)
 
     def add_wall_time(self, seconds: float) -> dict[str, Any] | None:
         if isinstance(seconds, bool) or not isinstance(seconds, (int, float)):

@@ -7,6 +7,7 @@ decision service derives selections from evidence and a fixed policy.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from typing import Any, Protocol, runtime_checkable
 
 from ..domain.errors import InputError
@@ -27,8 +28,22 @@ class Budget:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise InputError(f"budget.{name} must be a non-negative integer")
-        if self.max_wall_time_seconds <= 0:
+        wall_time = self.max_wall_time_seconds
+        try:
+            wall_time_finite = math.isfinite(float(wall_time))
+        except (OverflowError, ValueError, TypeError):
+            wall_time_finite = False
+        if (
+            isinstance(wall_time, bool)
+            or not isinstance(wall_time, (int, float))
+            or not wall_time_finite
+            or wall_time <= 0
+        ):
             raise InputError("budget.max_wall_time_seconds must be positive")
+        for name in ("max_consecutive_execution_failures", "plateau_rounds"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise InputError(f"budget.{name} must be a non-negative integer")
 
     def to_dict(self) -> dict[str, Any]:
         return {

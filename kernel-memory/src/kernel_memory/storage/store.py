@@ -607,7 +607,18 @@ class MemoryStore:
             if not raw.strip():
                 continue
             try:
-                entries.append(loads_strict(raw))
+                entry = loads_strict(raw)
+                if not isinstance(entry, dict):
+                    raise ValueError("journal line must be a JSON object")
+                required = {"record_id", "record_type", "relpath", "digest", "txn_id", "published_at"}
+                if not required.issubset(entry):
+                    raise ValueError("journal line is missing required fields")
+                if any(not isinstance(entry[field], str) or not entry[field] for field in required):
+                    raise ValueError("journal line has invalid field types")
+                validate_record_id(entry["record_id"], what="journal record_id")
+                if not is_sha256_ref(entry["digest"]):
+                    raise ValueError("journal line has an invalid digest")
+                entries.append(entry)
             except Exception:
                 entries.append({"corrupt_line": raw.decode("utf-8", errors="replace")})
         return entries
@@ -640,6 +651,67 @@ class MemoryStore:
                 strays.extend(p for p in root.rglob(".*.tmp-*") if p.is_file())
         return strays
 
+    def _validate_pending_manifest(self, manifest: Any, txn_id: str, staging: Path) -> list[dict[str, Any]]:
+        """Validate the shape and paths of a checksummed pending manifest.
+
+        The checksum authenticates the bytes that were written, but it does not make a
+        malformed or hostile manifest safe to interpret.  Recovery must seal such a
+        manifest instead of indexing missing keys or following a staged path outside the
+        transaction directory.
+        """
+        if not isinstance(manifest, dict):
+            raise ValueError("pending manifest must be a JSON object")
+        if manifest.get("txn_id") != txn_id:
+            raise ValueError("pending manifest transaction id does not match its filename")
+        records = manifest.get("records")
+        if not isinstance(records, list):
+            raise ValueError("pending manifest records must be a list")
+        # Ensure the staging root itself is beneath this store before resolving children.
+        staging_rel = f"{layout.RUNTIME_DIR}/staging/{txn_id}"
+        try:
+            safe_staging = resolve_inside(self.root, staging_rel)
+        except UnsafePathError as exc:
+            raise ValueError(f"unsafe staging directory: {exc}") from exc
+        if safe_staging != staging.resolve(strict=False):
+            raise ValueError("pending manifest staging directory is unsafe")
+
+        seen_ids: set[str] = set()
+        for position, entry in enumerate(records):
+            if not isinstance(entry, dict):
+                raise ValueError(f"manifest record {position} must be an object")
+            try:
+                record_id = entry["record_id"]
+                record_type = entry["record_type"]
+                relpath = entry["relpath"]
+                digest = entry["digest"]
+                staged = entry["staged"]
+            except KeyError as exc:
+                raise ValueError(f"manifest record {position} is missing {exc.args[0]!r}") from exc
+            try:
+                validate_record_id(record_id, what="manifest record_id")
+            except Exception as exc:
+                raise ValueError(f"manifest record {position} has invalid record_id") from exc
+            if record_id in seen_ids:
+                raise ValueError(f"manifest contains duplicate record_id {record_id!r}")
+            seen_ids.add(record_id)
+            if not isinstance(record_type, str) or record_type not in TYPE_ORDER:
+                raise ValueError(f"manifest record {record_id!r} has invalid record_type")
+            if not isinstance(relpath, str) or not layout.is_record_file(PurePosixPath(relpath)):
+                raise ValueError(f"manifest record {record_id!r} has unsafe relpath")
+            try:
+                self._abs(relpath)
+            except UnsafePathError as exc:
+                raise ValueError(f"manifest record {record_id!r} has unsafe relpath") from exc
+            if not is_sha256_ref(digest):
+                raise ValueError(f"manifest record {record_id!r} has invalid digest")
+            if not isinstance(staged, str) or not staged:
+                raise ValueError(f"manifest record {record_id!r} has invalid staged path")
+            try:
+                resolve_inside(staging, staged)
+            except UnsafePathError as exc:
+                raise ValueError(f"manifest record {record_id!r} has unsafe staged path") from exc
+        return records
+
     # ------------------------------------------------------------------ recovery
     def recover(self) -> RecoveryReport:
         report = RecoveryReport()
@@ -655,15 +727,19 @@ class MemoryStore:
                     body = {k: v for k, v in manifest.items() if k != "manifest_digest"}
                     if recorded != sha256_bytes(dumps_compact(body).encode("utf-8")):
                         raise InvariantViolation("pending manifest checksum mismatch", code="MANIFEST_CORRUPT")
+                    staging = self._runtime("staging", txn_id)
+                    records = self._validate_pending_manifest(manifest, txn_id, staging)
                 except Exception as exc:
                     sealed = self._seal_manifest(manifest_path, reason=f"unreadable manifest: {exc}")
                     report.sealed_txns.append(sealed)
                     continue
-                staging = self._runtime("staging", txn_id)
                 incomplete: list[dict[str, Any]] = []
-                for entry in manifest["records"]:
+                for entry in records:
                     dest = self._abs(entry["relpath"])
-                    staged = staging / entry.get("staged", "")
+                    # The manifest validator has already rejected traversal and symlink
+                    # components; resolve once more here to make the invariant explicit at
+                    # the point where a file may be moved.
+                    staged = resolve_inside(staging, entry["staged"])
                     if dest.exists():
                         try:
                             digest = Record.from_dict(load_json_file(dest)).canonical_digest()

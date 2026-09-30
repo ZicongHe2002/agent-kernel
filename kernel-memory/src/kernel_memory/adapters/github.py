@@ -285,7 +285,14 @@ def github_state_from_pull(pull: Any) -> str:
 # Client
 # --------------------------------------------------------------------------------------
 def _validate_name(value: str, what: str) -> str:
-    if not isinstance(value, str) or not _NAME_RE.match(value) or ".." in value:
+    # ``$`` in Python regexes may match before a trailing newline; use
+    # ``fullmatch`` and reject control characters before putting the value in a URL.
+    if (
+        not isinstance(value, str)
+        or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value)
+        or _NAME_RE.fullmatch(value) is None
+        or ".." in value
+    ):
         raise InputError(f"invalid GitHub {what}: {value!r}", code="INVALID_GITHUB_NAME")
     return value
 

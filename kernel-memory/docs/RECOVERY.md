@@ -75,9 +75,10 @@ artifact presence/digests + the integrity scan:
 
 ## Locks and concurrency
 
-One `fcntl` lock (`.runtime/lock`) guards mutation, recovery, and consistent reads on one machine.
-Two processes may publish concurrently and serialize on the lock. Multiple hosts writing one directory
-over a network filesystem are unsupported. A lock wait beyond the timeout raises `LOCK_TIMEOUT` (exit 6).
+One platform-native lock (`.runtime/lock`) guards mutation, recovery, and consistent reads on one machine:
+`fcntl.flock` on POSIX and `msvcrt.locking` on Windows. Two processes may publish concurrently and
+serialize on the lock. Multiple hosts writing one directory over a network filesystem are unsupported.
+A lock wait beyond the timeout raises `LOCK_TIMEOUT` (exit 6).
 
 ## Backups
 

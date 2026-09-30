@@ -31,6 +31,17 @@ bash scripts/demo_p0.sh                     # 使用合成数据包进行离线�
 REPS=50 WARMUP=10 bash scripts/demo_cpu.sh   # 在本机 CPU 上实际运行向量加法演示内核
 ```
 
+Windows PowerShell 可使用原生 Python CLI（演示脚本本身是 Bash）：
+
+```powershell
+cd kernel-memory
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,cpu-demo]"
+$env:PYTHONPATH = "$PWD\src"
+& .\.venv\Scripts\python.exe -m pytest tests -q
+& .\.venv\Scripts\python.exe -m kernel_memory.cli.main --help
+```
+
 演示脚本仅向 `kernel-memory/.demo/` 写入数据，该目录已被 Git 忽略。
 运行 `.venv/bin/kmem --help` 可查看命令行帮助。
 
@@ -43,6 +54,7 @@ REPS=50 WARMUP=10 bash scripts/demo_cpu.sh   # 在本机 CPU 上实际运行向�
 | [验收报告](kernel-memory/docs/ACCEPTANCE.md) | 验收场景 T01–T32 与已执行测试的对应关系及状态。 |
 | [设计文档](kernel-memory/docs/DESIGN.md) | 系统架构、模块划分、公共 API、标识符及测试约定。 |
 | [配置指南](kernel-memory/docs/CONFIGURATION.md) | 项目设置、GitHub / TPU / 模型 / LLO 配置、权限和预算。 |
+| [Memory 使用指南](kernel-memory/docs/MEMORY_GUIDE.zh-CN.md) | Windows 安装、problem 输入、bundle 导入，以及 query/context/trajectory 读取方式。 |
 | [恢复指南](kernel-memory/docs/RECOVERY.md) | 存储完整性模型、数据发布协议，以及 `kmem recover`、`kmem validate --deep` 的使用。 |
 | [迁移指南](kernel-memory/docs/MIGRATION.md) | v0.1 → v0.2 的输入格式、映射规则、禁止推断的信息及验证方式。 |
 | [架构决策记录](kernel-memory/docs/adr/) | 重要架构决策及其背景。 |
