@@ -42,7 +42,16 @@ entrypoint_resolver=None, jax_loader=None)``
   (``InvariantViolation`` code ``TESTED_SOURCE_MISMATCH``), dirty trees are refused unless
   ``allow_dirty_exploratory`` (then ``dirty=True`` with a ``patch_digest``).
 * ``compile(prepared)``: ``jax.jit(fn).lower(*inputs).compile()``; any exception becomes a
-  ``compile_error`` report (never a raise), with a ``compile_log`` artifact.
+  ``compile_error`` report (never a raise), with a ``compile_log`` artifact. After a *successful*
+  compile the adapter captures compiler text honestly: ``Lowered.as_text()`` (StableHLO MLIR)
+  becomes a ``stablehlo_text`` artifact (``<request_id>-stablehlo``) and ``Compiled.as_text()``
+  (optimised HLO) a ``compiled_hlo_text`` artifact (``<request_id>-compiled-hlo``), both
+  ``text/plain`` with retention ``retain_for_decision``. Each ``as_text`` call runs in its own
+  try/except; when the attribute is missing, the call raises, or it returns ``None``/non-text,
+  no artifact is written and the ``compile_log`` records why (``hlo_captured`` per kind,
+  ``hlo_unavailable_reason``). Text is never synthesised. The log's ``backend`` is the
+  constructor label of the adapter that actually compiled (``check_environment`` already refused
+  any other platform), so it is ``jax_tpu`` only when a real TPU compiled.
 * ``verify(prepared)``: runs the compiled function, ``jax.block_until_ready`` on the whole
   output pytree, checks required outputs, compares every leaf with
   ``verify.elementwise_close`` under the request verifier's tolerances/policy.
@@ -82,6 +91,7 @@ from ..domain.hashing import artifact_digest, jcs_digest, sha256_bytes, source_d
 from ..domain.jsonio import dumps_readable
 from ..domain.models import GitOid
 from . import timing, verify
+from .analysis import COMPILED_HLO_TEXT_KIND, STABLEHLO_TEXT_KIND
 from .base import (
     ArtifactBlob,
     CompileReport,
@@ -97,6 +107,13 @@ COMPILER_BUILD_FIELD = "compiler_build_id"
 TIMING_BOUNDARY = (
     "host call of the compiled entrypoint with preallocated device inputs, jax.block_until_ready on the complete "
     "output pytree; compilation, first execution and warmups excluded; no input allocation inside the timed region"
+)
+HLO_TEXT_MEDIA_TYPE = "text/plain"
+HLO_TEXT_RETENTION = "retain_for_decision"
+# (stage name in the compile pipeline, artifact kind, artifact id suffix)
+HLO_TEXT_STAGES: tuple[tuple[str, str, str], ...] = (
+    ("lowered", STABLEHLO_TEXT_KIND, "stablehlo"),
+    ("compiled", COMPILED_HLO_TEXT_KIND, "compiled-hlo"),
 )
 
 
@@ -208,6 +225,28 @@ def _consume_outputs(output: Any) -> list[dict[str, Any]]:
         total = float(np.sum(arr.astype(np.float64))) if arr.dtype.kind in "biuf" else None
         sums.append({"path": path, "checksum": total if total is None or np.isfinite(total) else repr(total), "size": int(arr.size)})
     return sums
+
+
+def _stage_text(stage: Any, stage_name: str) -> tuple[bytes | None, str | None]:
+    """Read ``stage.as_text()`` defensively: ``(utf-8 bytes, None)`` or ``(None, reason)``.
+
+    A missing ``as_text``, an exception, ``None``, a non-string or empty text all yield a
+    reason and no bytes. Nothing is ever synthesised: absence is recorded, never invented.
+    """
+    as_text = getattr(stage, "as_text", None)
+    if as_text is None:
+        return None, f"{stage_name} has no as_text"
+    try:
+        text = as_text()
+        if text is None:
+            return None, f"{stage_name}.as_text returned None"
+        if not isinstance(text, str):
+            return None, f"{stage_name}.as_text returned {type(text).__name__}, not str"
+        if not text.strip():
+            return None, f"{stage_name}.as_text returned empty text"
+        return text.encode("utf-8"), None
+    except Exception as exc:  # noqa: BLE001 - missing compiler text is recorded evidence of absence, never a failure
+        return None, f"{stage_name}.as_text raised {type(exc).__name__}: {exc}"
 
 
 # --------------------------------------------------------------------------------------
@@ -548,6 +587,30 @@ class JaxAdapter:
         return handle
 
     # ------------------------------------------------------------------ compile
+    @staticmethod
+    def _capture_hlo(request_id: str, lowered: Any, compiled: Any) -> tuple[list[ArtifactBlob], dict[str, bool], str | None]:
+        """Turn the stages' ``as_text`` output into evidence blobs; report per-kind capture and reasons."""
+        stages = {"lowered": lowered, "compiled": compiled}
+        blobs: list[ArtifactBlob] = []
+        captured: dict[str, bool] = {}
+        reasons: list[str] = []
+        for stage_name, kind, suffix in HLO_TEXT_STAGES:
+            data, reason = _stage_text(stages[stage_name], stage_name)
+            captured[kind] = data is not None
+            if data is not None:
+                blobs.append(
+                    ArtifactBlob(
+                        artifact_id=f"{request_id}-{suffix}",
+                        kind=kind,
+                        media_type=HLO_TEXT_MEDIA_TYPE,
+                        data=data,
+                        retention=HLO_TEXT_RETENTION,
+                    )
+                )
+            else:
+                reasons.append(f"{kind}: {reason}")
+        return blobs, captured, ("; ".join(reasons) if reasons else None)
+
     def compile(self, prepared: PreparedExecution) -> CompileReport:
         handle = self._handle(prepared)
         jax = handle["jax"]
@@ -563,18 +626,35 @@ class JaxAdapter:
             blob = _json_blob(
                 f"{request_id}-compile-log",
                 "compile_log",
-                {"kind": "compile_log", "status": "compile_error", "entrypoint": entrypoint, "message": message, "backend": self.backend},
+                {
+                    "kind": "compile_log",
+                    "status": "compile_error",
+                    "entrypoint": entrypoint,
+                    "message": message,
+                    "backend": self.backend,
+                    "hlo_captured": {kind: False for _, kind, _ in HLO_TEXT_STAGES},
+                    "hlo_unavailable_reason": "compile_error: no compiled stage exists",
+                },
             )
             return CompileReport(status="compile_error", message=message, artifacts=[blob])
         handle["compiled"] = compiled
         handle["compile_error"] = None
+        hlo_blobs, hlo_captured, hlo_unavailable_reason = self._capture_hlo(request_id, lowered, compiled)
         message = f"compiled {entrypoint} for {prepared.environment.get('accelerator_model', self.required_platform)} ({self.backend})"
         blob = _json_blob(
             f"{request_id}-compile-log",
             "compile_log",
-            {"kind": "compile_log", "status": "ok", "entrypoint": entrypoint, "message": message, "backend": self.backend},
+            {
+                "kind": "compile_log",
+                "status": "ok",
+                "entrypoint": entrypoint,
+                "message": message,
+                "backend": self.backend,
+                "hlo_captured": hlo_captured,
+                "hlo_unavailable_reason": hlo_unavailable_reason,
+            },
         )
-        return CompileReport(status="ok", message=message, artifacts=[blob])
+        return CompileReport(status="ok", message=message, artifacts=[blob, *hlo_blobs])
 
     def _compiled(self, prepared: PreparedExecution) -> tuple[dict[str, Any], Any, str | None]:
         handle = self._handle(prepared)
@@ -743,6 +823,9 @@ class JaxAdapter:
 __all__ = [
     "COMPILER_BUILD_FIELD",
     "EXECUTION_FLAG_ENV_VARS",
+    "HLO_TEXT_MEDIA_TYPE",
+    "HLO_TEXT_RETENTION",
+    "HLO_TEXT_STAGES",
     "JaxAdapter",
     "ResolvedEntrypoint",
     "TIMING_BOUNDARY",

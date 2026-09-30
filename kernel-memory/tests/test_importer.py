@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import pytest
+from conftest import PLACEHOLDER_ALGORITHM_ID, record_dict
 
 from kernel_memory.domain.errors import (
     IdConflictError,
@@ -96,11 +97,22 @@ def test_import_fixture_bundle_into_fresh_store(store: MemoryStore, fixtures_roo
     report = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True)
     assert report.ok
     assert report.is_fixture is True and report.dry_run is False and report.txn_id is not None
-    assert report.records_total == 18 and report.records_published == 18 and report.records_idempotent == 0
+    assert report.records_total == 19 and report.records_published == 19 and report.records_idempotent == 0
     assert report.artifacts_stored == 7 and report.artifacts_idempotent == 0
     assert report.blobs_stored == 5 and report.blobs_idempotent == 0  # three correctness reports share one digest
     assert report.provenance_downgraded == []
     assert {i.code for i in report.issues} == {"FIXTURE_RUN"}
+    assert report.legacy_upgrade == {
+        "from_version": "0.2.0",
+        "to_version": "0.3.0",
+        "records_rewritten": 18,
+        "configs_linked": ["cfg-demo"],
+        "records_synthesized": [PLACEHOLDER_ALGORITHM_ID],
+        "placeholder_method_summary": "unspecified (imported from v0.2)",
+    }
+    placeholder = store.get(PLACEHOLDER_ALGORITHM_ID)
+    assert placeholder.payload.method_summary == "unspecified (imported from v0.2)" and placeholder.payload.summary_author == "program"
+    assert store.get("cfg-demo").payload.algorithm_ref == PLACEHOLDER_ALGORITHM_ID
     for record in bundle_records:
         stored = store.get(record.record_id)
         assert stored is not None and stored.canonical_digest() == record.canonical_digest()
@@ -127,7 +139,7 @@ def test_reimport_is_idempotent(store: MemoryStore, fixtures_root: Path, bundle_
     journal_before = (store.root / "journal" / "records.jsonl").read_bytes()
     second = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True)
     assert second.ok
-    assert second.records_published == 0 and second.records_idempotent == 18
+    assert second.records_published == 0 and second.records_idempotent == 19
     assert second.artifacts_stored == 0 and second.artifacts_idempotent == 7
     assert second.blobs_stored == 0 and second.blobs_idempotent == 5
     assert second.txn_id is None and first.txn_id is not None
@@ -138,13 +150,13 @@ def test_reimport_is_idempotent(store: MemoryStore, fixtures_root: Path, bundle_
 def test_dry_run_writes_nothing(store: MemoryStore, fixtures_root: Path, bundle_path: Path) -> None:
     report = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True, dry_run=True)
     assert report.dry_run is True and report.txn_id is None
-    assert report.records_published == 18 and report.records_idempotent == 0
+    assert report.records_published == 19 and report.records_idempotent == 0
     assert report.artifacts_stored == 7 and report.blobs_stored == 5
     assert_nothing_published(store)
     assert not (store.root / "journal" / "records.jsonl").exists()
     import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True)
     again = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True, dry_run=True)
-    assert again.records_published == 0 and again.records_idempotent == 18 and again.artifacts_idempotent == 7
+    assert again.records_published == 0 and again.records_idempotent == 19 and again.artifacts_idempotent == 7
 
 
 # --------------------------------------------------------------------------------------
@@ -272,7 +284,7 @@ def test_t12_modified_record_conflicts_on_reimport(store: MemoryStore, fixtures_
         do_import(store, root, dry_run=True)
     store.invalidate_index()
     assert store.get("cfg-demo").canonical_digest() == before
-    assert len(store.records()) == 18
+    assert len(store.records()) == 19
 
 
 # --------------------------------------------------------------------------------------
@@ -292,12 +304,12 @@ def test_t19_trusted_worker_claim_is_downgraded(store: MemoryStore, fixtures_roo
     report = import_bundle(store, path, artifact_root=fixtures_root)  # no allow_fixture needed: nothing is a fixture
     assert report.ok and report.is_fixture is False
     assert sorted(report.provenance_downgraded) == FIXTURE_RUN_IDS
-    assert report.records_published == 18
+    assert report.records_published == 19
     for run_id in FIXTURE_RUN_IDS:
         assert store.get(run_id).payload.provenance == "imported_unverified"
     assert "FIXTURE_RUN" not in {i.code for i in report.issues}
     again = import_bundle(store, path, artifact_root=fixtures_root)
-    assert again.records_published == 0 and again.records_idempotent == 18
+    assert again.records_published == 0 and again.records_idempotent == 19
     assert sorted(again.provenance_downgraded) == FIXTURE_RUN_IDS
 
 
@@ -311,7 +323,7 @@ def test_t19_trusted_source_keeps_trusted_worker(store: MemoryStore, fixtures_ro
 def test_t19_imported_unverified_is_kept_as_is(store: MemoryStore, fixtures_root: Path, tmp_path: Path) -> None:
     path = write_bundle(tmp_path, _non_fixture_bundle(fixtures_root, "imported_unverified"))
     report = import_bundle(store, path, artifact_root=fixtures_root)
-    assert report.provenance_downgraded == [] and report.records_published == 18
+    assert report.provenance_downgraded == [] and report.records_published == 19
 
 
 def test_t19_fixture_runs_in_non_fixture_bundle_need_flag(store: MemoryStore, fixtures_root: Path, tmp_path: Path) -> None:
@@ -368,7 +380,7 @@ def test_t27_allow_missing_artifacts_imports_with_diagnostic(store: MemoryStore,
     root = copy_fixtures(fixtures_root, tmp_path)
     (root / "examples" / "artifacts" / "run-demo-a-samples.json").unlink()
     report = do_import(store, root, allow_missing_artifacts=True)
-    assert report.ok and report.records_published == 18
+    assert report.ok and report.records_published == 19
     codes = {i.code for i in report.issues}
     assert {"MISSING_ARTIFACT", "MISSING_EVIDENCE"} <= codes
     assert report.artifacts_stored == 6 and report.blobs_stored == 4
@@ -592,19 +604,91 @@ def test_import_is_all_or_nothing(store: MemoryStore, fixtures_root: Path, tmp_p
 
 
 # --------------------------------------------------------------------------------------
+# bundle versions: 0.3.0 current, 0.2.0 legacy (upgraded in memory), mixed refused
+# --------------------------------------------------------------------------------------
+def test_import_current_bundle_without_upgrade(store: MemoryStore, fixtures_root: Path, tmp_path: Path, bundle_dicts: list[dict]) -> None:
+    path = write_bundle(tmp_path, {"bundle_version": "0.3.0", "is_fixture": True, "records": bundle_dicts})
+    report = import_bundle(store, path, artifact_root=fixtures_root, allow_fixture=True)
+    assert report.ok and report.records_published == 19 and report.legacy_upgrade is None
+    assert report.to_dict()["legacy_upgrade"] is None
+    again = import_bundle(store, path, artifact_root=fixtures_root, allow_fixture=True)
+    assert again.records_idempotent == 19 and again.records_published == 0 and again.legacy_upgrade is None
+
+
+def test_bundle_version_absent_is_inferred_from_records(
+    store: MemoryStore, fixtures_root: Path, tmp_path: Path, legacy_bundle_dicts: list[dict], bundle_dicts: list[dict]
+) -> None:
+    legacy = write_bundle(tmp_path, {"is_fixture": True, "records": legacy_bundle_dicts}, "legacy.json")
+    report = import_bundle(store, legacy, artifact_root=fixtures_root, allow_fixture=True)
+    assert report.records_published == 19 and report.legacy_upgrade["records_synthesized"] == [PLACEHOLDER_ALGORITHM_ID]
+    current = write_bundle(tmp_path, {"is_fixture": True, "records": bundle_dicts}, "current.json")
+    report = import_bundle(MemoryStore.init(tmp_path / "second"), current, artifact_root=fixtures_root, allow_fixture=True)
+    assert report.records_published == 19 and report.legacy_upgrade is None
+
+
+@pytest.mark.parametrize(
+    "case, expected_versions",
+    [
+        ("legacy_bundle_with_current_record", ["0.2.0", "0.3.0"]),
+        ("current_bundle_with_legacy_records", ["0.2.0"]),
+        ("undeclared_mixed", ["0.2.0", "0.3.0"]),
+        ("current_bundle_one_downgraded", ["0.2.0", "0.3.0"]),
+    ],
+)
+def test_mixed_schema_versions_rejected(
+    store: MemoryStore, fixtures_root: Path, tmp_path: Path, legacy_bundle_dicts: list[dict], bundle_dicts: list[dict], case: str, expected_versions: list[str]
+) -> None:
+    placeholder = bundle_dicts[-1]
+    if case == "legacy_bundle_with_current_record":
+        bundle, indices = {"bundle_version": "0.2.0", "is_fixture": True, "records": legacy_bundle_dicts + [placeholder]}, [18]
+    elif case == "current_bundle_with_legacy_records":
+        bundle, indices = {"bundle_version": "0.3.0", "is_fixture": True, "records": legacy_bundle_dicts}, list(range(18))
+    elif case == "undeclared_mixed":
+        bundle, indices = {"is_fixture": True, "records": legacy_bundle_dicts + [placeholder]}, list(range(19))
+    else:
+        records = json.loads(json.dumps(bundle_dicts))
+        records[5]["schema_version"] = "0.2.0"
+        bundle, indices = {"bundle_version": "0.3.0", "is_fixture": True, "records": records}, [5]
+    with pytest.raises(InputError) as info:
+        import_bundle(store, write_bundle(tmp_path, bundle), artifact_root=fixtures_root, allow_fixture=True)
+    assert info.value.code == "MIXED_SCHEMA_VERSIONS" and info.value.exit_code == 2
+    assert info.value.details["indices"] == indices and info.value.details["record_versions"] == expected_versions
+    assert_nothing_published(store)
+
+
+def test_legacy_bundle_reuses_existing_placeholder(store: MemoryStore, fixtures_root: Path, bundle_path: Path, bundle_dicts: list[dict]) -> None:
+    kernel = Record.from_dict(record_dict(bundle_dicts, "kernel-demo"))
+    placeholder = Record.from_dict(record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID))
+    store.publish_bundle([kernel, placeholder], label="pre-existing")
+    report = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True)
+    assert report.ok and report.records_published == 17 and report.records_idempotent == 2
+    assert sorted(report.idempotent_ids) == [PLACEHOLDER_ALGORITHM_ID, "kernel-demo"]
+    assert report.legacy_upgrade["records_synthesized"] == [PLACEHOLDER_ALGORITHM_ID]  # synthesized in memory, identical in the store
+
+
+def test_legacy_schema_error_precedes_upgrade(store: MemoryStore, fixtures_root: Path, tmp_path: Path) -> None:
+    root = copy_fixtures(fixtures_root, tmp_path)
+    mutate_json(root, lambda b: find(b, "cfg-demo")["payload"].update({"algorithm_ref": PLACEHOLDER_ALGORITHM_ID}))  # not a 0.2.0 field
+    with pytest.raises(SchemaValidationError) as info:
+        do_import(store, root)
+    assert info.value.details["index"] == 1 and info.value.details["record_id"] == "cfg-demo" and info.value.details["contract"] == "0.2.0"
+    assert_nothing_published(store)
+
+
+# --------------------------------------------------------------------------------------
 # export
 # --------------------------------------------------------------------------------------
 def test_export_bundle_round_trips(demo_store: MemoryStore, tmp_path: Path) -> None:
     exported = export_bundle(demo_store, include_artifacts=True)
-    assert exported["bundle_version"] == "0.2.0" and exported["is_fixture"] is True
-    assert len(exported["records"]) == 18 and len(exported["artifacts"]) == 5
+    assert exported["bundle_version"] == "0.3.0" and exported["is_fixture"] is True
+    assert len(exported["records"]) == 19 and len(exported["artifacts"]) == 5
     assert exported == export_bundle(demo_store, include_artifacts=True)  # deterministic
     ids = [r["record_id"] for r in exported["records"]]
-    assert ids[0] == "kernel-demo" and ids[1] == "cfg-demo" and ids == sorted(ids, key=ids.index)
+    assert ids[:3] == ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo"] and ids == sorted(ids, key=ids.index)
     path = write_bundle(tmp_path, exported, "export.json")
     fresh = MemoryStore.init(tmp_path / "fresh")
     report = import_bundle(fresh, path, allow_fixture=True)  # no artifact_root: the blobs are embedded
-    assert report.ok and report.records_published == 18 and report.blobs_stored == 5
+    assert report.ok and report.records_published == 19 and report.blobs_stored == 5
     assert sorted(r.canonical_digest() for r in fresh.records()) == sorted(r.canonical_digest() for r in demo_store.records())
     assert sorted(p.name for p in blob_files(fresh)) == sorted(p.name for p in blob_files(demo_store))
     assert deep_validate(fresh).ok
@@ -618,13 +702,19 @@ def test_export_without_artifacts_needs_artifact_root_on_import(demo_store: Memo
         import_bundle(MemoryStore.init(tmp_path / "fresh-a"), path, allow_fixture=True)
     assert info.value.code == "MISSING_ARTIFACT"
     report = import_bundle(MemoryStore.init(tmp_path / "fresh-b"), path, artifact_root=fixtures_root, allow_fixture=True)
-    assert report.ok and report.records_published == 18
+    assert report.ok and report.records_published == 19
 
 
-def test_export_scoped_to_config(demo_store: MemoryStore) -> None:
+def test_export_scoped_to_config(demo_store: MemoryStore, fixtures_root: Path, tmp_path: Path) -> None:
     exported = export_bundle(demo_store, config_ref="cfg-demo")
-    assert len(exported["records"]) == 18
-    assert exported["records"][0]["record_id"] == "kernel-demo"
+    assert exported["bundle_version"] == "0.3.0" and len(exported["records"]) == 19
+    ids = [r["record_id"] for r in exported["records"]]
+    assert ids[:3] == ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo"]
+    fresh = MemoryStore.init(tmp_path / "fresh")
+    report = import_bundle(fresh, write_bundle(tmp_path, exported, "scoped.json"), artifact_root=fixtures_root, allow_fixture=True)
+    assert report.ok and report.records_published == 19 and report.legacy_upgrade is None
+    assert sorted(r.canonical_digest() for r in fresh.records()) == sorted(r.canonical_digest() for r in demo_store.records())
+    assert deep_validate(fresh).ok
     with pytest.raises(MissingReferenceError):
         export_bundle(demo_store, config_ref="cfg-nope")
 
@@ -668,7 +758,8 @@ def test_import_report_to_dict_shape(store: MemoryStore, fixtures_root: Path, bu
     expected_keys = {
         "ok", "bundle_path", "is_fixture", "records_total", "records_published", "records_idempotent", "artifacts_stored",
         "artifacts_idempotent", "blobs_stored", "blobs_idempotent", "provenance_downgraded", "published_ids", "idempotent_ids",
-        "issues", "warning_count", "dry_run", "txn_id",
+        "legacy_upgrade", "issues", "warning_count", "dry_run", "txn_id",
     }
     assert set(data) == expected_keys
     assert data["warning_count"] == 4 and all(i["severity"] == "warning" for i in data["issues"])
+    assert data["legacy_upgrade"]["records_synthesized"] == [PLACEHOLDER_ALGORITHM_ID]

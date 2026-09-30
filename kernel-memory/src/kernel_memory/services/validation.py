@@ -18,11 +18,16 @@ Public API
     filter; ``.codes()`` returns the set of codes; ``.to_dict()`` is JSON-ready.
 ``validate_records(records, *, artifact_reader, artifact_registry=None, registry=None,
                    external_resolver=None, kernel_resolver=None, verify_artifacts=True,
-                   missing_evidence_severity="error") -> ValidationReport``
+                   missing_evidence_severity="error", algorithm_resolver=None,
+                   shape_resolver=None) -> ValidationReport``
     Pure function over an in-memory set of ``Record`` instances (used before publishing a
     bundle and by ``deep_validate``). References that are not in the set are looked up through
     ``external_resolver`` (e.g. ``store.get``); kernels by ``kernel_id`` through
-    ``kernel_resolver`` (e.g. ``store.kernel_by_kernel_id``). ``artifact_reader(sha256_ref)``
+    ``kernel_resolver`` (e.g. ``store.kernel_by_kernel_id``); algorithms by
+    ``(kernel_id, algorithm_id)`` through ``algorithm_resolver`` (e.g. ``store.algorithm_by_id``);
+    ``shape_resolver(algorithm_ref, config_hash)`` lists configs known outside the set that
+    describe the same problem under the same algorithm (e.g.
+    ``lambda a, h: store.configs_by_hash(h, algorithm_ref=a)``). ``artifact_reader(sha256_ref)``
     returns the raw bytes of a content-addressed artifact or ``None`` when it is not available;
     ``artifact_registry(artifact_id)`` returns an already registered ``ArtifactRef`` or ``None``.
     ``missing_evidence_severity="warning"`` downgrades ``MISSING_EVIDENCE`` (an importer that was
@@ -38,11 +43,19 @@ Public API
 
 Issue codes (errors unless marked W = warning)
 ----------------------------------------------
-Set level: ``DUPLICATE_RECORD_ID``, ``DUPLICATE_KERNEL_ID``, ``DUPLICATE_PR_KEY``,
+Set level: ``DUPLICATE_RECORD_ID``, ``DUPLICATE_KERNEL_ID``, ``DUPLICATE_ALGORITHM_ID`` (same
+``(kernel_id, algorithm_id)`` twice in the set, or already stored under another id),
+``DUPLICATE_SHAPE_IN_ALGORITHM`` (same ``(algorithm_ref, config_hash)`` twice, or already stored under
+another id; the same problem under *another* algorithm is legitimate), ``DUPLICATE_PR_KEY``,
 ``DUPLICATE_BASELINE_ID``, ``DUPLICATE_ATTEMPT``, ``MISSING_REFERENCE``, ``WRONG_REFERENCE_TYPE``,
 ``SELF_REFERENCE``, ``ARTIFACT_DESCRIPTOR_CONFLICT``, ``ORIGIN_CYCLE``, ``GIT_PARENT_CYCLE``,
 ``PARENT_OIDS_INCONSISTENT``.
-config: ``CONFIG_HASH_MISMATCH``, ``CONFIG_PROBLEM_INVALID``, ``MISSING_KERNEL``.
+algorithm: ``MISSING_KERNEL``, ``ALGORITHM_ID_RESERVED`` (slug would collide with ``trajectory`` /
+``annotations`` / ``kernel.json``), ``METHOD_SUMMARY_EMPTY`` (whitespace-only summary).
+config: ``CONFIG_HASH_MISMATCH``, ``CONFIG_PROBLEM_INVALID``, ``MISSING_KERNEL``, ``MISSING_ALGORITHM``
+(``algorithm_ref`` unresolved; reported once, never also as ``MISSING_REFERENCE``), ``WRONG_REFERENCE_TYPE``
+(``algorithm_ref`` resolves to a non-algorithm), ``ALGORITHM_KERNEL_MISMATCH``, ``CONFIG_ID_RESERVED``
+(slug would collide with ``annotations`` / ``algorithm.json``).
 pr: ``PROVIDER_NUMBER_MISMATCH``, W ``PR_KEY_CONVENTION``, W ``ORIGIN_CROSS_CONFIG``.
 pr_snapshot: ``SNAPSHOT_CHAIN_MISMATCH``, ``SNAPSHOT_CHAIN_CYCLE``, ``CROSS_PR_MEMBERSHIP``,
 ``DUPLICATE_COMMIT_REF``, ``MISSING_ENUMERATION_REASON``.
@@ -66,7 +79,8 @@ decision: ``POLICY_HASH_MISMATCH``, ``DECISION_GROUP_MISMATCH``, ``DECISION_CONF
 ``CANDIDATE_SUBJECT_MISMATCH``, ``PRODUCTION_WITHOUT_ACCEPTANCE``, ``PRODUCTION_WITHOUT_EVIDENCE``,
 ``FIXTURE_PRODUCTION_DECISION``, ``INVALID_EVALUATOR``, ``ACCEPTED_WITHOUT_EVIDENCE``,
 ``FIXTURE_DECISION_ACCEPTED``, ``UNVERIFIED_ACCEPTED``.
-annotation: W ``DUPLICATE_EVIDENCE_REF`` (plus the generic reference checks).
+annotation: W ``DUPLICATE_EVIDENCE_REF`` (plus the generic reference checks; targets may be kernels,
+algorithms or any other record).
 """
 from __future__ import annotations
 
@@ -80,6 +94,7 @@ from ..domain.errors import InputError, InvariantViolation, KernelMemoryError
 from ..domain.jsonio import loads_strict
 from ..domain.models import ArtifactRef, GitOid, Record, to_json
 from ..domain.problems import ProblemRegistry, default_registry
+from ..storage import layout
 from ..storage.store import IntegrityReport, MemoryStore
 
 ERROR = "error"
@@ -89,6 +104,8 @@ SEVERITIES = (ERROR, WARNING)
 ArtifactReader = Callable[[str], "bytes | None"]
 ArtifactRegistry = Callable[[str], "ArtifactRef | None"]
 Resolver = Callable[[str], "Record | None"]
+AlgorithmResolver = Callable[[str, str], "Record | None"]  # (kernel_id, algorithm_id)
+ShapeResolver = Callable[[str, str], "Iterable[Record]"]  # (algorithm_ref, config_hash) -> configs known outside the set
 
 SUBJECT_TYPES: tuple[str, ...] = ("commit", "baseline")
 ORIGIN_RELATION_KINDS: tuple[str, ...] = ("optimization_origin", "rebased_from")
@@ -223,12 +240,16 @@ class _Validator:
         kernel_resolver: Resolver | None,
         verify_artifacts: bool,
         missing_evidence_severity: str,
+        algorithm_resolver: AlgorithmResolver | None = None,
+        shape_resolver: ShapeResolver | None = None,
     ) -> None:
         self.reader = artifact_reader
         self.artifact_registry = artifact_registry
         self.registry = registry
         self.external_resolver = external_resolver
         self.kernel_resolver = kernel_resolver
+        self.algorithm_resolver = algorithm_resolver
+        self.shape_resolver = shape_resolver
         self.verify_artifacts = verify_artifacts
         self.missing_severity = missing_evidence_severity
         self.report = ValidationReport(records_checked=len(records))
@@ -249,11 +270,14 @@ class _Validator:
         self.records: list[Record] = list(self.by_id.values())
         self.runs: list[Record] = [r for r in self.records if r.record_type == "run"]
         self.kernels_by_kernel_id: dict[str, Record] = {}
+        self.algorithms_by_key: dict[tuple[str, str], Record] = {}
         self.annotations_by_target: dict[str, list[Record]] = {}
         self.relations_by_endpoint: dict[str, list[Record]] = {}
         for record in self.records:
             if record.record_type == "kernel":
                 self.kernels_by_kernel_id.setdefault(record.payload.kernel_id, record)
+            elif record.record_type == "algorithm":
+                self.algorithms_by_key.setdefault((record.payload.kernel_id, record.payload.algorithm_id), record)
             elif record.record_type == "annotation":
                 self.annotations_by_target.setdefault(record.payload.target_ref, []).append(record)
             elif record.record_type == "relation":
@@ -306,6 +330,32 @@ class _Validator:
             return candidate
         return None
 
+    def find_algorithm(self, kernel_id: str, algorithm_id: str) -> Record | None:
+        algorithm = self.algorithms_by_key.get((kernel_id, algorithm_id))
+        if algorithm is not None:
+            return algorithm
+        if self.algorithm_resolver is not None:
+            try:
+                algorithm = self.algorithm_resolver(kernel_id, algorithm_id)
+            except KernelMemoryError:
+                algorithm = None
+            if algorithm is not None and algorithm.record_type == "algorithm":
+                return algorithm
+        return None
+
+    def resolve_algorithm_ref(self, record_id: str, kernel_id: str) -> Record | None:
+        """A config's ``algorithm_ref``: the set, then ``external_resolver``, then (last resort, like
+        ``find_kernel``'s conventional-id rule) ``algorithm_resolver`` for ``algorithm-<kernel_id>-<algorithm_id>``."""
+        record = self.resolve(record_id)
+        if record is not None:
+            return record
+        prefix = f"algorithm-{kernel_id}-"
+        if self.algorithm_resolver is not None and record_id.startswith(prefix) and len(record_id) > len(prefix):
+            candidate = self.find_algorithm(kernel_id, record_id[len(prefix):])
+            if candidate is not None and candidate.record_id == record_id:
+                return candidate
+        return None
+
     def lookup_artifact(self, artifact_id: str) -> ArtifactRef | None:
         entry = self.artifact_catalog.get(artifact_id)
         if entry is not None:
@@ -328,9 +378,12 @@ class _Validator:
     # ------------------------------------------------------------------ entry point
     def run(self) -> ValidationReport:
         self._check_kernel_ids()
+        self._check_algorithm_ids()
+        self._check_shape_keys()
         self._build_artifact_catalog()
         handlers = {
             "kernel": self._check_kernel,
+            "algorithm": self._check_algorithm,
             "config": self._check_config,
             "pr": self._check_pr,
             "pr_snapshot": self._check_pr_snapshot,
@@ -366,6 +419,86 @@ class _Validator:
                 )
             else:
                 seen[kid] = record.record_id
+
+    def _check_algorithm_ids(self) -> None:
+        seen: dict[tuple[str, str], str] = {}
+        for record in self.records:
+            if record.record_type != "algorithm":
+                continue
+            key = (record.payload.kernel_id, record.payload.algorithm_id)
+            if key in seen:
+                self.error(
+                    "DUPLICATE_ALGORITHM_ID",
+                    f"algorithm_id {key[1]!r} of kernel {key[0]!r} is declared by both {seen[key]!r} and {record.record_id!r}",
+                    record.record_id,
+                    "algorithm_id",
+                    other_record=seen[key],
+                    kernel_id=key[0],
+                    algorithm_id=key[1],
+                )
+                continue
+            seen[key] = record.record_id
+            if self.algorithm_resolver is None:
+                continue
+            try:
+                stored = self.algorithm_resolver(*key)
+            except KernelMemoryError:
+                stored = None
+            if stored is not None and stored.record_type == "algorithm" and stored.record_id != record.record_id:
+                self.error(
+                    "DUPLICATE_ALGORITHM_ID",
+                    f"algorithm_id {key[1]!r} of kernel {key[0]!r} is already declared by stored record {stored.record_id!r}; "
+                    f"{record.record_id!r} would be a second one",
+                    record.record_id,
+                    "algorithm_id",
+                    other_record=stored.record_id,
+                    kernel_id=key[0],
+                    algorithm_id=key[1],
+                    external=True,
+                )
+
+    def _check_shape_keys(self) -> None:
+        """One shape per (algorithm, problem): the same config_hash under another algorithm is fine (T01 per algorithm)."""
+        seen: dict[tuple[str, str], str] = {}
+        for record in self.records:
+            if record.record_type != "config":
+                continue
+            key = (record.payload.algorithm_ref, record.payload.config_hash)
+            if key in seen:
+                self.error(
+                    "DUPLICATE_SHAPE_IN_ALGORITHM",
+                    f"config {record.record_id!r} describes the same problem ({key[1]}) under algorithm {key[0]!r} as {seen[key]!r}; "
+                    "one shape per algorithm and problem",
+                    record.record_id,
+                    "config_hash",
+                    other_record=seen[key],
+                    algorithm_ref=key[0],
+                    config_hash=key[1],
+                )
+                continue
+            seen[key] = record.record_id
+            if self.shape_resolver is None:
+                continue
+            try:
+                others = list(self.shape_resolver(key[0], key[1]))
+            except KernelMemoryError:
+                others = []
+            for other in others:
+                if not isinstance(other, Record) or other.record_type != "config" or other.record_id == record.record_id:
+                    continue
+                if other.payload.algorithm_ref != key[0] or other.payload.config_hash != key[1]:
+                    continue
+                self.error(
+                    "DUPLICATE_SHAPE_IN_ALGORITHM",
+                    f"config {record.record_id!r} describes the same problem ({key[1]}) under algorithm {key[0]!r} as stored config {other.record_id!r}",
+                    record.record_id,
+                    "config_hash",
+                    other_record=other.record_id,
+                    algorithm_ref=key[0],
+                    config_hash=key[1],
+                    external=True,
+                )
+                break
 
     def _build_artifact_catalog(self) -> None:
         for run in self.runs:
@@ -422,6 +555,8 @@ class _Validator:
 
     def _check_references(self, record: Record) -> None:
         for ref in record.references():
+            if record.record_type == "config" and ref.field == "algorithm_ref":
+                continue  # resolved and reported once by _check_config (MISSING_ALGORITHM / WRONG_REFERENCE_TYPE)
             if ref.allowed_types == ("artifact",):
                 if self.lookup_artifact(ref.target) is None:
                     self.error(
@@ -534,6 +669,36 @@ class _Validator:
     def _check_kernel(self, record: Record) -> None:
         return None
 
+    def _check_algorithm(self, record: Record) -> None:
+        p = record.payload
+        rid = record.record_id
+        if self.find_kernel(p.kernel_id) is None:
+            self.error(
+                "MISSING_KERNEL",
+                f"algorithm {rid!r} refers to kernel_id {p.kernel_id!r} but no kernel record declares it",
+                rid,
+                "kernel_id",
+                kernel_id=p.kernel_id,
+            )
+        try:
+            layout.algorithm_slug(p.algorithm_id)
+        except InputError as exc:
+            self.error(
+                "ALGORITHM_ID_RESERVED",
+                f"algorithm {rid!r}: {exc.message}",
+                rid,
+                "algorithm_id",
+                algorithm_id=p.algorithm_id,
+                reserved=exc.details.get("reserved"),
+            )
+        if not p.method_summary.strip():
+            self.error(
+                "METHOD_SUMMARY_EMPTY",
+                f"algorithm {rid!r}: method_summary is blank; describe the method (the v0.2 placeholder text is acceptable, silence is not)",
+                rid,
+                "method_summary",
+            )
+
     def _check_config(self, record: Record) -> None:
         p = record.payload
         rid = record.record_id
@@ -545,6 +710,41 @@ class _Validator:
                 "kernel_id",
                 kernel_id=p.kernel_id,
             )
+        algorithm = self.resolve_algorithm_ref(p.algorithm_ref, p.kernel_id)
+        if algorithm is None:
+            self.error(
+                "MISSING_ALGORITHM",
+                f"config {rid!r} refers to algorithm {p.algorithm_ref!r} but no algorithm record with that id exists",
+                rid,
+                "algorithm_ref",
+                target=p.algorithm_ref,
+                kernel_id=p.kernel_id,
+                allowed_types=["algorithm"],
+            )
+        elif algorithm.record_type != "algorithm":
+            self.error(
+                "WRONG_REFERENCE_TYPE",
+                f"config {rid!r} field algorithm_ref refers to {p.algorithm_ref!r} of type {algorithm.record_type!r}; expected one of ['algorithm']",
+                rid,
+                "algorithm_ref",
+                target=p.algorithm_ref,
+                target_type=algorithm.record_type,
+                allowed_types=["algorithm"],
+            )
+        elif algorithm.payload.kernel_id != p.kernel_id:
+            self.error(
+                "ALGORITHM_KERNEL_MISMATCH",
+                f"config {rid!r} belongs to kernel {p.kernel_id!r} but its algorithm {p.algorithm_ref!r} belongs to kernel {algorithm.payload.kernel_id!r}",
+                rid,
+                "algorithm_ref",
+                algorithm_ref=p.algorithm_ref,
+                algorithm_kernel_id=algorithm.payload.kernel_id,
+                kernel_id=p.kernel_id,
+            )
+        try:
+            layout.shape_slug(rid)
+        except InputError as exc:
+            self.error("CONFIG_ID_RESERVED", f"config {rid!r}: {exc.message}", rid, "record_id", reserved=exc.details.get("reserved"))
         hash_ok = True
         try:
             expected = hashing.config_hash(
@@ -1342,6 +1542,8 @@ def validate_records(
     kernel_resolver: Resolver | None = None,
     verify_artifacts: bool = True,
     missing_evidence_severity: str = ERROR,
+    algorithm_resolver: AlgorithmResolver | None = None,
+    shape_resolver: ShapeResolver | None = None,
 ) -> ValidationReport:
     """Deep-validate an in-memory record set. See the module docstring for the checks and codes."""
     items = list(records)
@@ -1361,6 +1563,8 @@ def validate_records(
         kernel_resolver=kernel_resolver,
         verify_artifacts=verify_artifacts,
         missing_evidence_severity=missing_evidence_severity,
+        algorithm_resolver=algorithm_resolver,
+        shape_resolver=shape_resolver,
     )
     return validator.run()
 
@@ -1467,6 +1671,7 @@ def deep_validate(store: MemoryStore, *, verify_artifacts: bool = True, registry
         external_resolver=None,
         kernel_resolver=store.kernel_by_kernel_id,
         verify_artifacts=verify_artifacts,
+        algorithm_resolver=store.algorithm_by_id,
     )
     merge_integrity_report(report, integrity)
     return report

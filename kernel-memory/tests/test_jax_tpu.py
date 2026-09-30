@@ -9,6 +9,11 @@ Two families:
 * **Real-jax paths on CPU** (``JaxAdapter(required_platform="cpu", backend="jax_cpu_interface_test")``):
   the pytree / compile / verify / timing code path on the CPU backend, whose environment is
   labelled by the constructor and never ``tpu``.
+* **HLO capture**: fakes whose lowered/compiled stages expose ``as_text`` (like
+  ``jax.stages.Lowered``/``Compiled``) show the two text artifacts, their absence when the API
+  returns ``None``/raises/is missing (recorded reason, never invented text), and the real CPU
+  adapter yields genuine StableHLO (``func.func``) and optimised HLO (``HloModule``) text labelled
+  by the CPU adapter, never ``tpu``.
 
 Exactly one test is marked ``integration`` (T29): on this CPU-only host the TPU adapter must
 refuse with ``actual_backend == "cpu"``.  It executes here; it is never skipped.
@@ -26,6 +31,7 @@ import numpy as np
 import pytest
 
 from kernel_memory.adapters import jax_tpu
+from kernel_memory.adapters.analysis import COMPILED_HLO_TEXT_KIND, STABLEHLO_TEXT_KIND, hlo_artifact_ids
 from kernel_memory.adapters.base import PreparedExecution, RunRequestSpec, SourceSpec
 from kernel_memory.adapters.jax_tpu import COMPILER_BUILD_FIELD, TIMING_BOUNDARY, JaxAdapter, ResolvedEntrypoint
 from kernel_memory.domain.errors import (
@@ -215,6 +221,67 @@ def fake_tpu(count: int = 1, **kw: Any) -> FakeJax:
 
 def tpu_adapter(jax: FakeJax, resolver: Any = None) -> JaxAdapter:
     return JaxAdapter(jax_loader=lambda: jax, entrypoint_resolver=resolver)
+
+
+# ------------------------------------------------------------------------------ fake compile stages with as_text
+FAKE_STABLEHLO = "module @jit_good_kernel {\n  func.func public @main(%arg0: tensor<4x16xf32>) -> tensor<4x16xf32> {\n  }\n}\n"
+FAKE_HLO = "HloModule jit_good_kernel, entry_computation_layout={(f32[4,16]{1,0})->f32[4,16]{1,0}}\n"
+
+
+class FakeStage:
+    """Stands in for ``jax.stages.Lowered`` (``compile()``) or ``Compiled`` (callable); ``as_text`` is counted."""
+
+    def __init__(self, *, text: Any = None, raises: BaseException | None = None, fn: Any = None, compiled: Any = None) -> None:
+        self._text, self._raises, self._fn, self._compiled = text, raises, fn, compiled
+        self.as_text_calls = 0
+
+    def compile(self) -> Any:
+        return self._compiled
+
+    def __call__(self, *args: Any) -> Any:
+        return self._fn(*args)
+
+    def as_text(self) -> Any:
+        self.as_text_calls += 1
+        if self._raises is not None:
+            raise self._raises
+        return self._text
+
+
+def fake_tpu_with_text(
+    *,
+    lowered_text: Any = FAKE_STABLEHLO,
+    compiled_text: Any = FAKE_HLO,
+    lowered_raises: BaseException | None = None,
+    compiled_raises: BaseException | None = None,
+) -> FakeJax:
+    """A fake TPU jax whose stages expose ``as_text`` like the real ``Lowered``/``Compiled`` objects."""
+    jax = fake_tpu()
+    stages: dict[str, FakeStage] = {}
+
+    def jit(fn: Any) -> Any:
+        jax.jit_calls += 1
+        compiled = FakeStage(text=compiled_text, raises=compiled_raises, fn=fn)
+        lowered = FakeStage(text=lowered_text, raises=lowered_raises, compiled=compiled)
+        stages.update(lowered=lowered, compiled=compiled)
+        return SimpleNamespace(lower=lambda *args: lowered)
+
+    jax.jit = jit  # instance attribute shadows FakeJax.jit
+    jax.stages = stages
+    return jax
+
+
+def compile_with(jax: FakeJax, request_id: str) -> tuple[JaxAdapter, PreparedExecution, Any]:
+    adapter = tpu_adapter(jax, RecordingResolver(resolved(good_kernel)))
+    prepared = adapter.prepare(make_spec(request_id, authorization=AUTHORIZED), PROBLEM)
+    return adapter, prepared, adapter.compile(prepared)
+
+
+def by_kind(report: Any) -> dict[str, Any]:
+    return {a.kind: a for a in report.artifacts}
+
+
+NOT_CAPTURED = {STABLEHLO_TEXT_KIND: False, COMPILED_HLO_TEXT_KIND: False}
 
 
 # ------------------------------------------------------------------------------ constructor
@@ -494,6 +561,76 @@ def test_stages_refuse_a_prepared_execution_from_another_adapter() -> None:
         assert excinfo.value.code == "INVALID_PREPARED_EXECUTION"
 
 
+# ------------------------------------------------------------------------------ HLO capture (fake jax)
+def test_compile_captures_stablehlo_and_compiled_hlo_text_from_as_text() -> None:
+    jax = fake_tpu_with_text()
+    adapter, prepared, report = compile_with(jax, "req-hlo-both")
+    assert report.status == "ok"
+    assert [a.artifact_id for a in report.artifacts] == ["req-hlo-both-compile-log", "req-hlo-both-stablehlo", "req-hlo-both-compiled-hlo"]
+    assert [a.kind for a in report.artifacts] == ["compile_log", STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND]
+    hlo = by_kind(report)
+    for kind, text in ((STABLEHLO_TEXT_KIND, FAKE_STABLEHLO), (COMPILED_HLO_TEXT_KIND, FAKE_HLO)):
+        assert hlo[kind].media_type == "text/plain" and hlo[kind].retention == "retain_for_decision"
+        assert hlo[kind].data == text.encode("utf-8")  # verbatim bytes of what the stage returned
+    assert jax.stages["lowered"].as_text_calls == 1 and jax.stages["compiled"].as_text_calls == 1
+    log = blob_json(hlo["compile_log"])
+    assert log["status"] == "ok" and log["hlo_captured"] == {STABLEHLO_TEXT_KIND: True, COMPILED_HLO_TEXT_KIND: True}
+    assert log["hlo_unavailable_reason"] is None
+    assert log["backend"] == "jax_tpu"  # the fake claims a TPU; the label is the constructor's, never inferred
+    assert hlo_artifact_ids([{"artifact_id": a.artifact_id, "kind": a.kind} for a in report.artifacts]) == {
+        STABLEHLO_TEXT_KIND: "req-hlo-both-stablehlo",
+        COMPILED_HLO_TEXT_KIND: "req-hlo-both-compiled-hlo",
+    }
+    assert adapter.verify(prepared).status == "pass"  # capture leaves the compiled handle usable
+
+
+def test_compile_records_missing_compiled_hlo_when_as_text_returns_none() -> None:
+    _, _, report = compile_with(fake_tpu_with_text(compiled_text=None), "req-hlo-lowered-only")
+    assert report.status == "ok" and [a.kind for a in report.artifacts] == ["compile_log", STABLEHLO_TEXT_KIND]
+    log = blob_json(report.artifacts[0])
+    assert log["hlo_captured"] == {STABLEHLO_TEXT_KIND: True, COMPILED_HLO_TEXT_KIND: False}
+    assert log["hlo_unavailable_reason"] == f"{COMPILED_HLO_TEXT_KIND}: compiled.as_text returned None"
+
+
+def test_compile_records_reason_and_no_artifact_when_as_text_raises() -> None:
+    jax = fake_tpu_with_text(lowered_raises=RuntimeError("no MLIR here"), compiled_raises=ValueError("no HLO here"))
+    adapter, prepared, report = compile_with(jax, "req-hlo-raises")
+    assert report.status == "ok" and prepared.handle["compiled"] is not None  # a missing dump never fails the compile
+    assert [a.kind for a in report.artifacts] == ["compile_log"]
+    log = blob_json(report.artifacts[0])
+    assert log["status"] == "ok" and log["hlo_captured"] == NOT_CAPTURED
+    assert log["hlo_unavailable_reason"] == (
+        f"{STABLEHLO_TEXT_KIND}: lowered.as_text raised RuntimeError: no MLIR here; "
+        f"{COMPILED_HLO_TEXT_KIND}: compiled.as_text raised ValueError: no HLO here"
+    )
+    assert adapter.verify(prepared).status == "pass"
+
+
+def test_compile_without_as_text_records_absence_and_invents_nothing() -> None:
+    _, _, report = compile_with(fake_tpu(), "req-hlo-none")  # the plain fake: neither stage has as_text
+    assert report.status == "ok" and [a.kind for a in report.artifacts] == ["compile_log"]
+    log = blob_json(report.artifacts[0])
+    assert log["hlo_captured"] == NOT_CAPTURED
+    assert log["hlo_unavailable_reason"] == f"{STABLEHLO_TEXT_KIND}: lowered has no as_text; {COMPILED_HLO_TEXT_KIND}: compiled has no as_text"
+
+
+@pytest.mark.parametrize(
+    ("text", "fragment"),
+    [
+        pytest.param("", "returned empty text", id="empty"),
+        pytest.param("  \n", "returned empty text", id="whitespace"),
+        pytest.param(b"HloModule", "returned bytes, not str", id="bytes"),
+        pytest.param(42, "returned int, not str", id="int"),
+    ],
+)
+def test_compile_never_treats_empty_or_non_string_as_text_as_evidence(text: Any, fragment: str) -> None:
+    _, _, report = compile_with(fake_tpu_with_text(lowered_text=text, compiled_text=text), "req-hlo-junk")
+    assert report.status == "ok" and [a.kind for a in report.artifacts] == ["compile_log"]
+    log = blob_json(report.artifacts[0])
+    assert log["hlo_captured"] == NOT_CAPTURED
+    assert log["hlo_unavailable_reason"].count(fragment) == 2
+
+
 # ------------------------------------------------------------------------------ real jax on CPU
 @pytest.fixture(scope="module")
 def real_jax() -> Any:
@@ -539,7 +676,17 @@ def test_cpu_interface_full_pipeline_compile_verify_benchmark(real_jax: Any) -> 
     assert compiled.status == "ok" and CPU_LABEL in (compiled.message or "")
     log = compiled.artifacts[0]
     assert log.kind == "compile_log" and log.artifact_id == "req-cpu-pipeline-compile-log"
-    assert blob_json(log) == {"kind": "compile_log", "status": "ok", "entrypoint": ENTRYPOINT, "message": compiled.message, "backend": CPU_LABEL, "is_fixture": False}
+    assert blob_json(log) == {
+        "kind": "compile_log",
+        "status": "ok",
+        "entrypoint": ENTRYPOINT,
+        "message": compiled.message,
+        "backend": CPU_LABEL,
+        "hlo_captured": {STABLEHLO_TEXT_KIND: True, COMPILED_HLO_TEXT_KIND: True},
+        "hlo_unavailable_reason": None,
+        "is_fixture": False,
+    }
+    assert [a.kind for a in compiled.artifacts] == ["compile_log", STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND]
 
     report = adapter.verify(prepared)
     assert report.status == "pass" and (report.cases_total, report.cases_passed) == (1, 1)
@@ -641,6 +788,8 @@ def test_compile_error_is_a_report_and_downstream_stages_are_not_run(real_jax: A
     assert compiled.status == "compile_error" and compiled.message and "TypeError" in compiled.message
     log = blob_json(compiled.artifacts[0])
     assert log["status"] == "compile_error" and log["message"] == compiled.message and log["backend"] == CPU_LABEL
+    assert [a.kind for a in compiled.artifacts] == ["compile_log"]  # no HLO text exists for a program that did not compile
+    assert log["hlo_captured"] == NOT_CAPTURED and log["hlo_unavailable_reason"].startswith("compile_error")
     assert prepared.handle["compiled"] is None and prepared.handle["compile_error"] == compiled.message
     correctness = adapter.verify(prepared)
     assert correctness.status == "not_run" and correctness.artifacts == [] and "compile_error:" in (correctness.message or "")
@@ -681,6 +830,45 @@ def test_cpu_interface_never_requires_tpu_authorization_but_tpu_label_is_refused
     # ...and the TPU-labelled adapter on this host refuses even when authorized (see T29 below).
     with pytest.raises(BackendUnavailable):
         JaxAdapter(entrypoint_resolver=RecordingResolver(resolved(good_kernel))).prepare(make_spec("req-tpu-auth", authorization=AUTHORIZED), PROBLEM)
+
+
+def test_cpu_interface_compile_captures_real_stablehlo_and_compiled_hlo_text() -> None:
+    try:
+        import jax
+    except ImportError as exc:  # pragma: no cover - this host has jax; the reason is exact when it does not
+        pytest.skip(f"jax cannot be imported: {exc}")
+    adapter = cpu_adapter(RecordingResolver(resolved(jax.jit(good_kernel), inputs=jax_inputs)))
+    prepared = adapter.prepare(cpu_spec("req-cpu-hlo"), PROBLEM)
+    report = adapter.compile(prepared)
+    assert report.status == "ok"
+    assert [a.artifact_id for a in report.artifacts] == ["req-cpu-hlo-compile-log", "req-cpu-hlo-stablehlo", "req-cpu-hlo-compiled-hlo"]
+    hlo = by_kind(report)
+    stablehlo = hlo[STABLEHLO_TEXT_KIND].data.decode("utf-8")
+    compiled_hlo = hlo[COMPILED_HLO_TEXT_KIND].data.decode("utf-8")
+    assert stablehlo.strip() and "func.func" in stablehlo  # StableHLO MLIR from Lowered.as_text()
+    assert compiled_hlo.strip() and "HloModule" in compiled_hlo  # optimised HLO from Compiled.as_text()
+    for kind in (STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND):
+        assert hlo[kind].media_type == "text/plain" and hlo[kind].retention == "retain_for_decision"
+    log = blob_json(hlo["compile_log"])
+    assert log["hlo_captured"] == {STABLEHLO_TEXT_KIND: True, COMPILED_HLO_TEXT_KIND: True} and log["hlo_unavailable_reason"] is None
+    assert log["backend"] == CPU_LABEL and "tpu" not in log["backend"].lower()  # labelled by what compiled: the CPU adapter
+    assert hlo_artifact_ids([{"artifact_id": a.artifact_id, "kind": a.kind} for a in report.artifacts]) == {
+        STABLEHLO_TEXT_KIND: "req-cpu-hlo-stablehlo",
+        COMPILED_HLO_TEXT_KIND: "req-cpu-hlo-compiled-hlo",
+    }
+    assert adapter.verify(prepared).status == "pass" and adapter.benchmark(prepared).status == "recorded"
+
+
+def test_compile_log_backend_is_never_tpu_on_this_host(real_jax: Any) -> None:
+    if real_jax.default_backend() == "tpu":
+        pytest.fail("this host reports a TPU backend; the CPU-only labelling check is not observable here")
+    adapter = cpu_adapter(RecordingResolver(resolved(good_kernel, inputs=jax_inputs)))
+    prepared = adapter.prepare(cpu_spec("req-cpu-label"), PROBLEM)
+    log = blob_json(adapter.compile(prepared).artifacts[0])
+    assert log["backend"] == CPU_LABEL and log["backend"] != "jax_tpu" and "tpu" not in log["backend"].lower()
+    # the TPU-labelled adapter never reaches compile here, so no compile log can ever carry "jax_tpu" on this host
+    with pytest.raises(BackendUnavailable):
+        JaxAdapter(entrypoint_resolver=RecordingResolver(resolved(good_kernel))).prepare(make_spec("req-tpu-label", authorization=AUTHORIZED), PROBLEM)
 
 
 # ------------------------------------------------------------------------------ T29 (integration, executes here)

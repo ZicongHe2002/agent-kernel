@@ -1,15 +1,33 @@
-"""Registration services: kernels, configs, PR contexts, commits, baselines, relations, annotations.
+"""Registration services: kernels, algorithms, configs, PR contexts, commits, baselines, relations, annotations.
 
 Public API (every function returns a validated, published ``Record``)
 -------------------------------------------------------------------
 ``register_kernel(store, kernel_id, display_name, adapter_id, contract_notes) -> Record``
     id ``kernel-<kernel_id>``. An existing kernel with the same ``kernel_id`` and identical
     payload is returned; a different payload raises ``IdConflictError``.
-``register_config(store, kernel_id, raw_problem, *, registry=None, tags=None) -> (Record, created)``
-    Normalises through the problem registry (``IncompleteProblemContract`` for
-    ``mla_forward`` propagates, exit 5). A config with the same ``config_hash`` is returned
-    with ``created=False`` (T01); otherwise ``cfg-<config_id_hint>-<hash hex[:12]>`` is created.
-    The kernel record must exist (``MissingReferenceError`` code ``MISSING_KERNEL``).
+``register_algorithm(store, kernel_id, algorithm_id, *, method_summary, display_name=None,
+                     summary_author="human", tags=None) -> (Record, created)``
+    id ``algorithm-<kernel_id>-<algorithm_id>``. The kernel must exist (``MISSING_KERNEL``),
+    ``method_summary`` must be non-blank (``METHOD_SUMMARY_REQUIRED``; stored verbatim as data),
+    ``summary_author`` is ``human`` or ``agent`` here (``INVALID_ENUM``; ``program`` is reserved for
+    the v0.2 placeholder minted by ``migrations.v02``), and an ``algorithm_id`` whose slug is
+    ``trajectory``/``annotations``/``kernel.json`` is refused (``RESERVED_SLUG``). Identical payload
+    -> ``created=False``; different payload -> ``IdConflictError``.
+``resolve_algorithm(store, kernel_id, algorithm=None) -> Record``
+    ``algorithm`` is a bare ``algorithm_id`` or an algorithm record id. ``None`` selects the kernel's
+    single registered algorithm; several -> ``ALGORITHM_REQUIRED`` (exit 2, details list the ids);
+    none -> ``MISSING_ALGORITHM`` (exit 3); another kernel's algorithm -> ``ALGORITHM_KERNEL_MISMATCH``
+    (exit 2). Never creates anything.
+``register_config(store, kernel_id, raw_problem, *, registry=None, tags=None, algorithm=None,
+                  algorithm_id=None) -> (Record, created)``
+    Normalises through the problem registry (``IncompleteProblemContract`` for ``mla_forward``
+    propagates, exit 5), requires the kernel (``MISSING_KERNEL``), resolves the algorithm as above,
+    and reuses the config with the same ``config_hash`` *under that algorithm* (T01 per algorithm;
+    ``config_hash`` itself never depends on the algorithm, so the same shape under two algorithms is
+    two records sharing one hash). New ids are ``cfg-<algorithm_id>-<config_id_hint>-<hash hex[:12]>``;
+    legacy ids such as ``cfg-demo`` are returned as they are, never rewritten.
+``describe_algorithm(algorithm) -> dict`` display helper; ``is_placeholder`` flags the v0.2
+    placeholder (``algorithm_id == "unspecified"``).
 ``register_pr_context(store, config_ref, *, repo_uid, provider, number, title, hypothesis=None,
                       origin_ref=None, pr_key=None) -> Record``
     ``github`` requires ``number >= 1`` and derives ``pr_key = gh-<repo_id>-pr-<number>`` from
@@ -54,6 +72,7 @@ from ..adapters.git_local import LocalGitRepo
 from ..domain.errors import IdConflictError, InputError, MissingReferenceError
 from ..domain.ids import short_hash_id, validate_record_id
 from ..domain.models import (
+    AlgorithmPayload,
     AnnotationPayload,
     ArtifactRef,
     BaselinePayload,
@@ -69,12 +88,16 @@ from ..domain.models import (
 )
 from ..domain.problems import ProblemRegistry, default_registry
 from ..domain.schema import validate_nested
+from ..storage.layout import algorithm_slug, shape_slug
 from ..storage.store import MemoryStore
 from .common import new_record
 
 PROVIDERS = ("github", "local")
 RELATION_KINDS = ("optimization_origin", "inspired_by", "rebased_from")
 SUMMARY_AUTHORS = ("human", "agent", "collector")
+ALGORITHM_SUMMARY_AUTHORS = ("human", "agent")  # "program" is reserved for migrations.v02 placeholders
+ALGORITHM_PLACEHOLDER_ID = "unspecified"  # == migrations.v02.DEFAULT_ALGORITHM_ID (pinned by a test)
+MAX_ALGORITHM_ID_LENGTH = 64  # contracts/record.schema.json $defs.algorithm.algorithm_id
 BASELINE_ROLES = ("reference", "performance_anchor", "both")
 _REPO_UID_RE = re.compile(r"^github:(?P<host>[A-Za-z0-9._-]+):repo:(?P<id>\d+)$")
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -154,6 +177,126 @@ def register_kernel(store: MemoryStore, kernel_id: str, display_name: str, adapt
     return record
 
 
+def algorithm_record_id(kernel_id: str, algorithm_id: str) -> str:
+    """``algorithm-<kernel_id>-<algorithm_id>`` (same rule as ``migrations.v02.default_algorithm_record_id``)."""
+    return f"algorithm-{kernel_id}-{algorithm_id}"
+
+
+def register_algorithm(
+    store: MemoryStore,
+    kernel_id: str,
+    algorithm_id: str,
+    *,
+    method_summary: str,
+    display_name: str | None = None,
+    summary_author: str = "human",
+    tags: Sequence[str] | None = None,
+) -> tuple[Record, bool]:
+    validate_record_id(kernel_id, what="kernel_id")
+    validate_record_id(algorithm_id, what="algorithm_id")
+    if len(algorithm_id) > MAX_ALGORITHM_ID_LENGTH:
+        raise InputError(
+            f"algorithm_id {algorithm_id!r} is longer than {MAX_ALGORITHM_ID_LENGTH} characters",
+            code="INVALID_ID",
+            details={"algorithm_id": algorithm_id, "max_length": MAX_ALGORITHM_ID_LENGTH},
+        )
+    if store.kernel_by_kernel_id(kernel_id) is None:
+        raise MissingReferenceError(
+            f"kernel {kernel_id!r} is not registered; register the kernel before its algorithms",
+            code="MISSING_KERNEL",
+            details={"kernel_id": kernel_id},
+        )
+    if not isinstance(method_summary, str) or not method_summary.strip():
+        raise InputError(
+            "an algorithm needs a non-blank method_summary (an authored description of the method, stored as data)",
+            code="METHOD_SUMMARY_REQUIRED",
+            details={"kernel_id": kernel_id, "algorithm_id": algorithm_id},
+        )
+    _require_enum(summary_author, ALGORITHM_SUMMARY_AUTHORS, "summary_author")
+    algorithm_slug(algorithm_id)  # RESERVED_SLUG (exit 2) for trajectory / annotations / kernel.json
+    payload = AlgorithmPayload(
+        kernel_id=kernel_id,
+        algorithm_id=algorithm_id,
+        display_name=str(display_name) if display_name not in (None, "") else algorithm_id,
+        method_summary=method_summary,  # verbatim: data, never parsed or trimmed
+        summary_author=summary_author,
+        tags=sorted({str(t) for t in (tags or []) if str(t)}),
+    )
+    existing = store.algorithm_by_id(kernel_id, algorithm_id)
+    if existing is not None:
+        if to_json(existing.payload) == to_json(payload):
+            return existing, False
+        raise IdConflictError(
+            f"algorithm {algorithm_id!r} of kernel {kernel_id!r} is already registered as {existing.record_id!r} "
+            "with different content (published records are immutable)",
+            details={"record_id": existing.record_id, "kernel_id": kernel_id, "algorithm_id": algorithm_id},
+        )
+    return _publish_or_reuse(store, "algorithm", algorithm_record_id(kernel_id, algorithm_id), payload)
+
+
+def resolve_algorithm(store: MemoryStore, kernel_id: str, algorithm: str | None = None) -> Record:
+    """Resolve ``algorithm`` (bare ``algorithm_id`` or algorithm record id) within ``kernel_id``.
+
+    ``None`` selects the kernel's single registered algorithm. Never creates anything.
+    """
+    validate_record_id(kernel_id, what="kernel_id")
+    if store.kernel_by_kernel_id(kernel_id) is None:
+        raise MissingReferenceError(
+            f"kernel {kernel_id!r} is not registered", code="MISSING_KERNEL", details={"kernel_id": kernel_id}
+        )
+    if algorithm is None:
+        candidates = store.algorithms_for_kernel(kernel_id)
+        if not candidates:
+            raise MissingReferenceError(
+                f"kernel {kernel_id!r} has no registered algorithm; run register-algorithm first "
+                "(an algorithm is never created implicitly)",
+                code="MISSING_ALGORITHM",
+                details={"kernel_id": kernel_id},
+            )
+        if len(candidates) > 1:
+            raise InputError(
+                f"kernel {kernel_id!r} has {len(candidates)} registered algorithms; name one explicitly",
+                code="ALGORITHM_REQUIRED",
+                details={
+                    "kernel_id": kernel_id,
+                    "algorithm_ids": sorted(c.payload.algorithm_id for c in candidates),
+                    "algorithm_refs": sorted(c.record_id for c in candidates),
+                },
+            )
+        return candidates[0]
+    if not isinstance(algorithm, str) or not algorithm:
+        raise InputError(
+            f"algorithm must be an algorithm_id or an algorithm record id, got {algorithm!r}",
+            code="INVALID_ID",
+            details={"algorithm": algorithm},
+        )
+    record: Record | None = None
+    if algorithm.startswith("algorithm-"):
+        candidate = store.get(algorithm)
+        if candidate is not None and candidate.record_type == "algorithm":
+            record = candidate
+    if record is None:
+        validate_record_id(algorithm, what="algorithm_id")
+        record = store.algorithm_by_id(kernel_id, algorithm)
+    if record is None:
+        raise MissingReferenceError(
+            f"algorithm {algorithm!r} is not registered for kernel {kernel_id!r}",
+            code="MISSING_ALGORITHM",
+            details={"kernel_id": kernel_id, "algorithm": algorithm},
+        )
+    if record.payload.kernel_id != kernel_id:
+        raise InputError(
+            f"algorithm {record.record_id!r} belongs to kernel {record.payload.kernel_id!r}, not {kernel_id!r}",
+            code="ALGORITHM_KERNEL_MISMATCH",
+            details={
+                "kernel_id": kernel_id,
+                "algorithm_ref": record.record_id,
+                "algorithm_kernel_id": record.payload.kernel_id,
+            },
+        )
+    return record
+
+
 def register_config(
     store: MemoryStore,
     kernel_id: str,
@@ -161,6 +304,8 @@ def register_config(
     *,
     registry: ProblemRegistry | None = None,
     tags: Sequence[str] | None = None,
+    algorithm: str | None = None,
+    algorithm_id: str | None = None,
 ) -> tuple[Record, bool]:
     registry = registry or default_registry()
     normalized = registry.normalize(kernel_id, raw_problem)  # IncompleteProblemContract propagates (exit 5)
@@ -171,12 +316,24 @@ def register_config(
             code="MISSING_KERNEL",
             details={"kernel_id": kernel_id},
         )
-    existing = store.configs_by_hash(normalized.config_hash)
+    if algorithm_id is not None:
+        if algorithm is not None and algorithm != algorithm_id:
+            raise InputError(
+                f"algorithm={algorithm!r} and algorithm_id={algorithm_id!r} name different algorithms",
+                code="ALGORITHM_ARGUMENT_CONFLICT",
+                details={"algorithm": algorithm, "algorithm_id": algorithm_id},
+            )
+        algorithm = algorithm_id
+    algo = resolve_algorithm(store, kernel_id, algorithm)
+    existing = store.configs_by_hash(normalized.config_hash, algorithm_ref=algo.record_id)
     if existing:
-        return sorted(existing, key=lambda r: r.record_id)[0], False
+        return sorted(existing, key=lambda r: r.record_id)[0], False  # T01 per algorithm; legacy ids untouched
     clean_tags = sorted({str(t) for t in (tags or []) if str(t)})
+    record_id = f"cfg-{algo.payload.algorithm_id}-{normalized.config_id_hint}-{normalized.config_hash.split(':', 1)[1][:12]}"
+    shape_slug(record_id)  # RESERVED_SLUG; unreachable for cfg- ids but keeps the invariant in one place
     payload = ConfigPayload(
         kernel_id=kernel_id,
+        algorithm_ref=algo.record_id,
         config_id=normalized.config_id_hint,
         problem_schema_id=normalized.problem_schema_id,
         problem_schema_digest=normalized.problem_schema_digest,
@@ -184,9 +341,7 @@ def register_config(
         config_hash=normalized.config_hash,
         tags=clean_tags,
     )
-    record_id = f"cfg-{normalized.config_id_hint}-{normalized.config_hash.split(':', 1)[1][:12]}"
-    record, created = _publish_or_reuse(store, "config", record_id, payload)
-    return record, created
+    return _publish_or_reuse(store, "config", record_id, payload)
 
 
 # --------------------------------------------------------------------------------------
@@ -288,6 +443,24 @@ def describe_pr(pr: Record) -> dict[str, Any]:
         "is_local_trial": p.provider == "local",
         "display_label": label,
         "note": note,
+    }
+
+
+def describe_algorithm(algorithm: Record) -> dict[str, Any]:
+    if algorithm.record_type != "algorithm":
+        raise InputError(
+            f"describe_algorithm expects an algorithm record, got {algorithm.record_type!r}", code="NOT_AN_ALGORITHM"
+        )
+    p = algorithm.payload
+    return {
+        "algorithm_ref": algorithm.record_id,
+        "algorithm_id": p.algorithm_id,
+        "kernel_id": p.kernel_id,
+        "display_name": p.display_name,
+        "method_summary": p.method_summary,  # verbatim data
+        "summary_author": p.summary_author,
+        "tags": list(p.tags),
+        "is_placeholder": p.algorithm_id == ALGORITHM_PLACEHOLDER_ID,
     }
 
 
@@ -519,6 +692,10 @@ def annotate(
 
 __all__ = [
     "register_kernel",
+    "register_algorithm",
+    "resolve_algorithm",
+    "describe_algorithm",
+    "algorithm_record_id",
     "register_config",
     "register_pr_context",
     "register_local_trial",
@@ -535,4 +712,7 @@ __all__ = [
     "store_diff_artifact",
     "diff_artifact_id",
     "LOCAL_TRIAL_NOTE",
+    "ALGORITHM_SUMMARY_AUTHORS",
+    "ALGORITHM_PLACEHOLDER_ID",
+    "MAX_ALGORITHM_ID_LENGTH",
 ]

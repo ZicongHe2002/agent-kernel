@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
-from conftest import import_demo_bundle, record_dict
+from conftest import FIXTURE_RECORD_COUNT, PLACEHOLDER_ALGORITHM_ID, import_demo_bundle, record_dict
 from kernel_memory.domain.errors import (
     ConflictError,
     IdConflictError,
@@ -25,10 +25,10 @@ from kernel_memory.domain.hashing import artifact_digest, sha256_bytes
 from kernel_memory.domain.jsonio import dumps_readable
 from kernel_memory.domain.models import TYPE_ORDER, ArtifactRef, Record
 from kernel_memory.storage import MemoryStore, SqliteIndex
-from kernel_memory.storage.store import LAYOUT_VERSION
+from kernel_memory.storage.store import KERNEL_VIEW_FILE_NAMES, LAYOUT_VERSION, STORE_VERSION
 
 ALL_IDS = {
-    "kernel-demo", "cfg-demo", "baseline-demo", "pr-demo-101", "commit-demo-a", "commit-demo-b",
+    "kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo", "baseline-demo", "pr-demo-101", "commit-demo-a", "commit-demo-b",
     "snapshot-demo-101", "pr-demo-102", "commit-demo-c", "commit-demo-a-in-102", "snapshot-demo-102",
     "relation-demo-origin", "run-demo-baseline", "run-demo-a", "run-demo-c", "run-demo-c-failure",
     "decision-demo-blocked", "annotation-demo-grouped",
@@ -99,9 +99,11 @@ def rewrite_record_file(path: Path, mutate) -> None:
 def test_init_creates_manifest_and_directories(tmp_path: Path) -> None:
     store = MemoryStore.init(tmp_path / "memory")
     manifest = store.manifest()
-    assert manifest["layout_version"] == LAYOUT_VERSION
-    assert manifest["store_version"] == "0.2.0"
+    assert manifest["layout_version"] == LAYOUT_VERSION == 2
+    assert manifest["store_version"] == STORE_VERSION == "0.3.0"
+    assert manifest["schema_version"] == "0.3.0"
     assert manifest["hash_version"] == "jcs-sha256-v1"
+    assert "trajectory/" in manifest["notes"]
     for sub in ("kernels", "artifacts", "requests", "journal", ".runtime"):
         assert (store.root / sub).is_dir()
     assert store.records() == []
@@ -153,6 +155,28 @@ def test_open_refuses_unsupported_layout_version(tmp_path: Path) -> None:
     assert info.value.code == "UNSUPPORTED_STORE"
 
 
+def test_open_refuses_layout_1_store(tmp_path: Path) -> None:
+    """A v0.2 (layout 1) store is never read or relocated in place: the refusal names the migration."""
+    root = tmp_path / "memory"
+    MemoryStore.init(root)
+    manifest = root / "manifest.json"
+    data = json.loads(manifest.read_text("utf-8"))
+    data.update({"layout_version": 1, "store_version": "0.2.0", "schema_version": "0.2.0"})
+    manifest.write_text(json.dumps(data))
+    before = manifest.read_bytes()
+    for opener in (MemoryStore.open, MemoryStore.init):
+        with pytest.raises(InputError) as info:
+            opener(root)
+        assert info.value.code == "UNSUPPORTED_STORE"
+        assert info.value.exit_code == 2
+        assert "migrate-v02" in str(info.value)
+        assert str(root) in str(info.value)
+        assert info.value.details["layout_version"] == 1
+        assert info.value.details["expected"] == LAYOUT_VERSION
+        assert info.value.details["migrate_command"] == "migrate-v02"
+    assert manifest.read_bytes() == before
+
+
 def test_open_existing_store_sees_records(tmp_path: Path, bundle_records: list[Record]) -> None:
     MemoryStore.init(tmp_path / "memory").publish_bundle(bundle_records)
     reopened = MemoryStore.open(tmp_path / "memory")
@@ -179,7 +203,7 @@ def test_publish_bundle_in_shuffled_order(store: MemoryStore, bundle_records: li
             assert position[ref.target] < position[record.record_id], (record.record_id, ref.target)
     # The journal holds one entry per record with the canonical digest and the transaction id.
     lines = journal_lines(store)
-    assert len(lines) == 18
+    assert len(lines) == FIXTURE_RECORD_COUNT
     assert {(e["record_id"], e["digest"]) for e in lines} == {(r.record_id, r.canonical_digest()) for r in bundle_records}
     assert {e["txn_id"] for e in lines} == {outcome.txn_id}
     assert store.integrity_scan(verify_artifacts=False).ok
@@ -204,7 +228,7 @@ def test_reimport_is_fully_idempotent(demo_store: MemoryStore, bundle_records: l
     outcome = demo_store.publish_bundle(shuffled(bundle_records, seed=99), label="again")
     assert outcome.published == []
     assert sorted(outcome.idempotent) == sorted(ALL_IDS)
-    assert len(outcome.idempotent) == 18
+    assert len(outcome.idempotent) == FIXTURE_RECORD_COUNT
     assert outcome.artifacts_registered == []
     import_demo_bundle(demo_store, bundle_records, artifact_root)  # artifacts too
     assert fact_files(demo_store.root) == before_files
@@ -343,6 +367,83 @@ def test_supersedes_chain_without_cycle_publishes_in_order(demo_store: MemorySto
     b = annotation(bundle_dicts, "annotation-v2", supersedes="annotation-v1")
     outcome = demo_store.publish_bundle([b, a])
     assert outcome.published == ["annotation-v1", "annotation-v2"]
+
+
+def test_publish_bundle_orders_kernel_algorithm_config(store: MemoryStore, bundle_records: list[Record]) -> None:
+    by_id = {r.record_id: r for r in bundle_records}
+    outcome = store.publish_bundle([by_id["cfg-demo"], by_id[PLACEHOLDER_ALGORITHM_ID], by_id["kernel-demo"]])
+    # kernel_id is an identity field, not a reference: kernels are still ordered before algorithms and configs.
+    assert outcome.published == ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo"]
+    assert store.record_path("kernel-demo") == store.root / "kernels/demo_vector_add/kernel.json"
+    assert store.record_path(PLACEHOLDER_ALGORITHM_ID) == store.root / "kernels/demo_vector_add/unspecified/algorithm.json"
+    assert store.record_path("cfg-demo") == store.root / "kernels/demo_vector_add/unspecified/cfg-demo/config.json"
+    assert [e.record_id for e in store.index_entries()] == ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo"]
+    assert store.integrity_scan().ok
+
+
+def test_config_with_missing_algorithm_is_rejected(store: MemoryStore, bundle_records: list[Record]) -> None:
+    by_id = {r.record_id: r for r in bundle_records}
+    store.publish(by_id["kernel-demo"])
+    before = fact_files(store.root)
+    with pytest.raises(MissingReferenceError) as info:
+        store.publish(by_id["cfg-demo"])
+    assert info.value.code == "MISSING_REFERENCE"
+    assert info.value.exit_code == 3
+    assert info.value.details["record_id"] == "cfg-demo"
+    assert info.value.details["field"] == "algorithm_ref"
+    assert info.value.details["target"] == PLACEHOLDER_ALGORITHM_ID
+    assert store.get("cfg-demo") is None
+    assert fact_files(store.root) == before
+    assert len(journal_lines(store)) == 1
+
+
+def test_publish_rejects_algorithm_kernel_mismatch(demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
+    other_kernel = record_dict(bundle_dicts, "kernel-demo")
+    other_kernel["record_id"] = "kernel-other"
+    other_kernel["payload"]["kernel_id"] = "other_kernel"
+    other_algorithm = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    other_algorithm["record_id"] = "algorithm-other_kernel-unspecified"
+    other_algorithm["payload"]["kernel_id"] = "other_kernel"
+    mismatch = record_dict(bundle_dicts, "cfg-demo")
+    mismatch["record_id"] = "cfg-mismatch"
+    mismatch["payload"]["algorithm_ref"] = "algorithm-other_kernel-unspecified"  # kernel_id stays demo_vector_add
+    bundle = [Record.from_dict(d) for d in (other_kernel, other_algorithm, mismatch)]
+    before = fact_files(demo_store.root)
+    with pytest.raises(MissingReferenceError) as info:
+        demo_store.publish_bundle(bundle)
+    assert info.value.code == "ALGORITHM_KERNEL_MISMATCH"
+    assert info.value.exit_code == 3
+    assert info.value.details["algorithm_ref"] == "algorithm-other_kernel-unspecified"
+    # The whole bundle is refused: not even the valid kernel and algorithm were written.
+    assert fact_files(demo_store.root) == before
+    assert demo_store.get("kernel-other") is None and demo_store.get("cfg-mismatch") is None
+    assert {e.record_id for e in demo_store.index_entries()} == ALL_IDS
+
+
+def test_t01_same_shape_under_second_algorithm_shares_config_hash(demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
+    """The same problem under two algorithms is two config records with one config_hash (cross-algorithm comparison)."""
+    algorithm = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    algorithm["record_id"] = "algorithm-demo_vector_add-numpy-add"
+    algorithm["payload"].update(
+        {"algorithm_id": "numpy-add", "display_name": "numpy add", "method_summary": "numpy.add on the host", "summary_author": "human", "tags": []}
+    )
+    config = record_dict(bundle_dicts, "cfg-demo")
+    config_hash = config["payload"]["config_hash"]
+    new_id = "cfg-numpy-add-demo-n16-f32-" + config_hash.split(":", 1)[1][:12]
+    config["record_id"] = new_id
+    config["payload"]["algorithm_ref"] = "algorithm-demo_vector_add-numpy-add"  # config_hash untouched
+    outcome = demo_store.publish_bundle([Record.from_dict(config), Record.from_dict(algorithm)])
+    assert outcome.published == ["algorithm-demo_vector_add-numpy-add", new_id]
+    assert demo_store.record_path(new_id) == demo_store.root / f"kernels/demo_vector_add/numpy-add/{new_id}/config.json"
+    assert demo_store.get(new_id).payload.config_hash == demo_store.get("cfg-demo").payload.config_hash == config_hash
+    assert [c.record_id for c in demo_store.configs_by_hash(config_hash)] == ["cfg-demo", new_id]
+    assert [c.record_id for c in demo_store.configs_by_hash(config_hash, algorithm_ref="algorithm-demo_vector_add-numpy-add")] == [new_id]
+    assert [c.record_id for c in demo_store.configs_by_hash(config_hash, algorithm_ref=PLACEHOLDER_ALGORITHM_ID)] == ["cfg-demo"]
+    assert [a.record_id for a in demo_store.algorithms_for_kernel("demo_vector_add")] == [
+        "algorithm-demo_vector_add-numpy-add", PLACEHOLDER_ALGORITHM_ID,
+    ]
+    assert demo_store.algorithm_by_id("demo_vector_add", "numpy-add").record_id == "algorithm-demo_vector_add-numpy-add"
+    assert demo_store.integrity_scan().ok
 
 
 def test_publish_bundle_rejects_non_record_inputs(demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
@@ -537,7 +638,7 @@ def test_t27_integrity_scan_reports_artifact_problems(demo_store: MemoryStore) -
 def test_integrity_scan_ok_on_demo_store(demo_store: MemoryStore) -> None:
     report = demo_store.integrity_scan()
     assert report.ok
-    assert report.records_checked == 18
+    assert report.records_checked == FIXTURE_RECORD_COUNT
     assert report.artifacts_checked == 7
     assert report.to_dict()["ok"] is True
 
@@ -560,7 +661,7 @@ def test_integrity_scan_reports_missing_record(demo_store: MemoryStore) -> None:
     report = demo_store.integrity_scan(verify_artifacts=False)
     assert not report.ok
     assert report.missing == [{"record_id": "decision-demo-blocked", "expected_path": str(path.relative_to(demo_store.root))}]
-    assert report.records_checked == 17
+    assert report.records_checked == FIXTURE_RECORD_COUNT - 1
 
 
 def test_integrity_scan_reports_corrupt_record(demo_store: MemoryStore) -> None:
@@ -589,7 +690,7 @@ def test_integrity_scan_reports_unjournaled_record(demo_store: MemoryStore) -> N
     assert not report.ok
     assert report.unjournaled == [{"record_id": "annotation-hand-copied", "path": str(dest.relative_to(demo_store.root))}]
     assert report.modified == [] and report.duplicate_ids == []
-    assert report.records_checked == 19
+    assert report.records_checked == FIXTURE_RECORD_COUNT + 1
 
 
 def test_integrity_scan_reports_duplicate_ids(demo_store: MemoryStore) -> None:
@@ -613,10 +714,19 @@ def test_integrity_scan_ignores_generated_views(demo_store: MemoryStore) -> None
     demo_store.write_view("cfg-demo", "trajectory.json", b'{"nodes": []}')
     demo_store.write_view("cfg-demo", "memory_records.jsonl", b"{}\n")
     demo_store.write_view("cfg-demo", "context.json", b"{}")
+    demo_store.write_kernel_view("demo_vector_add", "trajectory.json", b'{"algorithms": []}')
+    demo_store.write_kernel_view("demo_vector_add", "memory_records.jsonl", b"{}\n")
+    # The exclusion is by directory: even a record-looking *.json anywhere under trajectory/ is not a record.
+    stray = demo_store.kernel_view_dir("demo_vector_add") / "shapes" / "stray" / "record-looking.json"
+    stray.parent.mkdir(parents=True)
+    stray.write_text(dumps_readable(demo_store.get("cfg-demo").to_dict()), encoding="utf-8")
+    demo_store.invalidate_index()
     report = demo_store.integrity_scan(verify_artifacts=False)
     assert report.ok
-    assert report.records_checked == 18
-    assert len(demo_store.index_entries()) == 18
+    assert report.records_checked == FIXTURE_RECORD_COUNT
+    assert report.unjournaled == [] and report.duplicate_ids == []
+    assert len(demo_store.index_entries()) == FIXTURE_RECORD_COUNT
+    assert {e.record_id for e in demo_store.index_entries()} == ALL_IDS
 
 
 # ============================================================================= reads
@@ -624,7 +734,7 @@ def test_records_are_ordered_by_type_then_id(demo_store: MemoryStore) -> None:
     ids = [r.record_id for r in demo_store.records()]
     keyed = [(TYPE_ORDER[r.record_type], r.record_id) for r in demo_store.records()]
     assert keyed == sorted(keyed)
-    assert ids[0] == "kernel-demo" and ids[1] == "cfg-demo"
+    assert ids[:3] == ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo"]
     assert [r.record_id for r in demo_store.records("run")] == ["run-demo-a", "run-demo-baseline", "run-demo-c", "run-demo-c-failure"]
     assert [e.record_id for e in demo_store.index_entries()] == ids
 
@@ -645,6 +755,14 @@ def test_get_require_exists_and_lookups(demo_store: MemoryStore) -> None:
     cfg = demo_store.require("cfg-demo")
     assert [c.record_id for c in demo_store.configs_by_hash(cfg.payload.config_hash)] == ["cfg-demo"]
     assert demo_store.configs_by_hash(sha256_bytes(b"other")) == []
+    assert [c.record_id for c in demo_store.configs_by_hash(cfg.payload.config_hash, algorithm_ref=PLACEHOLDER_ALGORITHM_ID)] == ["cfg-demo"]
+    assert demo_store.configs_by_hash(cfg.payload.config_hash, algorithm_ref="algorithm-x") == []
+    assert demo_store.algorithm_by_id("demo_vector_add", "unspecified").record_id == PLACEHOLDER_ALGORITHM_ID
+    assert demo_store.algorithm_by_id("demo_vector_add", "nope") is None
+    assert demo_store.algorithm_by_id("unknown", "unspecified") is None
+    assert [a.record_id for a in demo_store.algorithms_for_kernel("demo_vector_add")] == [PLACEHOLDER_ALGORITHM_ID]
+    assert demo_store.algorithms_for_kernel("unknown") == []
+    assert demo_store.require(PLACEHOLDER_ALGORITHM_ID, "algorithm").payload.algorithm_id == "unspecified"
 
 
 def test_invalidate_index_picks_up_out_of_band_files(demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
@@ -660,7 +778,11 @@ def test_invalidate_index_picks_up_out_of_band_files(demo_store: MemoryStore, bu
 def test_write_read_delete_views(demo_store: MemoryStore) -> None:
     assert demo_store.read_view("cfg-demo", "trajectory.json") is None
     path = demo_store.write_view("cfg-demo", "trajectory.json", b'{"v": 1}')
-    assert path == demo_store.config_dir("cfg-demo") / "trajectory.json"
+    assert path == demo_store.shape_view_dir("cfg-demo") / "trajectory.json"
+    assert path == demo_store.root / "kernels/demo_vector_add/trajectory/shapes/cfg-demo/trajectory.json"
+    # Views live in the kernel-wide trajectory/ tree, never inside the shape's record directory.
+    assert not path.is_relative_to(demo_store.config_dir("cfg-demo"))
+    assert path.is_relative_to(demo_store.kernel_view_dir("demo_vector_add"))
     assert demo_store.read_view("cfg-demo", "trajectory.json") == b'{"v": 1}'
     demo_store.write_view("cfg-demo", "trajectory.json", b'{"v": 2}')  # views are overwritable
     assert demo_store.read_view("cfg-demo", "trajectory.json") == b'{"v": 2}'
@@ -680,7 +802,63 @@ def test_write_view_rejects_non_view_names_and_non_configs(demo_store: MemorySto
         demo_store.write_view("cfg-demo", "../trajectory.json", b"{}")
     with pytest.raises(MissingReferenceError):
         demo_store.write_view("commit-demo-a", "trajectory.json", b"{}")
+    with pytest.raises(MissingReferenceError):
+        demo_store.write_view(PLACEHOLDER_ALGORITHM_ID, "trajectory.json", b"{}")  # an algorithm is not a shape
+    with pytest.raises(MissingReferenceError):
+        demo_store.write_view("cfg-nope", "trajectory.json", b"{}")
     assert demo_store.get("cfg-demo").payload.config_id == "demo-n16-f32"
+    assert not (demo_store.root / "kernels/demo_vector_add/trajectory").exists()
+
+
+def test_kernel_view_api(demo_store: MemoryStore) -> None:
+    root = demo_store.root
+    assert KERNEL_VIEW_FILE_NAMES == {"trajectory.json", "memory_records.jsonl"}
+    assert demo_store.kernel_view_dir("demo_vector_add") == root / "kernels/demo_vector_add/trajectory"
+    assert demo_store.read_kernel_view("demo_vector_add", "trajectory.json") is None
+    path = demo_store.write_kernel_view("demo_vector_add", "trajectory.json", b'{"v": 1}')
+    assert path == root / "kernels/demo_vector_add/trajectory/trajectory.json"
+    assert path == demo_store.kernel_view_dir("demo_vector_add") / "trajectory.json"
+    assert demo_store.read_kernel_view("demo_vector_add", "trajectory.json") == b'{"v": 1}'
+    demo_store.write_kernel_view("demo_vector_add", "trajectory.json", b'{"v": 2}')  # overwritable
+    assert demo_store.read_kernel_view("demo_vector_add", "trajectory.json") == b'{"v": 2}'
+    demo_store.write_kernel_view("demo_vector_add", "memory_records.jsonl", b"{}\n")
+    demo_store.write_view("cfg-demo", "trajectory.json", b"{}")
+    # Only the two kernel-level names are permitted (context.json is a per-shape reservation, config.json a record).
+    for bad in ("context.json", "config.json", "kernel.json"):
+        with pytest.raises(InputError) as info:
+            demo_store.write_kernel_view("demo_vector_add", bad, b"{}")
+        assert info.value.code == "INVALID_VIEW"
+    with pytest.raises(InputError):
+        demo_store.write_kernel_view("demo_vector_add", "../trajectory.json", b"{}")
+    for call in (
+        lambda: demo_store.write_kernel_view("nope", "trajectory.json", b"{}"),
+        lambda: demo_store.read_kernel_view("nope", "trajectory.json"),
+        lambda: demo_store.delete_kernel_views("nope"),
+        lambda: demo_store.kernel_view_dir("nope"),
+    ):
+        with pytest.raises(MissingReferenceError) as info:
+            call()
+        assert info.value.details["kernel_id"] == "nope"
+    # Views never enter the authoritative index or the integrity scan.
+    demo_store.invalidate_index()
+    assert {e.record_id for e in demo_store.index_entries()} == ALL_IDS
+    assert demo_store.integrity_scan(verify_artifacts=False).ok
+    # delete_kernel_views removes the whole subtree (kernel view + every shape view) and reports relpaths.
+    removed = demo_store.delete_kernel_views("demo_vector_add")
+    assert removed == sorted([
+        "kernels/demo_vector_add/trajectory/memory_records.jsonl",
+        "kernels/demo_vector_add/trajectory/shapes/cfg-demo/trajectory.json",
+        "kernels/demo_vector_add/trajectory/trajectory.json",
+    ])
+    assert not (root / "kernels/demo_vector_add/trajectory").exists()
+    assert demo_store.delete_kernel_views("demo_vector_add") == []
+    assert demo_store.read_kernel_view("demo_vector_add", "trajectory.json") is None
+    assert demo_store.read_view("cfg-demo", "trajectory.json") is None
+    assert demo_store.delete_views("cfg-demo") == []
+    # Authoritative facts are untouched.
+    assert {e.record_id for e in demo_store.index_entries()} == ALL_IDS
+    assert demo_store.integrity_scan(verify_artifacts=False).ok
+    assert (root / "kernels/demo_vector_add/unspecified/cfg-demo/config.json").is_file()
 
 
 # ============================================================================= fact files (T28)
@@ -805,6 +983,8 @@ def test_index_record_ids_filters(demo_store: MemoryStore) -> None:
     assert idx.record_ids() == sorted(ALL_IDS)
     assert idx.record_ids(record_type="run") == ["run-demo-a", "run-demo-baseline", "run-demo-c", "run-demo-c-failure"]
     assert idx.record_ids(record_type="kernel") == ["kernel-demo"]
+    assert idx.record_ids(record_type="algorithm") == [PLACEHOLDER_ALGORITHM_ID]
+    assert idx.record_ids(record_type="config") == ["cfg-demo"]
     assert idx.record_ids(subject_ref="commit-demo-c") == ["run-demo-c", "run-demo-c-failure"]
     assert idx.record_ids(subject_ref="commit-demo-b") == []
     assert idx.record_ids(config_ref="cfg-demo") == [
@@ -818,19 +998,28 @@ def test_index_record_ids_filters(demo_store: MemoryStore) -> None:
 def test_t24_delete_cache_and_views_then_rebuild_identical(demo_store: MemoryStore) -> None:
     demo_store.write_view("cfg-demo", "trajectory.json", b'{"nodes": []}')
     demo_store.write_view("cfg-demo", "memory_records.jsonl", b"{}\n")
+    demo_store.write_kernel_view("demo_vector_add", "trajectory.json", b'{"algorithms": []}')
+    demo_store.write_kernel_view("demo_vector_add", "memory_records.jsonl", b"{}\n")
     demo_store.rebuild_index()
     idx = _index(demo_store)
     rows_before = list(idx.rows())
     fingerprint_before = idx.fingerprint()
-    assert len(rows_before) == 18
+    assert len(rows_before) == FIXTURE_RECORD_COUNT
     assert {(r[0], r[1], r[2], r[3]) for r in rows_before} == {
         (e.record_id, e.record_type, e.relpath, e.digest) for e in demo_store.index_entries()
     }
-    # Delete every derived file.
+    # Delete every derived file: the SQLite cache and the whole kernels/<k>/trajectory/ tree.
     import shutil
 
     shutil.rmtree(demo_store.root / ".cache")
-    assert demo_store.delete_views("cfg-demo") == ["memory_records.jsonl", "trajectory.json"]
+    assert demo_store.delete_kernel_views("demo_vector_add") == [
+        "kernels/demo_vector_add/trajectory/memory_records.jsonl",
+        "kernels/demo_vector_add/trajectory/shapes/cfg-demo/memory_records.jsonl",
+        "kernels/demo_vector_add/trajectory/shapes/cfg-demo/trajectory.json",
+        "kernels/demo_vector_add/trajectory/trajectory.json",
+    ]
+    assert not (demo_store.root / "kernels/demo_vector_add/trajectory").exists()
+    assert demo_store.delete_views("cfg-demo") == []
     assert not idx.exists() and idx.is_fresh(demo_store) is False
     # Authoritative facts are untouched and the index reconstructs deterministically.
     assert demo_store.integrity_scan().ok
@@ -854,7 +1043,7 @@ def test_index_survives_garbage_cache_file(demo_store: MemoryStore) -> None:
     assert idx.is_fresh(demo_store) is False
     demo_store.rebuild_index()
     assert idx.is_fresh(demo_store) is True
-    assert len(list(idx.rows())) == 18
+    assert len(list(idx.rows())) == FIXTURE_RECORD_COUNT
 
 
 def test_index_of_empty_store(store: MemoryStore) -> None:

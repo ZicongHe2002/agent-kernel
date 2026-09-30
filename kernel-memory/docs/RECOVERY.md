@@ -7,14 +7,18 @@ situation is repaired without ever deleting published experimental facts.
 
 | Path | Role |
 |---|---|
-| `kernels/**/…json` (except views) | Authoritative records. Immutable once published. |
+| `kernels/<kernel>/kernel.json`, `kernels/<kernel>/<algorithm>/algorithm.json`, `kernels/<kernel>/<algorithm>/<shape>/**/*.json` | Authoritative records (layout version 2, ADR-0004). Immutable once published. |
 | `artifacts/sha256/<p>/<digest>` | Content-addressed evidence bytes. |
 | `artifacts/registry/*.json` | Artifact descriptors by `artifact_id`. |
 | `requests/**` | Request ledger and job events (append-only facts). |
 | `journal/records.jsonl` | Publication journal: `(record_id, relpath, canonical digest, txn)`. Integrity evidence. |
 | `.runtime/` | Lock, pending manifests, staging, sealed manifests, leases. Not facts. |
 | `.cache/index.sqlite` | Disposable index. Delete freely; rebuild with `kmem reindex`. |
-| `…/trajectory.json`, `…/memory_records.jsonl` | Generated views. Delete freely; rebuild with `kmem trajectory --rebuild`. |
+| `kernels/<kernel>/trajectory/**` (`trajectory.json`, `memory_records.jsonl`, `shapes/<shape>/…`) | Generated views for the whole kernel. Delete the directory freely; rebuild with `kmem trajectory --kernel <kernel_id> --rebuild`. Never scanned as records. |
+
+A store whose `manifest.json` says `layout_version: 1` (v0.2) is refused on open (`UNSUPPORTED_STORE`) and
+must be migrated into a new root: `kmem --root NEW migrate-v02 --source OLD` (dry run), then `--apply`. The
+old store is never written; see `docs/MIGRATION.md`.
 
 ## Publication protocol (why partial writes cannot corrupt history)
 

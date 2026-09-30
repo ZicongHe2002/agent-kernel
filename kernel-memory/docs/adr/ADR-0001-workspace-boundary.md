@@ -52,3 +52,12 @@ The sections above are kept as written on 2026-09-08; the following facts have c
   run inside it. Sibling directories under `company-project/` are still neither read nor modified. The MLA source,
   TPU hardware, GitHub token, model credentials, and LLO samples are still absent; see
   `docs/IMPLEMENTATION_STATUS.md` for the current pending-integration list.
+
+## Amendment 2026-09-28 (ADR-0004)
+
+The sentence "Contracts are copied verbatim into `src/kernel_memory/contracts/`" now holds only for
+`demo_problem.schema.json`, `hash_vectors.json`, and `contracts/legacy/record.schema.v0.2.0.json` (the verbatim
+handoff record contract, sha256 `e24f4cd5bc52f6f0b8b8c40ee123f2760e3a1371bae9e15b981c16e092ecbf77`, used to validate
+legacy input only). `contracts/record.schema.json` is the project's own `0.3.0` contract with the algorithm level;
+the divergence and its justification (the specification's own precedence rule) are recorded in ADR-0004. The fixture
+copy under `fixtures/handoff/` stays verbatim and is upgraded in memory by tests and the importer.

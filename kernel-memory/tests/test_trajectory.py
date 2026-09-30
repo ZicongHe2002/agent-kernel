@@ -1,11 +1,12 @@
 """Trajectory view tests (specification sections 4, 7, 14; acceptance T05, T06, T07, T24).
 
-Every assertion is against the documented view shape produced by ``services.trajectory``:
-``view_version``, ``config_ref``, ``config_hash``, ``kernel_id``, ``kernel_ref``, ``baselines``,
-``prs``, ``nodes``, ``edges``, ``decisions``, ``best_known``, ``annotations``, ``relations``,
-``diagnostics``, ``publishable`` and ``counts``. Synthetic records are built through
-``services.common.new_record`` (schema-validated) and published through the raw store, so the
-tests exercise the view generator, not the importer.
+Every assertion is against the documented per-shape view shape produced by ``services.trajectory``
+(``trajectory-v2``): ``view_version``, ``config_ref``, ``config_hash``, ``kernel_id``, ``kernel_ref``,
+``algorithm_ref``, ``algorithm_id``, ``baselines``, ``prs``, ``nodes``, ``edges``, ``decisions``,
+``best_known``, ``annotations``, ``relations``, ``code``, ``result``, ``diagnostics``, ``publishable``
+and ``counts``. Synthetic records are built through ``services.common.new_record``
+(schema-validated) and published through the raw store, so the tests exercise the view
+generator, not the importer. The kernel-level view is covered by ``test_trajectory_kernel.py``.
 """
 from __future__ import annotations
 
@@ -18,17 +19,19 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ARTIFACT_ROOT, import_demo_bundle, record_dict
+from conftest import ARTIFACT_ROOT, PLACEHOLDER_ALGORITHM_ID, import_demo_bundle, record_dict
 from kernel_memory.domain.errors import InvariantViolation, MissingReferenceError
-from kernel_memory.domain.hashing import jcs_digest
+from kernel_memory.domain.hashing import artifact_digest, jcs_digest
 from kernel_memory.domain.jsonio import dumps_compact, loads_strict
 from kernel_memory.domain.models import TYPE_ORDER, CommitPayload, Record
 from kernel_memory.services import trajectory as traj
 from kernel_memory.services.common import new_record
 from kernel_memory.storage import MemoryStore
 from kernel_memory.storage import layout
+from synthetic_runs import cloned_run_dict, publish_dict
 
 CFG = "cfg-demo"
+KERNEL_ID = "demo_vector_add"
 OID_1 = "0" * 39 + "1"  # the baseline's commit; no commit binding exists for it
 OID_2 = "0" * 39 + "2"  # commit A, bound twice (commit-demo-a, commit-demo-a-in-102)
 OID_3 = "0" * 39 + "3"  # commit B
@@ -53,6 +56,7 @@ ALL_CONFIG_RECORDS = {
     "decision-demo-blocked",
     "annotation-demo-grouped",
 }
+MINIMAL_KEEP = {"kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo", "baseline-demo", "pr-demo-101", "commit-demo-a", "commit-demo-b"}
 
 
 # --------------------------------------------------------------------------------------
@@ -96,6 +100,14 @@ def all_run_refs(view: dict) -> dict[str, list[str]]:
     return out
 
 
+def code_entry(view: dict, subject_ref: str) -> dict:
+    return next(e for e in view["code"] if e["subject_ref"] == subject_ref)
+
+
+def result_entry(view: dict, run_ref: str) -> dict:
+    return next(e for e in view["result"] if e["run_ref"] == run_ref)
+
+
 def relation(record_id: str, from_ref: str, to_ref: str, kind: str = "optimization_origin", rationale: str = "synthetic") -> Record:
     return new_record(
         "relation",
@@ -120,6 +132,32 @@ def annotation(record_id: str, target_ref: str, *, author_kind: str = "human", c
     )
 
 
+def remove_algorithm_file(store: MemoryStore, algorithm_ref: str) -> None:
+    """Out-of-band removal of an algorithm record (the layout never lets a config dangle otherwise)."""
+    path = store.record_path(algorithm_ref)
+    assert path.name == layout.ALGORITHM_FILE
+    path.unlink()
+    store.invalidate_index()
+    assert store.get(algorithm_ref) is None
+
+
+class _StoreProxy:
+    """Delegates everything to the store but answers ``get`` for one id with a substitute record."""
+
+    def __init__(self, store: MemoryStore, record_id: str, substitute: Record) -> None:
+        self._store = store
+        self._record_id = record_id
+        self._substitute = substitute
+
+    def get(self, record_id: str):
+        if record_id == self._record_id:
+            return self._substitute
+        return self._store.get(record_id)
+
+    def __getattr__(self, name: str):
+        return getattr(self._store, name)
+
+
 @pytest.fixture
 def view(demo_store: MemoryStore) -> dict:
     return traj.build_trajectory(demo_store, CFG)
@@ -129,17 +167,21 @@ def view(demo_store: MemoryStore) -> dict:
 # structure
 # --------------------------------------------------------------------------------------
 def test_view_top_level_structure(view: dict, bundle_dicts: list[dict]) -> None:
-    assert view["view_version"] == "trajectory-v1" == traj.VIEW_VERSION
+    assert view["view_version"] == "trajectory-v2" == traj.VIEW_VERSION
     assert view["config_ref"] == CFG
     assert view["config_hash"] == record_dict(bundle_dicts, CFG)["payload"]["config_hash"]
-    assert view["kernel_id"] == "demo_vector_add"
+    assert view["kernel_id"] == KERNEL_ID
     assert view["kernel_ref"] == "kernel-demo"
+    assert view["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID == record_dict(bundle_dicts, CFG)["payload"]["algorithm_ref"]
+    assert view["algorithm_id"] == "unspecified"
     assert set(view) == {
         "view_version",
         "config_ref",
         "config_hash",
         "kernel_id",
         "kernel_ref",
+        "algorithm_ref",
+        "algorithm_id",
         "baselines",
         "prs",
         "nodes",
@@ -148,6 +190,8 @@ def test_view_top_level_structure(view: dict, bundle_dicts: list[dict]) -> None:
         "best_known",
         "annotations",
         "relations",
+        "code",
+        "result",
         "diagnostics",
         "publishable",
         "counts",
@@ -201,6 +245,8 @@ def test_counts_match_scope(view: dict) -> None:
     assert counts["annotations"] == 1
     assert counts["nodes"] == len(view["nodes"])
     assert counts["edges"] == len(view["edges"])
+    assert counts["code_entries"] == len(view["code"]) == 5  # 4 commit bindings + 1 baseline
+    assert counts["result_entries"] == len(view["result"]) == 4  # one per run
     assert counts["diagnostics"] == len(view["diagnostics"])
     assert counts["errors"] == 0
 
@@ -219,6 +265,212 @@ def test_nodes_are_typed_unique_and_sorted(view: dict) -> None:
 
 
 # --------------------------------------------------------------------------------------
+# code / result: the whiteboard's shape leaves, generated from stored facts
+# --------------------------------------------------------------------------------------
+def test_code_section_lists_every_run_source_once(view: dict, demo_store: MemoryStore) -> None:
+    assert [e["subject_ref"] for e in view["code"]] == ["baseline-demo", "commit-demo-a", "commit-demo-a-in-102", "commit-demo-b", "commit-demo-c"]
+    for entry in view["code"]:
+        assert set(entry) == {
+            "subject_ref",
+            "subject_type",
+            "commit_ref",
+            "baseline_ref",
+            "pr_ref",
+            "commit_oid",
+            "diff_base_oid",
+            "change_status",
+            "source_available",
+            "diff_artifact_ref",
+            "diff_artifact",
+            "run_sources",
+        }
+        assert entry["diff_artifact_ref"] is None and entry["diff_artifact"] is None  # no diff artifact recorded
+        for src in entry["run_sources"]:
+            run = demo_store.require(src["run_ref"], "run").payload
+            assert src["source_digest"] == run.source.source_digest
+            assert src["variant_digest"] == run.source.variant_digest
+            assert src["entrypoint"] == run.source.entrypoint
+            assert src["implementation_overrides"] == run.source.implementation_overrides
+            assert src["checkout_mode"] == run.source.checkout_mode
+            assert src["patch_digest"] is None and src["dirty"] is False
+            assert src["tested_commit"] == {"algorithm": "sha1", "hex": run.source.tested_commit.hex}
+    # every run appears exactly once, under its own subject
+    listed = [src["run_ref"] for e in view["code"] for src in e["run_sources"]]
+    assert sorted(listed) == ["run-demo-a", "run-demo-baseline", "run-demo-c", "run-demo-c-failure"]
+    baseline = code_entry(view, "baseline-demo")
+    assert baseline["subject_type"] == "baseline" and baseline["baseline_ref"] == "baseline-demo" and baseline["commit_ref"] is None
+    assert baseline["pr_ref"] is None and baseline["change_status"] is None and baseline["source_available"] is None
+    assert baseline["commit_oid"] == {"algorithm": "sha1", "hex": OID_1}
+    assert [s["run_ref"] for s in baseline["run_sources"]] == ["run-demo-baseline"]
+    commit_c = code_entry(view, "commit-demo-c")
+    assert commit_c["subject_type"] == "commit" and commit_c["commit_ref"] == "commit-demo-c" and commit_c["baseline_ref"] is None
+    assert commit_c["pr_ref"] == "pr-demo-102"
+    assert commit_c["commit_oid"] == {"algorithm": "sha1", "hex": OID_4}
+    assert commit_c["diff_base_oid"] == {"algorithm": "sha1", "hex": OID_2}
+    assert commit_c["change_status"] == "recorded" and commit_c["source_available"] is False
+    assert [s["run_ref"] for s in commit_c["run_sources"]] == ["run-demo-c", "run-demo-c-failure"]
+    assert code_entry(view, "commit-demo-b")["run_sources"] == []  # untested: nothing invented
+
+
+def test_result_section_copies_run_results_and_keeps_nulls(view: dict) -> None:
+    assert [e["run_ref"] for e in view["result"]] == ["run-demo-a", "run-demo-baseline", "run-demo-c", "run-demo-c-failure"]
+    for entry in view["result"]:
+        assert set(entry) == {
+            "run_ref",
+            "subject_ref",
+            "stage",
+            "provenance",
+            "execution_status",
+            "failure_reason",
+            "correctness",
+            "timing",
+            "analysis_metrics",
+            "artifacts",
+            "hlo",
+            "llo",
+        }
+        assert entry["provenance"] == "fixture"
+        assert entry["hlo"] == {"stablehlo_text": None, "compiled_hlo_text": None}
+        assert entry["llo"] == {"status": "unsupported", "artifact_id": None}
+    failure = result_entry(view, "run-demo-c-failure")
+    assert failure["subject_ref"] == "commit-demo-c"
+    assert failure["execution_status"] == "compile_error"
+    assert failure["failure_reason"] == "Synthetic compile failure."
+    assert failure["correctness"] == {"status": "not_run", "cases_total": 0, "cases_passed": 0}
+    assert failure["timing"] == {"status": "not_run", "sample_count": 0, "median_us": None, "p90_us": None, "samples_artifact_ref": None}
+    assert failure["analysis_metrics"] == [
+        {
+            "name": "register_spill_vmem_static_bytes",
+            "status": "not_collected",
+            "value": None,
+            "unit": "bytes",
+            "kind": "static_estimate",
+            "scope": "compiled_kernel",
+            "source_artifact_ref": None,
+        }
+    ]
+    assert failure["artifacts"] == []
+    ok = result_entry(view, "run-demo-c")
+    assert ok["execution_status"] == "succeeded" and ok["failure_reason"] is None
+    assert ok["correctness"] == {"status": "pass", "cases_total": 1, "cases_passed": 1}
+    assert ok["timing"] == {"status": "recorded", "sample_count": 5, "median_us": 88, "p90_us": 88.6, "samples_artifact_ref": "run-demo-c-samples"}
+    assert ok["analysis_metrics"][0]["status"] == "observed"
+    assert ok["analysis_metrics"][0]["value"] == 65536
+    assert ok["analysis_metrics"][0]["source_artifact_ref"] == "mock-spill-report"
+    assert [a["artifact_id"] for a in ok["artifacts"]] == ["mock-spill-report", "run-demo-c-correctness", "run-demo-c-samples"]
+    assert ok["artifacts"][0] == {"artifact_id": "mock-spill-report", "kind": "mock_analysis", "media_type": "application/json", "size_bytes": 99, "availability": "present"}
+    assert "speedup" not in json.dumps(view["result"])
+
+
+def test_hlo_and_llo_slots_pick_artifacts_by_kind(demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
+    blobs = {
+        "run-hlo-stablehlo": ("stablehlo_text", b"module @synthetic_stablehlo {}\n"),
+        "run-hlo-compiled": ("compiled_hlo_text", b"HloModule synthetic_compiled\n"),
+        "run-hlo-llo": ("llo_dump", b"synthetic llo bytes; never parsed\n"),
+    }
+    artifacts = []
+    for artifact_id, (kind, data) in blobs.items():
+        sha = demo_store.put_artifact_bytes(data)
+        assert sha == artifact_digest(data)
+        artifacts.append(
+            {
+                "artifact_id": artifact_id,
+                "kind": kind,
+                "uri": f"artifact://sha256/{sha.split(':', 1)[1]}",
+                "sha256": sha,
+                "size_bytes": len(data),
+                "media_type": "text/plain",
+                "retention": "retain_for_decision",
+                "availability": "present",
+            }
+        )
+    clone = cloned_run_dict(bundle_dicts, "run-demo-a", new_id="run-demo-a-hlo", artifacts=artifacts)
+    publish_dict(demo_store, clone)
+    view = traj.build_trajectory(demo_store, CFG)
+    entry = result_entry(view, "run-demo-a-hlo")
+    assert entry["hlo"] == {"stablehlo_text": "run-hlo-stablehlo", "compiled_hlo_text": "run-hlo-compiled"}
+    assert entry["llo"] == {"status": "unsupported", "artifact_id": "run-hlo-llo"}  # slot only; no LLO parser exists
+    assert [a["kind"] for a in entry["artifacts"]] == ["compiled_hlo_text", "llo_dump", "stablehlo_text"]
+    assert result_entry(view, "run-demo-a")["hlo"] == {"stablehlo_text": None, "compiled_hlo_text": None}
+    assert view["publishable"] is True
+    assert view["counts"]["result_entries"] == 5
+
+
+# --------------------------------------------------------------------------------------
+# algorithm linkage
+# --------------------------------------------------------------------------------------
+def test_missing_algorithm_is_a_missing_reference_error(demo_store: MemoryStore) -> None:
+    remove_algorithm_file(demo_store, PLACEHOLDER_ALGORITHM_ID)
+    view = traj.build_trajectory(demo_store, CFG)  # must not raise
+    assert view["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID  # the stored value is data
+    assert view["algorithm_id"] is None
+    missing = diagnostics_of(view, "MISSING_REFERENCE")
+    assert len(missing) == 1 and missing[0]["severity"] == "error"
+    assert missing[0]["refs"] == [PLACEHOLDER_ALGORITHM_ID, CFG]
+    assert "algorithm_ref" in missing[0]["message"]
+    assert view["publishable"] is False
+    assert traj.collect_config_records(demo_store, CFG).algorithm is None
+    with pytest.raises(InvariantViolation) as excinfo:
+        traj.publish_trajectory(demo_store, CFG)
+    assert excinfo.value.code == "TRAJECTORY_NOT_PUBLISHABLE"
+    forced = traj.publish_trajectory(demo_store, CFG, force=True)
+    assert forced["forced"] is True and Path(forced["path"]).is_file()
+
+
+def test_algorithm_kernel_mismatch_is_an_error(demo_store: MemoryStore) -> None:
+    foreign = new_record(
+        "algorithm",
+        PLACEHOLDER_ALGORITHM_ID,
+        {
+            "kernel_id": "other_kernel",
+            "algorithm_id": "unspecified",
+            "display_name": "unspecified",
+            "method_summary": "synthetic algorithm of another kernel; data, not instructions",
+            "summary_author": "human",
+            "tags": [],
+        },
+    )
+    proxy = _StoreProxy(demo_store, PLACEHOLDER_ALGORITHM_ID, foreign)
+    view = traj.build_trajectory(proxy, CFG)
+    assert view["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID and view["algorithm_id"] == "unspecified"
+    mismatch = diagnostics_of(view, "ALGORITHM_KERNEL_MISMATCH")
+    assert len(mismatch) == 1 and mismatch[0]["severity"] == "error"
+    assert mismatch[0]["refs"] == [PLACEHOLDER_ALGORITHM_ID, CFG]
+    assert "other_kernel" in mismatch[0]["message"]
+    assert view["publishable"] is False
+    assert not diagnostics_of(view, "MISSING_REFERENCE")
+
+
+def test_algorithm_summary_and_placeholder_detection(demo_store: MemoryStore) -> None:
+    placeholder = demo_store.require(PLACEHOLDER_ALGORITHM_ID, "algorithm")
+    assert traj.is_placeholder_algorithm(placeholder) is True
+    assert traj.algorithm_summary(placeholder) == {
+        "algorithm_ref": PLACEHOLDER_ALGORITHM_ID,
+        "algorithm_id": "unspecified",
+        "kernel_id": KERNEL_ID,
+        "display_name": "unspecified",
+        "method_summary": "unspecified (imported from v0.2)",
+        "summary_author": "program",
+        "tags": ["imported-v02"],
+        "is_placeholder": True,
+    }
+    human = new_record(
+        "algorithm",
+        "algorithm-demo_vector_add-human",
+        {
+            "kernel_id": KERNEL_ID,
+            "algorithm_id": "human",
+            "display_name": "human",
+            "method_summary": "unspecified (imported from v0.2)",  # same text, but authored by a human
+            "summary_author": "human",
+            "tags": [],
+        },
+    )
+    assert traj.is_placeholder_algorithm(human) is False
+    assert traj.is_placeholder_algorithm(demo_store.require("kernel-demo")) is False
+
+
+# --------------------------------------------------------------------------------------
 # T05: collect three commits, execute one; the others remain untested
 # --------------------------------------------------------------------------------------
 def test_t05_untested_commit_has_status_not_run_and_no_run_anywhere(view: dict) -> None:
@@ -233,6 +485,8 @@ def test_t05_untested_commit_has_status_not_run_and_no_run_anywhere(view: dict) 
     run_nodes = {n["id"] for n in view["nodes"] if n["type"] == "run"}
     assert run_nodes == {"run-demo-baseline", "run-demo-a", "run-demo-c", "run-demo-c-failure"}
     assert all(d["candidate_subject_ref"] != "commit-demo-b" for d in view["decisions"])
+    assert code_entry(view, "commit-demo-b")["run_sources"] == []
+    assert all(r["subject_ref"] != "commit-demo-b" for r in view["result"])
 
 
 def test_t05_tested_commit_lists_only_its_run(view: dict) -> None:
@@ -261,7 +515,7 @@ def test_t05_status_is_derived_from_runs_not_stored(bundle_dicts: list[dict], bu
     assert "status" not in {f.name for f in fields(CommitPayload)}
     # Same commit records, no runs published: both commits are not_run at query time.
     store = MemoryStore.init(tmp_path / "memory")
-    keep = {"kernel-demo", "cfg-demo", "baseline-demo", "pr-demo-101", "snapshot-demo-101", "commit-demo-a", "commit-demo-b"}
+    keep = MINIMAL_KEEP | {"snapshot-demo-101"}
     store.publish_bundle([r for r in bundle_records if r.record_id in keep])
     before = traj.build_trajectory(store, CFG)
     assert [(c["commit_ref"], c["status"]) for c in commit_views(before)] == [("commit-demo-a", "not_run"), ("commit-demo-b", "not_run")]
@@ -321,6 +575,9 @@ def test_t07_shared_source_commit_is_two_bindings_and_runs_do_not_move(view: dic
     assert ("pr-demo-102", "commit-demo-a-in-102", "structure") in memberships
     assert ("pr-demo-102", "commit-demo-a", "structure") not in memberships
     assert ("pr-demo-101", "commit-demo-a-in-102", "structure") not in memberships
+    # the code leaf keeps the two bindings apart as well: the run source stays with its binding
+    assert [s["run_ref"] for s in code_entry(view, "commit-demo-a")["run_sources"]] == ["run-demo-a"]
+    assert code_entry(view, "commit-demo-a-in-102")["run_sources"] == []
 
 
 def test_t07_shared_source_diagnostic_is_informational(view: dict) -> None:
@@ -504,7 +761,7 @@ def test_pr_display_label(demo_store: MemoryStore) -> None:
 
 
 # --------------------------------------------------------------------------------------
-# T24: determinism and rebuild
+# T24: determinism and rebuild (shape level)
 # --------------------------------------------------------------------------------------
 def test_t24_build_twice_is_identical(demo_store: MemoryStore) -> None:
     first = traj.build_trajectory(demo_store, CFG)
@@ -530,11 +787,15 @@ def test_t24_import_order_does_not_change_the_view(demo_store: MemoryStore, stor
 def test_t24_delete_views_and_cache_then_rebuild_identically(demo_store: MemoryStore) -> None:
     published = traj.publish_trajectory(demo_store, CFG)
     assert published["publishable"] is True and published["forced"] is False
-    assert published["record_count"] == len(ALL_CONFIG_RECORDS)
+    assert published["record_count"] == len(ALL_CONFIG_RECORDS)  # the algorithm is kernel-level, never a shape line
     view_file = Path(published["path"])
     records_file = Path(published["memory_records_path"])
     assert view_file == traj.view_path(demo_store, CFG)
+    assert view_file == demo_store.root / "kernels" / KERNEL_ID / "trajectory" / "shapes" / "cfg-demo" / "trajectory.json"
+    assert records_file == view_file.parent / "memory_records.jsonl"
     assert view_file.is_file() and records_file.is_file()
+    # nothing generated lives inside the shape's record directory
+    assert not (demo_store.config_dir(CFG) / "trajectory.json").exists()
     original_hash = published["view_hash"]
     original_lines = records_file.read_bytes()
     stored = traj.read_stored_trajectory(demo_store, CFG)
@@ -705,8 +966,7 @@ def test_partial_snapshot_gives_partial_coverage_warning(demo_store: MemoryStore
 
 
 def test_pr_without_snapshot_reports_no_snapshot_coverage(store: MemoryStore, bundle_records: list[Record]) -> None:
-    keep = {"kernel-demo", "cfg-demo", "baseline-demo", "pr-demo-101", "commit-demo-a", "commit-demo-b"}
-    store.publish_bundle([r for r in bundle_records if r.record_id in keep])
+    store.publish_bundle([r for r in bundle_records if r.record_id in MINIMAL_KEEP])
     view = traj.build_trajectory(store, CFG)
     pr = view["prs"][0]
     assert pr["snapshots"] == [] and pr["latest_snapshot_ref"] is None
@@ -764,14 +1024,17 @@ def test_memory_records_one_line_per_record_sorted_deterministically(demo_store:
     assert [l["record_ref"] for l in lines] == sorted((l["record_ref"] for l in lines), key=lambda rid: (TYPE_ORDER[demo_store.require(rid).record_type], rid))
     assert {l["record_ref"] for l in lines} == ALL_CONFIG_RECORDS
     assert "kernel-demo" not in {l["record_ref"] for l in lines}  # the kernel is not owned by one config
+    assert PLACEHOLDER_ALGORITHM_ID not in {l["record_ref"] for l in lines}  # nor is the algorithm
     assert len(lines) == len(ALL_CONFIG_RECORDS)
     for line in lines:
-        assert set(line) == {"record_ref", "record_type", "summary", "kind", "evidence_refs", "provenance", "config_ref"}
+        assert set(line) == {"record_ref", "record_type", "summary", "kind", "evidence_refs", "provenance", "config_ref", "kernel_id", "algorithm_ref"}
         assert line["record_type"] == demo_store.require(line["record_ref"]).record_type
         assert isinstance(line["summary"], str) and line["summary"]
         assert line["kind"] in ("fact", "hypothesis")
         assert line["evidence_refs"] == sorted(set(line["evidence_refs"]))
         assert line["config_ref"] == CFG
+        assert line["kernel_id"] == KERNEL_ID
+        assert line["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
         if line["record_type"] == "run":
             assert line["provenance"] == "fixture"
             assert "not production evidence" in line["summary"]
@@ -781,6 +1044,7 @@ def test_memory_records_one_line_per_record_sorted_deterministically(demo_store:
     assert by_ref["annotation-demo-grouped"]["kind"] == "hypothesis"
     assert by_ref["annotation-demo-grouped"]["evidence_refs"] == ["run-demo-c"]
     assert all(l["kind"] == "fact" for l in lines if l["record_type"] != "annotation")
+    assert PLACEHOLDER_ALGORITHM_ID in by_ref[CFG]["summary"]
     # untested commit: the summary says not_run and the evidence carries no run
     assert "not_run" in by_ref["commit-demo-b"]["summary"]
     assert not any(ref.startswith("run-") for ref in by_ref["commit-demo-b"]["evidence_refs"])
@@ -814,6 +1078,9 @@ def test_memory_records_accepts_prebuilt_scope(demo_store: MemoryStore) -> None:
     scope = traj.collect_config_records(demo_store, CFG)
     assert scope.config_id == CFG
     assert scope.kernel is not None and scope.kernel.record_id == "kernel-demo"
+    assert scope.algorithm is not None and scope.algorithm.record_id == PLACEHOLDER_ALGORITHM_ID
+    assert scope.algorithm_ref == PLACEHOLDER_ALGORITHM_ID
+    assert scope.algorithm not in scope.all_records()
     assert [r.record_id for r in scope.all_records()] == [l["record_ref"] for l in traj.memory_records(demo_store, CFG)]
     assert traj.memory_records(demo_store, CFG, scope) == traj.memory_records(demo_store, CFG)
     assert scope.subject_ids == {"baseline-demo", "commit-demo-a", "commit-demo-b", "commit-demo-c", "commit-demo-a-in-102"}

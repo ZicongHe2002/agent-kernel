@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import record_dict
+from conftest import FIXTURE_RECORD_COUNT, record_dict
 from kernel_memory.domain.hashing import sha256_bytes
 from kernel_memory.domain.jsonio import dumps_compact, dumps_readable
 from kernel_memory.domain.models import Record
@@ -156,7 +156,7 @@ def test_pending_manifest_with_missing_staged_file_is_sealed(demo_store: MemoryS
     assert report["sealed_manifest"] == ".runtime/sealed/txn-lost.json"
     # The store stays valid and nothing published was touched.
     assert journal_entries(demo_store.root) == journal_before
-    assert len(recovered.records()) == 18
+    assert len(recovered.records()) == FIXTURE_RECORD_COUNT
     assert recovered.integrity_scan().ok
     assert_noop(recovered.recover())
     # A sealed manifest is evidence, not a pending transaction: it is never retried.
@@ -247,7 +247,9 @@ def test_publish_recovers_pending_work_first(demo_store: MemoryStore, bundle_dic
 def test_stray_temp_files_are_removed_by_open(demo_store: MemoryStore) -> None:
     strays = [
         demo_store.root / "kernels" / "demo_vector_add" / ".kernel.json.tmp-999-deadbeef",
-        demo_store.root / "kernels" / "demo_vector_add" / "configs" / "cfg-demo" / ".config.json.tmp-1-0badf00d",
+        demo_store.root / "kernels" / "demo_vector_add" / "unspecified" / "cfg-demo" / ".config.json.tmp-1-0badf00d",
+        demo_store.root / "kernels" / "demo_vector_add" / "unspecified" / ".algorithm.json.tmp-4-feedface",
+        demo_store.root / "kernels" / "demo_vector_add" / "trajectory" / ".trajectory.json.tmp-5-0ddba11",
         demo_store.root / "artifacts" / "registry" / ".x.json.tmp-2-cafebabe",
         demo_store.root / "requests" / ".request.json.tmp-3-00000000",
     ]
@@ -261,7 +263,7 @@ def test_stray_temp_files_are_removed_by_open(demo_store: MemoryStore) -> None:
         assert not stray.exists(), stray
     assert keep.exists()  # only never-published temp files are removed
     assert reopened.integrity_scan().ok
-    assert len(reopened.records()) == 18
+    assert len(reopened.records()) == FIXTURE_RECORD_COUNT
 
 
 def test_recover_reports_removed_temp_files(demo_store: MemoryStore) -> None:

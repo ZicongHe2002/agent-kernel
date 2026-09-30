@@ -5,21 +5,23 @@
 
 ```text
 Memory
-└── name / kernel_id
-    └── config                       # 一个固定的计算问题
-        ├── trajectory               # 自动生成，不保存独有事实，可重建
-        └── attempt                  # 此 config 下所有 PR 的集合
-            └── PR
-                └── commit
-                    ├── changes + summary
-                    └── run
-                        ├── Result (执行状态、正确性、耗时)
-                        ├── Analysis (附带来源信息的指标)
-                        └── Artifact references (按内容寻址的证据引用)
+└── kernel（name / kernel_id）
+    ├── trajectory/                  # 自动生成的整核视图：覆盖全部 algorithm 与 shape；不保存独有事实，可重建
+    ├── algorithm_1                  # 一种优化方法；method_summary 为人工/智能体撰写的说明（数据，不是测量）
+    │   ├── shape_1                  # 一个固定的计算问题（= config 记录，config_hash 与算法无关）
+    │   │   ├── attempt/             # 此 shape 下所有 PR 的集合 → PR → commit（changes + summary）→ run
+    │   │   ├── code                 # 生成视图：commit 的 diff 证据 + 各 run 的源码/变体摘要
+    │   │   └── result               # 生成视图：各 run 的执行状态、正确性、耗时、分析指标、HLO/LLO 证据槽
+    │   ├── shape_2
+    │   └── shape_3
+    ├── algorithm_2
+    └── algorithm_3
 ```
 
 `attempt` 表示 PR 的集合，而非单个 PR。未经测试的提交始终保留未测试状态。测试夹具数据
-不会进入生产排名。设计文档、架构决策记录（ADR）、实现状态和操作指南见 `docs/`。
+不会进入生产排名。同一 shape 在不同 algorithm 下拥有相同的 `config_hash`，因此可以比较；
+v0.2 数据导入时会为每个 kernel 补上占位算法 `unspecified`（其 `method_summary` 明确写明未描述方法）。
+设计文档、架构决策记录（ADR，本层级见 ADR-0004）、实现状态和操作指南见 `docs/`。
 
 ## 环境配置
 
@@ -39,14 +41,15 @@ macOS 注意事项：如果在虚拟环境中执行 `import kernel_memory` 失�
 两个脚本都在当前目录下使用 `.venv` 运行，无需网络，仅向 `.demo/` 写入文件
 （该目录已被 Git 忽略；每次运行都会删除并重建目标存储）。
 
-* `bash scripts/demo_p0.sh [STORE]` — 使用合成的交接数据包，离线演示 P0 流程：
-  `init`、两次 `import-bundle --allow-fixture`（第二次导入满足幂等性）、`validate --deep`、
-  确定性的 `trajectory --rebuild` / `--verify`、`query`（查询未经测试的提交和分块变化）、
+* `bash scripts/demo_p0.sh [STORE]` — 使用合成的交接数据包（原样的 v0.2 数据包，导入时在内存中升级到 v0.3，
+  为 kernel 补上占位算法），离线演示 P0 流程：`init`、两次 `import-bundle --allow-fixture`（第二次导入满足幂等性，
+  19 条记录）、`validate --deep`、确定性的 `trajectory --kernel demo_vector_add --rebuild` / `--verify`、
+  `query`（按算法查询 shape、查询未经测试的提交和分块变化）、
   `compare run-demo-a run-demo-baseline`（夹具数据的计算结果：加速比为 100/90，耗时降低 10%）、
   `decide --dry-run`（被阻止，原因是 `FIXTURE_NOT_ELIGIBLE`）、`export-context`、`status`。
   默认存储为 `.demo/p0-memory`。其中所有数值均来自测试夹具，并非实际测量结果。
 * `REPS=50 WARMUP=10 bash scripts/demo_cpu.sh [STORE]` — 在本机 CPU 上实际执行演示用向量加法内核：
-  注册内核、配置和基线，执行并测量基线及一个覆盖运行时参数的变体（`provenance=trusted_worker`），
+  注册内核、算法（`register-algorithm`，附人工撰写的方法说明）、shape 和基线，执行并测量基线及一个覆盖运行时参数的变体（`provenance=trusted_worker`），
   重放同一请求 ID 而不再次执行，将一个故意出错的候选记录为执行状态 `succeeded`、正确性 `fail`，
   进行比较，用一组配对数据作出决策（结果为 `inconclusive`），展示 `jax_tpu` 后端明确拒绝执行，
   进行深度校验，重建轨迹，并在小额预算下运行 MockPlanner。`REPS` 和 `WARMUP` 分别设置基准测试

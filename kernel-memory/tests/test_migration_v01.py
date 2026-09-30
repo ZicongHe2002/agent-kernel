@@ -1,4 +1,4 @@
-"""Tests for the explicit v0.1 -> v0.2 migration (specification section 20, acceptance T31).
+"""Tests for the explicit v0.1 -> v0.3 migration (specification section 20, acceptance T31).
 
 All input data here is SYNTHETIC. It follows the v0.1 structure documented in
 ``docs/MIGRATION.md`` (inferred from the concepts named in specification section 20); no
@@ -14,8 +14,9 @@ from typing import Any
 
 import pytest
 
+from conftest import PLACEHOLDER_ALGORITHM_ID, record_dict
 from kernel_memory.domain.errors import IdConflictError, InputError, UnsafePathError
-from kernel_memory.domain.models import GitOid, Record
+from kernel_memory.domain.models import AlgorithmPayload, GitOid, Record
 from kernel_memory.migrations.v01 import (
     EXCESSIVE_SPILL_NOTE,
     NO_ADAPTER_REASON,
@@ -31,6 +32,8 @@ from kernel_memory.migrations.v01 import (
     resolve_sha,
     source_file_digests,
 )
+from kernel_memory.migrations.v02 import default_algorithm_payload, default_algorithm_record, upgrade_v02_records
+from kernel_memory.services.common import new_record
 from kernel_memory.storage import MemoryStore
 
 # --------------------------------------------------------------------------------------
@@ -46,6 +49,8 @@ FULL_3B = "cafe2222abcdefabcdefabcdefabcdefabcdefab"
 SHORT_3 = "cafe"
 FIXTURE_CONFIG_HASH = "sha256:f93d42a53c9f6bcdab1fa855d9b3e5727e65601ff355aa96dc16142a282c1915"
 CREATED_AT = "2026-09-09T00:00:00Z"
+FIXTURE_KERNEL_CREATED_AT = "2026-09-08T00:00:00Z"  # kernel-demo in the handoff bundle; demo_store's placeholder copies it
+CONFIG_RECORD_ID = f"cfg-unspecified-demo-n16-f32-{FIXTURE_CONFIG_HASH[7:19]}"
 RESULT_REV1 = {"revision_id": "rev-1", "status": "ok", "latency_us": 123.4, "speedup": 1.1}
 RESULT_REV2 = {
     "revision_id": "rev-2",
@@ -127,19 +132,36 @@ def by_type(report: MigrationReport, record_type: str) -> list[dict[str, Any]]:
     return [r for r in report.records if r["record_type"] == record_type]
 
 
+def mapping(report: MigrationReport) -> dict[tuple[str, str, str], dict[str, Any]]:
+    """identity_map keyed by (v01_kind, v01_id, v02_record_type): a v0.1 kernel maps to a kernel AND an algorithm."""
+    return {(m["v01_kind"], m["v01_id"], m["v02_record_type"]): m for m in report.identity_map}
+
+
 # --------------------------------------------------------------------------------------
 # Dry run / apply
 # --------------------------------------------------------------------------------------
 def test_t31_dry_run_produces_records_and_writes_nothing(tmp_path: Path, store: MemoryStore) -> None:
     report = run(write_single(tmp_path, synthetic_v01()), store=store)  # dry_run defaults to True
     assert report.dry_run is True
-    assert report.record_counts() == {"annotation": 3, "commit": 2, "config": 1, "kernel": 1, "pr": 2}
+    assert report.record_counts() == {"algorithm": 1, "annotation": 3, "commit": 2, "config": 1, "kernel": 1, "pr": 2}
     assert report.publish_outcome is None
     assert store.index_entries() == []
     assert list((store.root / "kernels").rglob("*.json")) == []
     assert any("nothing was written" in note for note in report.notes)
-    for record in report.records:  # every produced record is a valid v0.2 record
+    for record in report.records:  # every produced record is valid under the current contract
         Record.from_dict(json.loads(json.dumps(record)))
+    (kernel,) = by_type(report, "kernel")
+    (algorithm,) = by_type(report, "algorithm")
+    assert algorithm["record_id"] == PLACEHOLDER_ALGORITHM_ID
+    assert algorithm["created_at"] == kernel["created_at"] == CREATED_AT
+    assert algorithm == default_algorithm_record("demo_vector_add", kernel["created_at"])  # byte-identical to the v0.2 upgrade path
+    assert algorithm["payload"] == default_algorithm_payload("demo_vector_add")
+    assert algorithm["payload"]["method_summary"] == "unspecified (imported from v0.2)" and algorithm["payload"]["summary_author"] == "program"
+    (config,) = by_type(report, "config")
+    assert config["payload"]["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
+    assert mapping(report)[("kernel", "demo_vector_add", "algorithm")] == {
+        "v01_kind": "kernel", "v01_id": "demo_vector_add", "v02_record_type": "algorithm", "v02_record_id": PLACEHOLDER_ALGORITHM_ID, "status": "mapped",
+    }
 
 
 def test_apply_publishes_and_deep_counts_match(tmp_path: Path, store: MemoryStore) -> None:
@@ -147,8 +169,10 @@ def test_apply_publishes_and_deep_counts_match(tmp_path: Path, store: MemoryStor
     assert report.dry_run is False
     assert report.publish_outcome is not None
     assert sorted(report.publish_outcome["published"]) == sorted(r["record_id"] for r in report.records)
-    counts = {t: len(store.records(t)) for t in ("kernel", "config", "pr", "commit", "annotation", "relation", "decision", "run")}
+    counts = {t: len(store.records(t)) for t in ("kernel", "algorithm", "config", "pr", "commit", "annotation", "relation", "decision", "run")}
     assert counts["kernel"] == 1
+    assert counts["algorithm"] == 1
+    assert store.algorithm_by_id("demo_vector_add", "unspecified") is not None
     assert counts["config"] == 1
     assert counts["pr"] == 2
     assert counts["commit"] == 2
@@ -378,7 +402,9 @@ def test_config_maps_to_fixture_hash_and_kernel_defaults(tmp_path: Path) -> None
     report = run(write_single(tmp_path, data))
     (config,) = by_type(report, "config")
     assert config["payload"]["config_hash"] == FIXTURE_CONFIG_HASH
-    assert config["record_id"] == f"cfg-demo-n16-f32-{FIXTURE_CONFIG_HASH[7:19]}"
+    assert config["record_id"] == CONFIG_RECORD_ID
+    assert config["payload"]["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
+    assert config["payload"]["tags"] == ["migrated-v01"]
     assert config["payload"]["problem"] == {"n": 16, "dtype": "float32", "operation": "vector_add", "outputs": ["y"]}
     assert config["payload"]["config_id"] == "demo-n16-f32"
     (kernel,) = by_type(report, "kernel")
@@ -389,16 +415,18 @@ def test_config_maps_to_fixture_hash_and_kernel_defaults(tmp_path: Path) -> None
 
 
 def test_t01_existing_store_kernel_and_config_are_reused_by_hash(tmp_path: Path, demo_store: MemoryStore) -> None:
-    before = {t: len(demo_store.records(t)) for t in ("kernel", "config", "pr", "commit", "annotation", "run", "decision")}
+    before = {t: len(demo_store.records(t)) for t in ("kernel", "algorithm", "config", "pr", "commit", "annotation", "run", "decision")}
     report = run(write_single(tmp_path, synthetic_v01()), store=demo_store, dry_run=False)
-    assert by_type(report, "kernel") == [] and by_type(report, "config") == []
-    mapped = {(m["v01_kind"], m["v01_id"]): m for m in report.identity_map}
-    assert mapped[("kernel", "demo_vector_add")]["v02_record_id"] == "kernel-demo"
-    assert mapped[("config", "cfg-1")]["v02_record_id"] == "cfg-demo"
+    assert by_type(report, "kernel") == [] and by_type(report, "config") == [] and by_type(report, "algorithm") == []
+    mapped = mapping(report)
+    assert mapped[("kernel", "demo_vector_add", "kernel")]["v02_record_id"] == "kernel-demo"
+    assert mapped[("kernel", "demo_vector_add", "algorithm")]["v02_record_id"] == PLACEHOLDER_ALGORITHM_ID
+    assert mapped[("config", "cfg-1", "config")]["v02_record_id"] == "cfg-demo"
     for pr in by_type(report, "pr"):
         assert pr["payload"]["config_ref"] == "cfg-demo"
     after = {t: len(demo_store.records(t)) for t in before}
     assert after["kernel"] == before["kernel"] and after["config"] == before["config"]
+    assert after["algorithm"] == before["algorithm"]
     assert after["pr"] == before["pr"] + 2 and after["commit"] == before["commit"] + 2
     assert after["annotation"] == before["annotation"] + 3
     assert after["run"] == before["run"] and after["decision"] == before["decision"]
@@ -411,6 +439,7 @@ def test_two_equivalent_v01_configs_become_one_config(tmp_path: Path) -> None:
     data["attempts"][1]["config_id"] = "cfg-1-alias"
     report = run(write_single(tmp_path, data))
     assert len(by_type(report, "config")) == 1
+    assert len(by_type(report, "algorithm")) == 1
     assert {m["v02_record_id"] for m in report.identity_map if m["v01_kind"] == "config"} == {by_type(report, "config")[0]["record_id"]}
     assert len(by_type(report, "pr")) == 2
 
@@ -479,6 +508,61 @@ def test_pr_number_without_repo_mapping_falls_back_to_local(tmp_path: Path) -> N
     assert any("no repo_uid mapping" in note for note in report.notes)
 
 
+def test_dry_run_placeholder_algorithm_created_at_equals_kernel_created_at(tmp_path: Path) -> None:
+    report = run(write_single(tmp_path, synthetic_v01()), created_at="2026-09-11T12:34:56Z")
+    (kernel,) = by_type(report, "kernel")
+    (algorithm,) = by_type(report, "algorithm")
+    assert algorithm["created_at"] == kernel["created_at"] == "2026-09-11T12:34:56Z"
+    assert algorithm == default_algorithm_record("demo_vector_add", kernel["created_at"])
+    Record.from_dict(json.loads(json.dumps(algorithm)))  # valid under the current contract
+    assert any("placeholder algorithm" in note for note in report.notes)
+
+
+def test_placeholder_only_for_kernels_with_configs(tmp_path: Path) -> None:
+    data = synthetic_v01()
+    data["kernels"].append({"kernel_id": "lonely_kernel", "display_name": "SYNTHETIC kernel without configs"})
+    report = run(write_single(tmp_path, data))
+    assert [a["record_id"] for a in by_type(report, "algorithm")] == [PLACEHOLDER_ALGORITHM_ID]
+    assert any(k["payload"]["kernel_id"] == "lonely_kernel" for k in by_type(report, "kernel"))
+    assert ("kernel", "lonely_kernel", "algorithm") not in mapping(report)
+
+
+def _other_algorithm_records(bundle_dicts: list[dict], created_at: str) -> list[Record]:
+    """A second algorithm of demo_vector_add holding the SAME shape (same config_hash) as cfg-demo."""
+    algorithm = new_record(
+        "algorithm",
+        "algorithm-demo_vector_add-other",
+        AlgorithmPayload(kernel_id="demo_vector_add", algorithm_id="other", display_name="other", method_summary="SYNTHETIC other method", summary_author="human", tags=[]),
+        created_at=created_at,
+    )
+    config = record_dict(bundle_dicts, "cfg-demo")
+    config["record_id"] = f"cfg-other-demo-n16-f32-{FIXTURE_CONFIG_HASH[7:19]}"
+    config["payload"]["algorithm_ref"] = "algorithm-demo_vector_add-other"
+    return [algorithm, Record.from_dict(config)]
+
+
+def test_t01_reuse_never_crosses_algorithms(tmp_path: Path, demo_store: MemoryStore, bundle_dicts: list[dict]) -> None:
+    demo_store.publish_bundle(_other_algorithm_records(bundle_dicts, FIXTURE_KERNEL_CREATED_AT), label="other")
+    assert len(demo_store.configs_by_hash(FIXTURE_CONFIG_HASH)) == 2
+    report = run(write_single(tmp_path, synthetic_v01()), store=demo_store)
+    assert by_type(report, "config") == []
+    assert mapping(report)[("config", "cfg-1", "config")]["v02_record_id"] == "cfg-demo"  # the placeholder's shape, never the other algorithm's
+
+
+def test_t01_same_shape_under_another_algorithm_is_not_reused(tmp_path: Path, store: MemoryStore, bundle_records: list[Record], bundle_dicts: list[dict]) -> None:
+    fixture_kernel = next(r for r in bundle_records if r.record_id == "kernel-demo")
+    store.publish_bundle([fixture_kernel, *_other_algorithm_records(bundle_dicts, FIXTURE_KERNEL_CREATED_AT)], label="other-only")
+    report = run(write_single(tmp_path, synthetic_v01()), store=store, dry_run=False)
+    (config,) = by_type(report, "config")
+    assert config["record_id"] == CONFIG_RECORD_ID and config["payload"]["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
+    assert config["payload"]["config_hash"] == FIXTURE_CONFIG_HASH
+    (algorithm,) = by_type(report, "algorithm")
+    assert algorithm["created_at"] == FIXTURE_KERNEL_CREATED_AT
+    assert len(store.configs_by_hash(FIXTURE_CONFIG_HASH)) == 2
+    assert [c.record_id for c in store.configs_by_hash(FIXTURE_CONFIG_HASH, algorithm_ref=PLACEHOLDER_ALGORITHM_ID)] == [CONFIG_RECORD_ID]
+    assert store.integrity_scan().ok
+
+
 # --------------------------------------------------------------------------------------
 # Changes
 # --------------------------------------------------------------------------------------
@@ -520,8 +604,13 @@ def test_reapply_is_idempotent_and_changed_input_conflicts(tmp_path: Path, store
     second = run(path, store=store, dry_run=False)
     assert second.publish_outcome is not None
     assert second.publish_outcome["published"] == []
-    assert sorted(second.publish_outcome["idempotent"]) == sorted(r["record_id"] for r in first.records)
-    assert [r["record_id"] for r in second.records] == [r["record_id"] for r in first.records]
+    first_ids = [r["record_id"] for r in first.records]
+    assert PLACEHOLDER_ALGORITHM_ID in first_ids
+    reminted = [rid for rid in first_ids if rid != PLACEHOLDER_ALGORITHM_ID]  # the placeholder is reused, never re-minted
+    assert sorted(second.publish_outcome["idempotent"]) == sorted(reminted)
+    assert [r["record_id"] for r in second.records] == reminted
+    assert by_type(second, "algorithm") == []
+    assert mapping(second)[("kernel", "demo_vector_add", "algorithm")]["v02_record_id"] == PLACEHOLDER_ALGORITHM_ID
     assert len(store.records()) == len(first.records)
     changed = synthetic_v01()
     changed["attempts"][0]["title"] = "SYNTHETIC attempt 1: edited title"
@@ -559,6 +648,71 @@ def test_bundle_internal_conflict_is_detected(tmp_path: Path) -> None:
     with pytest.raises(IdConflictError) as excinfo:
         run(write_single(tmp_path, data))
     assert excinfo.value.details["record_id"] == "pr-gh-42-pr-7"
+
+
+def test_t01_placeholder_from_importer_path_is_reused_without_conflict(tmp_path: Path, demo_store: MemoryStore) -> None:
+    """demo_store's placeholder came from the v0.2 upgrade path (created_at copied from kernel-demo): the v0.1 path links to it."""
+    before = demo_store.get(PLACEHOLDER_ALGORITHM_ID)
+    assert before is not None and before.created_at == FIXTURE_KERNEL_CREATED_AT
+    algorithms_before = len(demo_store.records("algorithm"))
+    path = write_single(tmp_path, synthetic_v01())
+    dry = run(path, store=demo_store)  # a dry run predicts no conflict either
+    assert by_type(dry, "algorithm") == []
+    report = run(path, store=demo_store, dry_run=False)  # no IdConflictError
+    assert by_type(report, "algorithm") == []
+    entry = mapping(report)[("kernel", "demo_vector_add", "algorithm")]
+    assert entry["v02_record_id"] == PLACEHOLDER_ALGORITHM_ID and entry["status"] == "mapped"
+    assert any("reused existing placeholder algorithm" in note for note in report.notes)
+    assert report.publish_outcome is not None and PLACEHOLDER_ALGORITHM_ID not in report.publish_outcome["published"]
+    after = demo_store.get(PLACEHOLDER_ALGORITHM_ID)
+    assert after is not None and after.canonical_digest() == before.canonical_digest()
+    assert len(demo_store.records("algorithm")) == algorithms_before
+    assert demo_store.integrity_scan().ok
+
+
+def test_placeholder_is_byte_identical_to_the_v02_upgrade_path(tmp_path: Path, store: MemoryStore) -> None:
+    """v0.1 migration first, then the same kernel/config arriving as a 0.2.0 bundle: the upgrade synthesizes the same record."""
+    report = run(write_single(tmp_path, synthetic_v01()), store=store, dry_run=False)
+    stored = store.get(PLACEHOLDER_ALGORITHM_ID)
+    assert stored is not None
+    (kernel,) = by_type(report, "kernel")
+    (config,) = by_type(report, "config")
+    legacy_kernel = json.loads(json.dumps(kernel))
+    legacy_kernel["schema_version"] = "0.2.0"
+    legacy_config = json.loads(json.dumps(config))
+    legacy_config["schema_version"] = "0.2.0"
+    del legacy_config["payload"]["algorithm_ref"]
+    upgraded, up = upgrade_v02_records([legacy_kernel, legacy_config])
+    assert up.records_synthesized == [PLACEHOLDER_ALGORITHM_ID]
+    synthesized = upgraded[-1]
+    assert synthesized == stored.to_dict()
+    assert Record.from_dict(synthesized).canonical_digest() == stored.canonical_digest()
+    assert Record.from_dict(upgraded[1]).canonical_digest() == store.get(config["record_id"]).canonical_digest()
+    outcome = store.publish_bundle([Record.from_dict(d) for d in upgraded], label="v02-reimport")
+    assert outcome.published == [] and sorted(outcome.idempotent) == sorted([kernel["record_id"], config["record_id"], PLACEHOLDER_ALGORITHM_ID])
+    # a kernel-less bundle consults the store resolver and synthesizes nothing
+    _, up2 = upgrade_v02_records([legacy_config], algorithm_resolver=store.algorithm_by_id)
+    assert up2.records_synthesized == [] and up2.configs_linked == [config["record_id"]]
+
+
+def test_reused_store_kernel_gives_placeholder_the_kernels_created_at(tmp_path: Path, store: MemoryStore, bundle_records: list[Record]) -> None:
+    """Store holds a foreign kernel (kernel-demo) but no placeholder: the placeholder copies THAT kernel's created_at."""
+    fixture_kernel = next(r for r in bundle_records if r.record_id == "kernel-demo")
+    store.publish(fixture_kernel)
+    path = write_single(tmp_path, synthetic_v01())
+    report = run(path, store=store)  # created_at=CREATED_AT (2026-09-09) for this run
+    assert by_type(report, "kernel") == []
+    (algorithm,) = by_type(report, "algorithm")
+    assert algorithm["created_at"] == FIXTURE_KERNEL_CREATED_AT != CREATED_AT
+    assert algorithm == default_algorithm_record("demo_vector_add", FIXTURE_KERNEL_CREATED_AT)
+    (config,) = by_type(report, "config")
+    assert config["created_at"] == CREATED_AT and config["payload"]["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
+    run(path, store=store, dry_run=False)
+    # a later import of the v0.2 fixture (whose placeholder copies kernel-demo's created_at) is idempotent, never ID_CONFLICT
+    outcome = store.publish_bundle(bundle_records, label="fixture-after-v01")
+    assert PLACEHOLDER_ALGORITHM_ID in outcome.idempotent and "kernel-demo" in outcome.idempotent
+    # the fixture's artifact blobs are not imported here, so only the record side of the scan is meaningful
+    assert store.integrity_scan(verify_artifacts=False).ok
 
 
 # --------------------------------------------------------------------------------------

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Real CPU demonstration: registers the demo vector-add kernel/config, a baseline whose identity is
-# the content address of the actually loaded demo source, a local trial context, then EXECUTES and
-# MEASURES vector addition on this host (backend "cpu", provenance "trusted_worker"), compares a
-# runtime-override variant against the baseline, evaluates the promotion policy, and runs the
-# MockPlanner orchestration with a small budget. This proves execution integration on CPU only.
-# It says nothing about MLA or TPU performance.
+# Real CPU demonstration: registers the demo vector-add kernel, an explicitly described algorithm,
+# a shape (config) under it, and a baseline whose identity is the content address of the actually
+# loaded demo source; then EXECUTES and MEASURES vector addition on this host (backend "cpu",
+# provenance "trusted_worker"), compares a runtime-override variant against the baseline, evaluates
+# the promotion policy, rebuilds the kernel-level trajectory, and runs the MockPlanner orchestration
+# with a small budget. This proves execution integration on CPU only. It says nothing about MLA or
+# TPU performance.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}"
@@ -21,10 +22,14 @@ echo "== init =="
 $KMEM --root "$ROOT" init --json
 echo "== default protocol/verifier + demo source content address =="
 $KMEM --root "$ROOT" cpu-demo-defaults --out "$OUT" --repetitions "$REPS" --warmup "$WARMUP" --json
-echo "== register kernel and config (normalizer: f32 alias -> float32) =="
+echo "== register kernel, algorithm (authored method summary), and shape (normalizer: f32 alias -> float32) =="
 $KMEM --root "$ROOT" register-kernel --kernel-id demo_vector_add --display-name "CPU demo vector add" \
   --adapter-id cpu-demo-v1 --notes "Real CPU demonstration operator; not MLA." --json
-CFG_JSON=$($KMEM --root "$ROOT" register-config --kernel-id demo_vector_add --problem '{"n": 4096, "dtype": "f32"}' --tag cpu-demo --json)
+$KMEM --root "$ROOT" register-algorithm --kernel-id demo_vector_add --algorithm-id numpy-add \
+  --display-name "numpy elementwise add" \
+  --method-summary "Elementwise float32 vector addition through numpy's precompiled add ufunc on preallocated host arrays; the chunked entrypoint adds in fixed-size chunks into a preallocated output (runtime override 'chunk'). Demonstration operator, not MLA." \
+  --tag cpu-demo --json
+CFG_JSON=$($KMEM --root "$ROOT" register-config --kernel-id demo_vector_add --algorithm numpy-add --problem '{"n": 4096, "dtype": "f32"}' --tag cpu-demo --json)
 echo "$CFG_JSON"
 CFG=$(printf '%s' "$CFG_JSON" | "$HERE/.venv/bin/python" -c 'import json,sys; print(json.load(sys.stdin)["config"]["record_id"])')
 echo "== baseline: numpy vector add at the loaded-source content address =="
@@ -55,13 +60,14 @@ $KMEM --root "$ROOT" compare --candidate run-request-cpu-chunked-1-a1 --baseline
 echo "== decide with one pair (expected: inconclusive, INSUFFICIENT_CONFIRMATION_PAIRS) =="
 printf '[{"candidate_run": "run-request-cpu-chunked-1-a1", "baseline_run": "run-request-cpu-baseline-1-a1"}]\n' > "$OUT/pairs.json"
 $KMEM --root "$ROOT" decide --candidate baseline-cpu-demo-reference --pairs "$OUT/pairs.json" --json || true
-echo "== TPU backend on this host: explicit BackendUnavailable (exit 5), no fallback =="
+echo "== TPU backend on this host: explicit refusal, no fallback =="
 $KMEM --root "$ROOT" run --subject baseline-cpu-demo-reference --backend jax_tpu \
   --protocol "$OUT/cpu_protocol.json" --verifier "$OUT/cpu_verifier.json" --request-id request-tpu-1 --json || echo "exit=$? (expected 7: authorization precedes the backend probe; 5 once allow_tpu_execution is granted)"
 echo "== deep validation of real runs =="
 $KMEM --root "$ROOT" validate --deep --json
-echo "== trajectory =="
-$KMEM --root "$ROOT" trajectory --config "$CFG" --rebuild --json
+echo "== kernel-level trajectory (algorithm numpy-add -> shape -> attempt/code/result) =="
+$KMEM --root "$ROOT" trajectory --kernel demo_vector_add --rebuild --json
+$KMEM --root "$ROOT" trajectory --kernel demo_vector_add --verify --json
 echo "== MockPlanner orchestration: chunk-size sweep on the chunked entrypoint (dry run, then a small real budget) =="
 printf '{"max_candidates": 3, "max_execution_attempts": 3, "max_model_calls": 0, "max_wall_time_seconds": 600, "max_concurrent_runners": 1}\n' > "$OUT/budget.json"
 $KMEM --root "$ROOT" optimize --config "$CFG" --planner mock --subject baseline-cpu-demo-reference \
@@ -70,6 +76,9 @@ $KMEM --root "$ROOT" optimize --config "$CFG" --planner mock --subject baseline-
 $KMEM --root "$ROOT" optimize --config "$CFG" --planner mock --subject baseline-cpu-demo-reference \
   --baseline-run run-request-cpu-baseline-1-a1 --backend cpu --entrypoint kernel_memory.adapters.cpu_demo:vector_add_numpy_chunked \
   --protocol "$OUT/cpu_protocol.json" --verifier "$OUT/cpu_verifier.json" --budget "$OUT/budget.json" --job-id job-cpu-demo --json
-echo "== export context =="
+echo "== export context (algorithm block with the human-authored method summary) =="
 $KMEM --root "$ROOT" export-context --config "$CFG" --json
+echo "== status / store layout =="
+$KMEM --root "$ROOT" status --json
+(cd "$ROOT" && find kernels -maxdepth 3 | sort)
 echo "CPU demo complete. Store: $ROOT"

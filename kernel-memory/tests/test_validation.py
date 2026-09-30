@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import pytest
-from conftest import record_dict
+from conftest import FIXTURE_RECORD_COUNT, PLACEHOLDER_ALGORITHM_ID, record_dict
 
 from kernel_memory.domain import hashing
 from kernel_memory.domain.errors import InputError
@@ -91,7 +91,7 @@ def samples_sha(bundle_dicts: list[dict], run_id: str) -> str:
 def test_deep_validate_demo_store_ok(demo_store: MemoryStore) -> None:
     report = deep_validate(demo_store)
     assert report.ok, [i.to_dict() for i in report.errors]
-    assert report.records_checked == 18
+    assert report.records_checked == FIXTURE_RECORD_COUNT
     assert report.runs_checked == 4
     assert report.artifact_checks == 7
     assert report.summary_checks == 6  # three recorded timings x (median, p90)
@@ -207,6 +207,138 @@ def test_missing_kernel(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> No
     dicts = [d for d in clone(bundle_dicts) if d["record_id"] != "kernel-demo"]
     issue = next(i for i in validate(dicts, blobs).errors if i.code == "MISSING_KERNEL")
     assert issue.record_id == "cfg-demo" and issue.details["kernel_id"] == "demo_vector_add"
+    assert any(i.code == "MISSING_KERNEL" and i.record_id == PLACEHOLDER_ALGORITHM_ID for i in validate(dicts, blobs).errors)
+
+
+# --------------------------------------------------------------------------------------
+# algorithm / shape (ADR-0004)
+# --------------------------------------------------------------------------------------
+def _second_kernel_and_algorithm(bundle_dicts: list[dict]) -> tuple[dict, dict]:
+    kernel = record_dict(bundle_dicts, "kernel-demo")
+    kernel["record_id"] = "kernel-other_kernel"
+    kernel["payload"]["kernel_id"] = "other_kernel"
+    algorithm = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    algorithm["record_id"] = "algorithm-other_kernel-x"
+    algorithm["payload"].update(kernel_id="other_kernel", algorithm_id="x", display_name="x")
+    return kernel, algorithm
+
+
+def test_missing_algorithm(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    dicts = [d for d in clone(bundle_dicts) if d["record_id"] != PLACEHOLDER_ALGORITHM_ID]
+    report = validate(dicts, blobs)
+    issues = [i for i in report.errors if i.code == "MISSING_ALGORITHM"]
+    assert len(issues) == 1 and issues[0].record_id == "cfg-demo" and issues[0].field == "algorithm_ref"
+    assert issues[0].details == {"target": PLACEHOLDER_ALGORITHM_ID, "kernel_id": "demo_vector_add", "allowed_types": ["algorithm"]}
+    assert not any(i.code == "MISSING_REFERENCE" and i.record_id == "cfg-demo" for i in report.errors)  # reported once
+
+
+def test_algorithm_ref_wrong_type(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    report = validate(mutated(bundle_dicts, "cfg-demo", lambda d: d["payload"].update(algorithm_ref="commit-demo-a")), blobs)
+    issues = [i for i in report.errors if i.record_id == "cfg-demo" and i.code == "WRONG_REFERENCE_TYPE"]
+    assert len(issues) == 1 and issues[0].field == "algorithm_ref"
+    assert issues[0].details == {"target": "commit-demo-a", "target_type": "commit", "allowed_types": ["algorithm"]}
+    assert "MISSING_ALGORITHM" not in error_codes(report)
+
+
+def test_algorithm_kernel_mismatch(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    kernel, algorithm = _second_kernel_and_algorithm(bundle_dicts)
+    dicts = mutated(bundle_dicts, "cfg-demo", lambda d: d["payload"].update(algorithm_ref="algorithm-other_kernel-x")) + [kernel, algorithm]
+    issue = next(i for i in validate(dicts, blobs).errors if i.code == "ALGORITHM_KERNEL_MISMATCH")
+    assert issue.record_id == "cfg-demo" and issue.field == "algorithm_ref"
+    assert issue.details == {"algorithm_ref": "algorithm-other_kernel-x", "algorithm_kernel_id": "other_kernel", "kernel_id": "demo_vector_add"}
+
+
+def test_duplicate_algorithm_id(bundle_dicts: list[dict], blobs: dict[str, bytes], demo_store: MemoryStore) -> None:
+    twin = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    twin["record_id"] = "algorithm-demo_vector_add-unspecified-twin"
+    issue = next(i for i in validate(clone(bundle_dicts) + [twin], blobs).errors if i.code == "DUPLICATE_ALGORITHM_ID")
+    assert issue.record_id == twin["record_id"] and issue.field == "algorithm_id"
+    assert issue.details == {"other_record": PLACEHOLDER_ALGORITHM_ID, "kernel_id": "demo_vector_add", "algorithm_id": "unspecified"}
+    # The same key already stored under another id is a duplicate too; the same id (a re-import) is not.
+    external = validate([record_dict(bundle_dicts, "kernel-demo"), twin], blobs, algorithm_resolver=demo_store.algorithm_by_id)
+    issue = next(i for i in external.errors if i.code == "DUPLICATE_ALGORITHM_ID")
+    assert issue.details["external"] is True and issue.details["other_record"] == PLACEHOLDER_ALGORITHM_ID
+    same = validate(
+        [record_dict(bundle_dicts, "kernel-demo"), record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)], blobs, algorithm_resolver=demo_store.algorithm_by_id
+    )
+    assert same.ok, [i.to_dict() for i in same.errors]
+
+
+def test_duplicate_shape_in_algorithm(bundle_dicts: list[dict], blobs: dict[str, bytes], demo_store: MemoryStore) -> None:
+    copy_ = record_dict(bundle_dicts, "cfg-demo")
+    copy_["record_id"] = "cfg-demo-copy"
+    issue = next(i for i in validate(clone(bundle_dicts) + [copy_], blobs).errors if i.code == "DUPLICATE_SHAPE_IN_ALGORITHM")
+    assert issue.record_id == "cfg-demo-copy" and issue.field == "config_hash"
+    assert issue.details == {"other_record": "cfg-demo", "algorithm_ref": PLACEHOLDER_ALGORITHM_ID, "config_hash": copy_["payload"]["config_hash"]}
+    # The same problem under a second algorithm of the same kernel is legitimate (same config_hash, two shapes).
+    other = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    other["record_id"] = "algorithm-demo_vector_add-second"
+    other["payload"].update(algorithm_id="second", display_name="second", method_summary="a second method", summary_author="human", tags=[])
+    copy_["payload"]["algorithm_ref"] = other["record_id"]
+    assert "DUPLICATE_SHAPE_IN_ALGORITHM" not in error_codes(validate(clone(bundle_dicts) + [other, copy_], blobs))
+    # A shape already stored under the same algorithm (different id) is reported through shape_resolver.
+    stored_twin = record_dict(bundle_dicts, "cfg-demo")
+    stored_twin["record_id"] = "cfg-demo-imported-twin"
+    external = validate(
+        [record_dict(bundle_dicts, "kernel-demo"), record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID), stored_twin],
+        blobs,
+        shape_resolver=lambda algorithm_ref, config_hash: demo_store.configs_by_hash(config_hash, algorithm_ref=algorithm_ref),
+    )
+    issue = next(i for i in external.errors if i.code == "DUPLICATE_SHAPE_IN_ALGORITHM")
+    assert issue.details["external"] is True and issue.details["other_record"] == "cfg-demo"
+    # The stored record itself (same id) is never its own duplicate.
+    same = validate(
+        [record_dict(bundle_dicts, "kernel-demo"), record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID), record_dict(bundle_dicts, "cfg-demo")],
+        blobs,
+        shape_resolver=lambda algorithm_ref, config_hash: demo_store.configs_by_hash(config_hash, algorithm_ref=algorithm_ref),
+    )
+    assert "DUPLICATE_SHAPE_IN_ALGORITHM" not in error_codes(same)
+
+
+@pytest.mark.parametrize("algorithm_id", ["trajectory", "annotations", "kernel.json"])
+def test_algorithm_id_reserved(bundle_dicts: list[dict], blobs: dict[str, bytes], algorithm_id: str) -> None:
+    report = validate(mutated(bundle_dicts, PLACEHOLDER_ALGORITHM_ID, lambda d: d["payload"].update(algorithm_id=algorithm_id)), blobs)
+    issue = next(i for i in report.errors if i.code == "ALGORITHM_ID_RESERVED")
+    assert issue.record_id == PLACEHOLDER_ALGORITHM_ID and issue.field == "algorithm_id"
+    assert issue.details["algorithm_id"] == algorithm_id and algorithm_id in issue.details["reserved"]
+
+
+@pytest.mark.parametrize("record_id", ["annotations", "algorithm.json"])
+def test_config_id_reserved(bundle_dicts: list[dict], blobs: dict[str, bytes], record_id: str) -> None:
+    dicts = clone(bundle_dicts)
+    for d in dicts:
+        if d["record_id"] == "cfg-demo":
+            d["record_id"] = record_id
+        if d["payload"].get("config_ref") == "cfg-demo":
+            d["payload"]["config_ref"] = record_id
+    report = validate(dicts, blobs)
+    issue = next(i for i in report.errors if i.code == "CONFIG_ID_RESERVED")
+    assert issue.record_id == record_id and issue.field == "record_id" and record_id in issue.details["reserved"]
+    assert "MISSING_REFERENCE" not in error_codes(report)
+
+
+def test_method_summary_whitespace_rejected(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    report = validate(mutated(bundle_dicts, PLACEHOLDER_ALGORITHM_ID, lambda d: d["payload"].update(method_summary="  \n\t ")), blobs)
+    issue = next(i for i in report.errors if i.code == "METHOD_SUMMARY_EMPTY")
+    assert issue.record_id == PLACEHOLDER_ALGORITHM_ID and issue.field == "method_summary"
+
+
+def test_missing_kernel_for_algorithm(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    dicts = [d for d in clone(bundle_dicts) if d["record_id"] != "kernel-demo"]
+    assert any(i.code == "MISSING_KERNEL" and i.record_id == PLACEHOLDER_ALGORITHM_ID and i.field == "kernel_id" for i in validate(dicts, blobs).errors)
+
+
+def test_annotation_may_target_algorithm(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
+    report = validate(mutated(bundle_dicts, "annotation-demo-grouped", lambda d: d["payload"].update(target_ref=PLACEHOLDER_ALGORITHM_ID)), blobs)
+    assert report.ok, [i.to_dict() for i in report.errors]
+
+
+def test_algorithm_resolver_conventional_id(bundle_dicts: list[dict], blobs: dict[str, bytes], demo_store: MemoryStore) -> None:
+    # Without an external resolver the config's conventional algorithm_ref is still found through algorithm_resolver.
+    dicts = [record_dict(bundle_dicts, "kernel-demo"), record_dict(bundle_dicts, "cfg-demo")]
+    assert "MISSING_ALGORITHM" in error_codes(validate(dicts, blobs))
+    resolved = validate(dicts, blobs, algorithm_resolver=demo_store.algorithm_by_id)
+    assert resolved.ok, [i.to_dict() for i in resolved.errors]
 
 
 # --------------------------------------------------------------------------------------
@@ -610,8 +742,10 @@ def test_observed_metric_evidence_must_be_readable(bundle_dicts: list[dict], blo
 
 
 def test_fixture_run_warning(bundle_dicts: list[dict], blobs: dict[str, bytes]) -> None:
-    report = validate([record_dict(bundle_dicts, r) for r in ("kernel-demo", "cfg-demo", "baseline-demo", "run-demo-baseline")], blobs)
-    assert report.ok
+    report = validate(
+        [record_dict(bundle_dicts, r) for r in ("kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo", "baseline-demo", "run-demo-baseline")], blobs
+    )
+    assert report.ok, [i.to_dict() for i in report.errors]
     assert [i.record_id for i in report.warnings if i.code == "FIXTURE_RUN"] == ["run-demo-baseline"]
 
 

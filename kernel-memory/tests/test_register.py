@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 import pytest
-from conftest import record_dict
+from conftest import PLACEHOLDER_ALGORITHM_ID, record_dict
 from test_git_local import HEX40, History, TempRepo
 
 from kernel_memory.adapters.git_local import LocalGitRepo
@@ -23,6 +23,7 @@ from kernel_memory.domain.errors import (
     SchemaValidationError,
 )
 from kernel_memory.domain.models import Change, GitOid, Record
+from kernel_memory.migrations.v02 import DEFAULT_ALGORITHM_ID, LEGACY_METHOD_SUMMARY
 from kernel_memory.services import register
 from kernel_memory.services.common import config_of
 from kernel_memory.services.register import (
@@ -30,13 +31,16 @@ from kernel_memory.services.register import (
     add_baseline,
     add_relation,
     annotate,
+    describe_algorithm,
     describe_pr,
     local_pr_key,
     record_commit,
+    register_algorithm,
     register_config,
     register_kernel,
     register_local_trial,
     register_pr_context,
+    resolve_algorithm,
     short_hash,
     slugify,
 )
@@ -59,8 +63,24 @@ def make_kernel(store: MemoryStore, kernel_id: str = KERNEL_ID, display_name: st
     return register_kernel(store, kernel_id, display_name, "cpu-demo-v1", "CPU demonstration operator; not MLA.")
 
 
+ALGORITHM_ID = "naive-loop"
+OTHER_ALGORITHM_ID = "tiled-loop"
+METHOD_SUMMARY = "Plain elementwise loop over n; no tiling, no vectorisation."
+
+
+def make_algorithm(store: MemoryStore, algorithm_id: str = ALGORITHM_ID, kernel_id: str = KERNEL_ID, **kw: object) -> Record:
+    kw.setdefault("method_summary", METHOD_SUMMARY)
+    record, _ = register_algorithm(store, kernel_id, algorithm_id, **kw)  # type: ignore[arg-type]
+    return record
+
+
+def expected_cfg_id(algorithm_id: str, hint: str, config_hash: str) -> str:
+    return f"cfg-{algorithm_id}-{hint}-{config_hash.split(':', 1)[1][:12]}"
+
+
 def make_config(store: MemoryStore, raw: dict | None = None) -> Record:
     make_kernel(store)
+    make_algorithm(store)
     record, _ = register_config(store, KERNEL_ID, raw or {"n": 16, "dtype": "f32"})
     return record
 
@@ -96,6 +116,7 @@ class Context:
         self.history = history
         self.git: LocalGitRepo = history.git
         self.kernel = make_kernel(store)
+        self.algorithm = make_algorithm(store)
         self.config, _ = register_config(store, KERNEL_ID, {"n": 16, "dtype": "f32"})
         self.pr = make_github_pr(store, self.config)
         self.baseline = add_baseline(
@@ -168,6 +189,7 @@ def test_register_kernel_rejects_invalid_identifiers(store: MemoryStore) -> None
 # --------------------------------------------------------------------------------------
 def test_t01_equivalent_raw_problems_register_one_config(store: MemoryStore, bundle_dicts: list[dict]) -> None:
     make_kernel(store)
+    algorithm = make_algorithm(store)
     first, created_first = register_config(store, KERNEL_ID, {"n": 16, "dtype": "f32"}, tags=["b", "a", "b"])
     second, created_second = register_config(store, KERNEL_ID, {"n": 16}, tags=["ignored-on-reuse"])
     assert created_first is True
@@ -176,12 +198,14 @@ def test_t01_equivalent_raw_problems_register_one_config(store: MemoryStore, bun
     assert second.canonical_digest() == first.canonical_digest()
     assert count(store, "config") == 1
     assert store.configs_by_hash(first.payload.config_hash) == [first]
+    assert store.configs_by_hash(first.payload.config_hash, algorithm_ref=algorithm.record_id) == [first]
 
     payload = first.payload
     assert payload.problem == {"n": 16, "dtype": "float32", "operation": "vector_add", "outputs": ["y"]}
     assert payload.config_id == "demo-n16-f32"
     assert payload.tags == ["a", "b"]
-    assert first.record_id == f"cfg-demo-n16-f32-{payload.config_hash.split(':', 1)[1][:12]}"
+    assert payload.algorithm_ref == algorithm.record_id == f"algorithm-{KERNEL_ID}-{ALGORITHM_ID}"
+    assert first.record_id == expected_cfg_id(ALGORITHM_ID, "demo-n16-f32", payload.config_hash)
     # Identity comes only from domain.hashing over the normalized problem ...
     assert payload.config_hash == hashing.config_hash(
         kernel_id=KERNEL_ID,
@@ -249,6 +273,211 @@ def test_t32_register_config_rejects_invalid_problems(store: MemoryStore, raw: d
         register_config(store, KERNEL_ID, raw)
     assert excinfo.value.exit_code == 2
     assert count(store, "config") == 0
+
+
+# --------------------------------------------------------------------------------------
+# algorithms (ADR-0004: kernel -> algorithm -> shape)
+# --------------------------------------------------------------------------------------
+def test_register_algorithm_publishes_a_validated_algorithm_record(store: MemoryStore) -> None:
+    make_kernel(store)
+    record, created = register_algorithm(
+        store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY, tags=["b", "a", "b"], summary_author="agent"
+    )
+    assert created is True
+    assert record.record_type == "algorithm"
+    assert record.record_id == f"algorithm-{KERNEL_ID}-{ALGORITHM_ID}"
+    p = record.payload
+    assert (p.kernel_id, p.algorithm_id, p.display_name) == (KERNEL_ID, ALGORITHM_ID, ALGORITHM_ID)
+    assert p.method_summary == METHOD_SUMMARY and p.summary_author == "agent" and p.tags == ["a", "b"]
+    assert store.algorithm_by_id(KERNEL_ID, ALGORITHM_ID).record_id == record.record_id
+    assert store.algorithms_for_kernel(KERNEL_ID) == [record]
+    Record.from_dict(record.to_dict())  # round-trips through the schema
+    named, _ = register_algorithm(store, KERNEL_ID, OTHER_ALGORITHM_ID, method_summary="Tiled loop.", display_name="Tiled loop")
+    assert named.payload.display_name == "Tiled loop"
+    assert describe_algorithm(record) == {
+        "algorithm_ref": record.record_id,
+        "algorithm_id": ALGORITHM_ID,
+        "kernel_id": KERNEL_ID,
+        "display_name": ALGORITHM_ID,
+        "method_summary": METHOD_SUMMARY,
+        "summary_author": "agent",
+        "tags": ["a", "b"],
+        "is_placeholder": False,
+    }
+    assert register.ALGORITHM_PLACEHOLDER_ID == DEFAULT_ALGORITHM_ID
+
+
+def test_register_algorithm_is_idempotent_on_an_identical_payload(store: MemoryStore) -> None:
+    make_kernel(store)
+    first, created_first = register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY, tags=["x"])
+    second, created_second = register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY, tags=["x", "x"])
+    assert created_first is True and created_second is False
+    assert second.canonical_digest() == first.canonical_digest()
+    assert count(store, "algorithm") == 1
+
+
+def test_t12_register_algorithm_with_a_different_summary_conflicts(store: MemoryStore) -> None:
+    make_kernel(store)
+    first = make_algorithm(store)
+    with pytest.raises(IdConflictError) as excinfo:
+        register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary="A different description.")
+    assert excinfo.value.code == "ID_CONFLICT" and excinfo.value.exit_code == 3
+    assert excinfo.value.details["record_id"] == first.record_id
+    assert store.get(first.record_id).payload.method_summary == METHOD_SUMMARY
+    assert count(store, "algorithm") == 1
+
+
+def test_register_algorithm_requires_a_non_blank_method_summary(store: MemoryStore) -> None:
+    make_kernel(store)
+    for bad in ("", "   ", "\n\t", None):
+        with pytest.raises(InputError) as excinfo:
+            register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=bad)  # type: ignore[arg-type]
+        assert excinfo.value.code == "METHOD_SUMMARY_REQUIRED" and excinfo.value.exit_code == 2
+    assert count(store, "algorithm") == 0
+
+
+@pytest.mark.parametrize("reserved", ["trajectory", "annotations", "kernel.json"])
+def test_register_algorithm_rejects_reserved_slugs(store: MemoryStore, reserved: str) -> None:
+    make_kernel(store)
+    with pytest.raises(InputError) as excinfo:
+        register_algorithm(store, KERNEL_ID, reserved, method_summary=METHOD_SUMMARY)
+    assert excinfo.value.code == "RESERVED_SLUG" and excinfo.value.exit_code == 2
+    assert count(store, "algorithm") == 0
+
+
+def test_register_algorithm_restricts_summary_author_to_human_or_agent(store: MemoryStore) -> None:
+    make_kernel(store)
+    for bad in ("program", "collector", "robot", ""):
+        with pytest.raises(InputError) as excinfo:
+            register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY, summary_author=bad)
+        assert excinfo.value.code == "INVALID_ENUM" and excinfo.value.exit_code == 2
+    assert count(store, "algorithm") == 0
+    record, _ = register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY, summary_author="agent")
+    assert record.payload.summary_author == "agent"
+
+
+def test_register_algorithm_for_an_unregistered_kernel_is_missing_kernel_exit_3(store: MemoryStore) -> None:
+    with pytest.raises(MissingReferenceError) as excinfo:
+        register_algorithm(store, KERNEL_ID, ALGORITHM_ID, method_summary=METHOD_SUMMARY)
+    assert excinfo.value.code == "MISSING_KERNEL" and excinfo.value.exit_code == 3
+    assert excinfo.value.details["kernel_id"] == KERNEL_ID
+    assert count(store, "algorithm") == 0
+
+
+def test_register_algorithm_rejects_invalid_identifiers(store: MemoryStore) -> None:
+    make_kernel(store)
+    for bad in ("", "bad id", "../x", "-leading", "a" * 65):
+        with pytest.raises(InputError) as excinfo:
+            register_algorithm(store, KERNEL_ID, bad, method_summary=METHOD_SUMMARY)
+        assert excinfo.value.code == "INVALID_ID" and excinfo.value.exit_code == 2
+    ok, _ = register_algorithm(store, KERNEL_ID, "a" * 64, method_summary=METHOD_SUMMARY)
+    assert ok.payload.algorithm_id == "a" * 64
+    assert count(store, "algorithm") == 1
+
+
+def test_describe_algorithm_flags_the_legacy_placeholder(demo_store: MemoryStore) -> None:
+    placeholder = demo_store.get(PLACEHOLDER_ALGORITHM_ID)
+    described = describe_algorithm(placeholder)
+    assert described["is_placeholder"] is True
+    assert described["algorithm_id"] == "unspecified" and described["kernel_id"] == KERNEL_ID
+    assert described["method_summary"] == LEGACY_METHOD_SUMMARY == "unspecified (imported from v0.2)"
+    assert described["summary_author"] == "program" and described["tags"] == ["imported-v02"]
+    with pytest.raises(InputError) as excinfo:
+        describe_algorithm(demo_store.get("cfg-demo"))
+    assert excinfo.value.code == "NOT_AN_ALGORITHM"
+
+
+def test_t01_same_problem_under_a_second_algorithm_is_a_second_shape_with_the_same_config_hash(store: MemoryStore) -> None:
+    make_kernel(store)
+    first_alg = make_algorithm(store)
+    second_alg = make_algorithm(store, OTHER_ALGORITHM_ID, method_summary="Tiled loop over n in blocks.")
+    a, created_a = register_config(store, KERNEL_ID, {"n": 16, "dtype": "f32"}, algorithm=ALGORITHM_ID)
+    b, created_b = register_config(store, KERNEL_ID, {"n": 16}, algorithm=second_alg.record_id)
+    assert created_a is True and created_b is True
+    assert a.record_id != b.record_id
+    assert a.record_id == expected_cfg_id(ALGORITHM_ID, "demo-n16-f32", a.payload.config_hash)
+    assert b.record_id == expected_cfg_id(OTHER_ALGORITHM_ID, "demo-n16-f32", b.payload.config_hash)
+    assert a.payload.config_hash == b.payload.config_hash  # identity is the problem, never the algorithm
+    assert a.payload.problem == b.payload.problem
+    assert a.payload.algorithm_ref == first_alg.record_id and b.payload.algorithm_ref == second_alg.record_id
+    h = a.payload.config_hash
+    assert sorted(r.record_id for r in store.configs_by_hash(h)) == sorted([a.record_id, b.record_id])
+    assert store.configs_by_hash(h, algorithm_ref=first_alg.record_id) == [a]
+    assert store.configs_by_hash(h, algorithm_ref=second_alg.record_id) == [b]
+    again, created_again = register_config(store, KERNEL_ID, {"n": 16, "dtype": "f32"}, algorithm=ALGORITHM_ID)
+    assert created_again is False and again.record_id == a.record_id
+    assert count(store, "config") == 2
+
+
+def test_register_config_requires_an_algorithm_name_when_several_exist(store: MemoryStore) -> None:
+    make_kernel(store)
+    make_algorithm(store)
+    make_algorithm(store, OTHER_ALGORITHM_ID)
+    with pytest.raises(InputError) as excinfo:
+        register_config(store, KERNEL_ID, {"n": 16})
+    assert excinfo.value.code == "ALGORITHM_REQUIRED" and excinfo.value.exit_code == 2
+    assert excinfo.value.details["algorithm_ids"] == [ALGORITHM_ID, OTHER_ALGORITHM_ID]
+    assert count(store, "config") == 0
+    record, created = register_config(store, KERNEL_ID, {"n": 16}, algorithm=OTHER_ALGORITHM_ID)
+    assert created is True and record.record_id.startswith(f"cfg-{OTHER_ALGORITHM_ID}-demo-n16-f32-")
+
+
+def test_register_config_without_any_algorithm_is_missing_algorithm_exit_3(store: MemoryStore) -> None:
+    make_kernel(store)
+    with pytest.raises(MissingReferenceError) as excinfo:
+        register_config(store, KERNEL_ID, {"n": 16})
+    assert excinfo.value.code == "MISSING_ALGORITHM" and excinfo.value.exit_code == 3
+    assert excinfo.value.details["kernel_id"] == KERNEL_ID
+    with pytest.raises(MissingReferenceError) as named:
+        register_config(store, KERNEL_ID, {"n": 16}, algorithm="does-not-exist")
+    assert named.value.code == "MISSING_ALGORITHM"
+    assert count(store, "config") == 0 and count(store, "algorithm") == 0  # never auto-created
+
+
+def test_register_config_rejects_another_kernels_algorithm(store: MemoryStore) -> None:
+    make_kernel(store)
+    register_kernel(store, "other_op", "Other operator", "cpu-demo-v1", "notes")
+    foreign = make_algorithm(store, kernel_id="other_op")
+    with pytest.raises(InputError) as excinfo:
+        register_config(store, KERNEL_ID, {"n": 16}, algorithm=foreign.record_id)
+    assert excinfo.value.code == "ALGORITHM_KERNEL_MISMATCH" and excinfo.value.exit_code == 2
+    assert excinfo.value.details["algorithm_kernel_id"] == "other_op"
+    with pytest.raises(MissingReferenceError) as bare:
+        register_config(store, KERNEL_ID, {"n": 16}, algorithm=ALGORITHM_ID)  # bare ids are scoped to demo_vector_add
+    assert bare.value.code == "MISSING_ALGORITHM"
+    assert count(store, "config") == 0
+
+
+def test_register_config_on_the_legacy_placeholder_reuses_cfg_demo_and_mints_new_ids(demo_store: MemoryStore) -> None:
+    same, created = register_config(demo_store, KERNEL_ID, {"n": 16, "dtype": "f32"})
+    assert created is False and same.record_id == "cfg-demo"  # legacy id never rewritten
+    new, created_new = register_config(demo_store, KERNEL_ID, {"n": 32})
+    assert created_new is True
+    assert new.record_id == expected_cfg_id("unspecified", "demo-n32-f32", new.payload.config_hash)
+    assert new.record_id.startswith("cfg-unspecified-demo-n32-f32-")
+    assert new.payload.algorithm_ref == PLACEHOLDER_ALGORITHM_ID
+    assert count(demo_store, "config") == 2
+
+
+def test_resolve_algorithm_accepts_bare_and_full_ids(store: MemoryStore) -> None:
+    make_kernel(store)
+    alg = make_algorithm(store)
+    assert resolve_algorithm(store, KERNEL_ID) == alg
+    assert resolve_algorithm(store, KERNEL_ID, ALGORITHM_ID) == alg
+    assert resolve_algorithm(store, KERNEL_ID, alg.record_id) == alg
+    via_alias, _ = register_config(store, KERNEL_ID, {"n": 16}, algorithm_id=ALGORITHM_ID)
+    via_primary, created = register_config(store, KERNEL_ID, {"n": 16}, algorithm=ALGORITHM_ID)
+    assert created is False and via_primary.record_id == via_alias.record_id
+    with pytest.raises(InputError) as excinfo:
+        register_config(store, KERNEL_ID, {"n": 16}, algorithm=ALGORITHM_ID, algorithm_id=OTHER_ALGORITHM_ID)
+    assert excinfo.value.code == "ALGORITHM_ARGUMENT_CONFLICT"
+    with pytest.raises(InputError) as bad:
+        resolve_algorithm(store, KERNEL_ID, "")
+    assert bad.value.code == "INVALID_ID"
+    with pytest.raises(MissingReferenceError) as missing:
+        resolve_algorithm(store, "never_registered")
+    assert missing.value.code == "MISSING_KERNEL"
+    assert count(store, "config") == 1
 
 
 # --------------------------------------------------------------------------------------

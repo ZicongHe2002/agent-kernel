@@ -1,4 +1,11 @@
-"""Shared pytest fixtures. Tests never touch the network or the handoff directory."""
+"""Shared pytest fixtures. Tests never touch the network or the handoff directory.
+
+The synthetic handoff bundle (``fixtures/handoff/examples/demo_bundle.json``, a verbatim v0.2.0
+copy) is upgraded in memory to the current contract by ``migrations.v02.upgrade_v02_records`` once
+per session, so every fixture-derived object (``bundle_dicts``, ``bundle_records``, ``demo_store``,
+``record_dict`` clones) carries the placeholder algorithm record and ``config.algorithm_ref``.
+``legacy_bundle_dicts`` exposes the raw 0.2.0 dicts for importer/migration tests.
+"""
 from __future__ import annotations
 
 import json
@@ -15,13 +22,16 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from kernel_memory.domain.jsonio import load_json_file  # noqa: E402
-from kernel_memory.domain.models import Record
-from kernel_memory.storage import MemoryStore
+from kernel_memory.domain.models import Record  # noqa: E402
+from kernel_memory.migrations.v02 import upgrade_v02_records  # noqa: E402
+from kernel_memory.storage import MemoryStore  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FIXTURES_ROOT = PROJECT_ROOT / "fixtures" / "handoff"
 BUNDLE_PATH = FIXTURES_ROOT / "examples" / "demo_bundle.json"
 ARTIFACT_ROOT = FIXTURES_ROOT  # bundle artifact URIs are relative to this directory
+FIXTURE_RECORD_COUNT = 19  # 18 verbatim records + 1 synthesized placeholder algorithm
+PLACEHOLDER_ALGORITHM_ID = "algorithm-demo_vector_add-unspecified"
 
 
 @pytest.fixture(scope="session")
@@ -45,8 +55,16 @@ def artifact_root() -> Path:
 
 
 @pytest.fixture(scope="session")
-def bundle_dicts() -> list[dict]:
+def legacy_bundle_dicts() -> list[dict]:
+    """The verbatim 0.2.0 records of the handoff bundle (18 records)."""
     return json.loads(json.dumps(load_json_file(BUNDLE_PATH)["records"]))
+
+
+@pytest.fixture(scope="session")
+def bundle_dicts(legacy_bundle_dicts: list[dict]) -> list[dict]:
+    """The handoff bundle upgraded to the current contract (19 records; algorithm appended last)."""
+    upgraded, _report = upgrade_v02_records(legacy_bundle_dicts)
+    return json.loads(json.dumps(upgraded))
 
 
 @pytest.fixture
@@ -60,7 +78,7 @@ def store(tmp_path: Path) -> MemoryStore:
 
 
 def import_demo_bundle(store: MemoryStore, records: list[Record], artifact_root: Path) -> None:
-    """Publish the fixture bundle and store its artifacts (raw store path, bypassing the importer service)."""
+    """Publish the (upgraded) fixture bundle and store its artifacts (raw store path, bypassing the importer service)."""
     store.publish_bundle(records, label="demo-fixture")
     for record in records:
         if record.record_type != "run":

@@ -83,6 +83,14 @@ synthetic bundle's spill report; it exists to exercise the metric pipeline offli
 one metric, `register_spill_vmem_static_bytes`, is a compiler-side *static estimate* (`kind=static_estimate`), not a
 measurement of HBM traffic, and `0` is reported only when the report literally says `0`.
 
+**HLO evidence.** After a successful compile the JAX adapter stores what JAX itself returns — `Lowered.as_text()`
+(StableHLO MLIR) as an artifact of kind `stablehlo_text` and `Compiled.as_text()` (optimized HLO) as
+`compiled_hlo_text`, both `text/plain`, retention `retain_for_decision` — labelled with the backend that actually
+compiled (`cpu` on this host). When the API returns nothing or raises, the compile log records
+`hlo_unavailable_reason` and no artifact is created; text is never synthesized. These are evidence artifacts: no
+parser reads them and no metric is derived from them. Each shape's generated `result` section exposes them as
+`hlo.stablehlo_text` / `hlo.compiled_hlo_text` artifact ids (null when absent) next to `llo.status: "unsupported"`.
+
 ## 6. Model-driven planner
 
 Code: `kernel_memory.execution.planner`. `MockPlanner` exercises the orchestration state machine with

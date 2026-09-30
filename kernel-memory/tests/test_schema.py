@@ -1,7 +1,12 @@
-"""JSON Schema (2020-12) validation of wire records and nested contract objects (DESIGN section 3)."""
+"""JSON Schema (2020-12) validation of wire records and nested contract objects (DESIGN section 3; ADR-0004).
+
+The current contract is 0.3.0 (kernel -> algorithm -> config/shape); the verbatim 0.2.0 handoff
+contract is retained under ``contracts/legacy/`` for legacy *input* only and pinned by digest.
+"""
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Callable
@@ -14,17 +19,24 @@ from jsonschema.exceptions import SchemaError
 from kernel_memory.domain import schema as schema_mod
 from kernel_memory.domain.errors import InputError, SchemaValidationError
 from kernel_memory.domain.schema import (
+    LEGACY_RECORD_TYPES,
+    LEGACY_SCHEMA_VERSION,
     RECORD_TYPES,
+    SCHEMA_VERSION,
     demo_problem_schema,
     golden_hash_vectors,
     is_valid_record_dict,
+    legacy_record_schema,
     record_schema,
     validate_against,
+    validate_legacy_record_dict,
     validate_nested,
     validate_record_dict,
 )
 
 DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
+# sha256 of the verbatim handoff record.schema.json (0.2.0), retained byte-for-byte under contracts/legacy/.
+LEGACY_SCHEMA_SHA256 = "e24f4cd5bc52f6f0b8b8c40ee123f2760e3a1371bae9e15b981c16e092ecbf77"
 
 
 # --------------------------------------------------------------------------------------
@@ -36,9 +48,14 @@ def test_record_schema_loads_and_is_valid_2020_12() -> None:
     assert schema["$schema"] == DRAFT_2020_12
     Draft202012Validator.check_schema(schema)  # raises SchemaError if invalid
     assert set(RECORD_TYPES) <= set(schema["$defs"])
-    # every record type is reachable from the top-level oneOf
+    # every record type is reachable from the top-level oneOf, in RECORD_TYPES order
     refs = {alt["$ref"] for alt in schema["oneOf"]}
     assert refs == {f"#/$defs/{t}" for t in RECORD_TYPES}
+    assert [alt["$ref"] for alt in schema["oneOf"]] == [f"#/$defs/{t}" for t in RECORD_TYPES]
+    assert len(RECORD_TYPES) == 11
+    assert RECORD_TYPES[:3] == ("kernel", "algorithm", "config")
+    assert schema["$id"] == "urn:kernel-memory:records:0.3.0"
+    assert SCHEMA_VERSION == "0.3.0" and LEGACY_SCHEMA_VERSION == "0.2.0"
 
 
 def test_record_schema_is_cached_and_pins_schema_version() -> None:
@@ -116,7 +133,7 @@ def test_validate_record_dict_unknown_record_type_names_known_types(bundle_dicts
 
 def test_validate_record_dict_missing_record_type_is_unknown_type() -> None:
     with pytest.raises(SchemaValidationError) as excinfo:
-        validate_record_dict({"schema_version": "0.2.0", "record_id": "x"})
+        validate_record_dict({"schema_version": SCHEMA_VERSION, "record_id": "x"})
     assert "record_type" in str(excinfo.value)
     assert excinfo.value.details["known"] == list(RECORD_TYPES)
 
@@ -244,6 +261,107 @@ def test_validate_record_dict_payload_mismatch_for_record_type(bundle_dicts: lis
     with pytest.raises(SchemaValidationError) as excinfo:
         validate_record_dict(data)
     assert excinfo.value.details["record_type"] == "config"
+
+
+def test_validate_record_dict_rejects_legacy_version(legacy_bundle_dicts: list[dict]) -> None:
+    raw = copy.deepcopy(next(d for d in legacy_bundle_dicts if d["record_id"] == "kernel-demo"))
+    assert raw["schema_version"] == LEGACY_SCHEMA_VERSION
+    with pytest.raises(SchemaValidationError) as excinfo:
+        validate_record_dict(raw)
+    assert "schema_version" in str(excinfo.value)
+    assert excinfo.value.details["contract"] == SCHEMA_VERSION
+    assert is_valid_record_dict(raw) is False
+
+
+def test_current_contract_rejects_config_without_algorithm_ref(bundle_dicts: list[dict]) -> None:
+    data = record_dict(bundle_dicts, "cfg-demo")
+    del data["payload"]["algorithm_ref"]
+    with pytest.raises(SchemaValidationError) as excinfo:
+        validate_record_dict(data)
+    assert "algorithm_ref" in str(excinfo.value)
+    assert excinfo.value.details["record_id"] == "cfg-demo"
+    assert excinfo.value.details["record_type"] == "config"
+    assert excinfo.value.details["contract"] == SCHEMA_VERSION
+    assert is_valid_record_dict(data) is False
+
+
+# --------------------------------------------------------------------------------------
+# 0.3.0 contract shape and the retained 0.2.0 contract (ADR-0004)
+# --------------------------------------------------------------------------------------
+def test_algorithm_definition_shape() -> None:
+    schema = record_schema()
+    definition = schema["$defs"]["algorithm"]
+    assert definition["properties"]["record_type"] == {"const": "algorithm"}
+    payload = definition["properties"]["payload"]
+    assert set(payload["required"]) == {"kernel_id", "algorithm_id", "display_name", "method_summary", "summary_author", "tags"}
+    assert set(payload["properties"]) == set(payload["required"])
+    assert payload["additionalProperties"] is False
+    assert payload["properties"]["summary_author"]["enum"] == ["human", "agent", "program"]
+    assert payload["properties"]["method_summary"]["minLength"] == 1
+    assert payload["properties"]["algorithm_id"]["pattern"].endswith("{0,63}$")  # at most 64 characters
+    assert payload["properties"]["tags"] == {"type": "array", "items": {"type": "string"}}
+    assert "references" not in payload["properties"]  # would shadow Payload.references()
+    config_payload = schema["$defs"]["config"]["properties"]["payload"]
+    assert "algorithm_ref" in config_payload["required"]
+    assert config_payload["properties"]["algorithm_ref"] == config_payload["properties"]["kernel_id"]
+
+
+def test_legacy_contract_is_verbatim_and_pinned() -> None:
+    path = schema_mod.LEGACY_CONTRACTS_DIR / "record.schema.v0.2.0.json"
+    assert path.is_file()
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == LEGACY_SCHEMA_SHA256
+    legacy = legacy_record_schema()
+    assert legacy_record_schema() is legacy  # cached
+    assert legacy["$schema"] == DRAFT_2020_12
+    Draft202012Validator.check_schema(legacy)
+    assert legacy["$id"] == "urn:kernel-memory:records:0.2.0"
+    assert "algorithm" not in legacy["$defs"]
+    assert LEGACY_RECORD_TYPES == tuple(t for t in RECORD_TYPES if t != "algorithm")
+    assert len(LEGACY_RECORD_TYPES) == 10
+    assert [alt["$ref"] for alt in legacy["oneOf"]] == [f"#/$defs/{t}" for t in LEGACY_RECORD_TYPES]
+    for record_type in LEGACY_RECORD_TYPES:
+        assert legacy["$defs"][record_type]["properties"]["schema_version"] == {"const": LEGACY_SCHEMA_VERSION}
+    legacy_config_payload = legacy["$defs"]["config"]["properties"]["payload"]
+    assert "algorithm_ref" not in legacy_config_payload["required"]
+    assert "algorithm_ref" not in legacy_config_payload["properties"]
+    # The two contracts are distinct objects with distinct ids: the legacy one is never used for publication.
+    assert record_schema()["$id"] != legacy["$id"]
+
+
+def test_validate_legacy_record_dict_accepts_verbatim_fixture(legacy_bundle_dicts: list[dict]) -> None:
+    assert len(legacy_bundle_dicts) == 18
+    seen: set[str] = set()
+    for data in legacy_bundle_dicts:
+        before = json.dumps(data, sort_keys=True)
+        assert validate_legacy_record_dict(copy.deepcopy(data)) == data["record_type"], data["record_id"]
+        assert validate_legacy_record_dict(data) == data["record_type"]
+        assert json.dumps(data, sort_keys=True) == before  # no mutation
+        seen.add(data["record_type"])
+    assert seen == set(LEGACY_RECORD_TYPES)
+    # Legacy records are NOT valid under the current contract: they must be upgraded first.
+    assert not any(is_valid_record_dict(d) for d in legacy_bundle_dicts)
+
+
+def test_validate_legacy_record_dict_rejects_algorithm_and_current_records(bundle_dicts: list[dict]) -> None:
+    algorithm = next(d for d in bundle_dicts if d["record_type"] == "algorithm")
+    with pytest.raises(SchemaValidationError) as excinfo:
+        validate_legacy_record_dict(copy.deepcopy(algorithm))
+    assert "algorithm" in str(excinfo.value)
+    assert excinfo.value.details["known"] == list(LEGACY_RECORD_TYPES)
+    assert excinfo.value.details["contract"] == LEGACY_SCHEMA_VERSION
+    # An upgraded (0.3.0) record fails the legacy contract on its schema_version.
+    with pytest.raises(SchemaValidationError) as excinfo:
+        validate_legacy_record_dict(record_dict(bundle_dicts, "kernel-demo"))
+    assert "schema_version" in str(excinfo.value)
+    assert excinfo.value.details["contract"] == LEGACY_SCHEMA_VERSION
+    # A config carrying algorithm_ref is not a legacy config even with the legacy version stamp.
+    data = record_dict(bundle_dicts, "cfg-demo")
+    data["schema_version"] = LEGACY_SCHEMA_VERSION
+    with pytest.raises(SchemaValidationError) as excinfo:
+        validate_legacy_record_dict(data)
+    assert "algorithm_ref" in str(excinfo.value)
+    with pytest.raises(SchemaValidationError):
+        validate_legacy_record_dict(None)
 
 
 # --------------------------------------------------------------------------------------

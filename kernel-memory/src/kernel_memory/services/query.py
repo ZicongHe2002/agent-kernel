@@ -1,42 +1,49 @@
 """Structured Memory retrieval (specification section 14).
 
-Retrieval starts from structured filters, never from free text: kernel, config (by record id or
-by ``config_hash``), record type, changed component / parameter key, subject, PR, execution and
-correctness status, provenance, comparison context, decision outcome and reason codes, and the
-derived ``tested`` / ``not_run`` status of commits. Every result item carries the original record
-id (``record_ref``) so the caller can go back to the authoritative JSON record; the compact
-fields are read-only copies, nothing is derived or invented here.
+Retrieval starts from structured filters, never from free text: kernel, algorithm, config (by
+record id or by ``config_hash``), record type, changed component / parameter key, subject, PR,
+execution and correctness status, provenance, comparison context, decision outcome and reason
+codes, and the derived ``tested`` / ``not_run`` status of commits. Every result item carries the
+original record id (``record_ref``) so the caller can go back to the authoritative JSON record;
+the compact fields are read-only copies, nothing is derived or invented here.
 
 Public API
 ----------
 ``QueryFilters``
-    Frozen dataclass with exactly the seventeen filter fields the ``kmem query`` command exposes.
-    All default to ``None`` (``include_cross_config_hints=False``). ``validate()`` raises
-    ``InputError`` (exit code 2) for an unknown ``record_type``, a ``run_status`` outside
-    ``("tested", "not_run")`` or a ``limit`` below 1.
+    Frozen dataclass with exactly the nineteen filter fields the ``kmem query`` command exposes.
+    All default to ``None`` (``include_cross_config_hints`` / ``include_cross_algorithm_hints``
+    default to ``False``). ``validate()`` raises ``InputError`` (exit code 2) for an unknown
+    ``record_type``, a ``run_status`` outside ``("tested", "not_run")`` or a ``limit`` below 1.
 
 ``QueryResult``
     ``items`` (compact dicts sorted by ``(TYPE_ORDER[record_type], record_id)``),
-    ``cross_config_hints`` (same shape, each carrying ``"cross_config_hint": true``, never mixed
-    into ``items``), ``total`` (matching items *before* ``limit``), ``truncated``, ``index_used``
-    (whether the disposable SQLite cache narrowed the candidate commits), ``filters`` (the filters
-    as a dict) and ``configs`` (the config record ids that formed the scope). ``to_dict()`` is what
-    the CLI prints.
+    ``cross_config_hints`` and ``cross_algorithm_hints`` (same shape, each carrying
+    ``"cross_config_hint": true`` / ``"cross_algorithm_hint": true``, never mixed into ``items``
+    and disjoint from each other), ``total`` (matching items *before* ``limit``), ``truncated``,
+    ``index_used`` (whether the disposable SQLite cache narrowed the candidate commits),
+    ``filters`` (the filters as a dict) and ``configs`` (the config record ids that formed the
+    scope). ``to_dict()`` is what the CLI prints.
 
 ``query_memory(store, filters) -> QueryResult``
-    Scope resolution: ``config_ref`` -> that one config (an unknown or non-config id raises
-    ``MissingReferenceError``, exit code 3); else ``config_hash`` -> ``store.configs_by_hash``; else
-    ``kernel_id`` -> every config of that kernel; else every config in the store. A config that is
-    named by one scope filter must still satisfy the other scope filters that are given.
-    ``ConfigRecords`` (``services.trajectory.collect_config_records``) is built once per config and
-    every record in it is tested by the single predicate ``_matches``; the SQLite fast path only
-    narrows the candidate commits when a ``component`` filter is given and the cache exists and is
-    fresh, so its results are identical to the scan path.
+    Scope resolution (precedence): ``config_ref`` -> that one config (an unknown or non-config id
+    raises ``MissingReferenceError``, exit code 3); else ``config_hash`` -> ``store.configs_by_hash``;
+    else ``algorithm_ref`` -> every shape of that algorithm (an algorithm record id, or a bare
+    ``algorithm_id`` resolved through ``kernel_id`` when given, else unique across the store; an
+    unresolvable value yields an empty scope); else ``kernel_id`` -> every config of that kernel;
+    else every config in the store. A config that is named by one scope filter must still satisfy
+    the other scope filters that are given. ``ConfigRecords``
+    (``services.trajectory.collect_config_records``) is built once per config and every record in
+    it is tested by the single predicate ``_matches``; the SQLite fast path only narrows the
+    candidate commits when a ``component`` filter is given and the cache exists and is fresh, so its
+    results are identical to the scan path.
 
-    Cross-config hints are produced only when ``include_cross_config_hints`` is true *and* the scope
-    was named by ``config_ref`` / ``config_hash`` / ``kernel_id``: the same predicate runs over the
-    other configs of the same kernel(s) and those items are returned in ``cross_config_hints`` (not
-    limited by ``limit``, which applies to ``items`` only).
+    Kernel records are listed once per kernel in scope and algorithm records once per algorithm in
+    scope (both with ``config_ref`` null); neither is ever a hint. Hints are produced only when the
+    scope was named (``config_ref`` / ``config_hash`` / ``algorithm_ref`` / ``kernel_id``): the same
+    predicate runs over the other configs of the same kernel(s); a config with a *different*
+    ``config_hash`` feeds ``cross_config_hints`` (needs ``include_cross_config_hints``), a config with
+    the *same* ``config_hash`` under another algorithm feeds ``cross_algorithm_hints`` (needs
+    ``include_cross_algorithm_hints``). Hints are not limited by ``limit``.
 
 ``untested_commits(store, config_ref) -> list[dict]``
     Commits of the config that have no run at all (``reason="no_run_recorded"``), derived at query
@@ -53,8 +60,7 @@ one run whose subject is the commit, else ``not_run``). ``subject_ref`` matches 
 ``pr_ref`` matches commits and PR snapshots by ``pr_ref`` and runs through their subject commit's
 ``pr_ref``. ``execution_status``, ``correctness_status`` and ``provenance`` apply to runs;
 ``comparison_key`` applies to runs and decisions; ``decision_outcome`` and ``reason_code`` apply to
-decisions. Kernel records are listed once per kernel in scope (``config_ref`` null) and never as
-cross-config hints.
+decisions.
 """
 from __future__ import annotations
 
@@ -67,9 +73,10 @@ from ..domain.errors import InputError, MissingReferenceError
 from ..domain.models import PAYLOAD_TYPES, TYPE_ORDER, Record, to_json
 from ..storage.index import SqliteIndex
 from ..storage.store import MemoryStore
-from .common import configs_for_kernel
+from .common import configs_for_algorithm, configs_for_kernel
 from .trajectory import (
     ConfigRecords,
+    algorithm_summary,
     annotation_kind,
     change_summary,
     collect_config_records,
@@ -82,6 +89,7 @@ RUN_STATUS_NOT_RUN = "not_run"
 RUN_STATUSES: tuple[str, ...] = (RUN_STATUS_TESTED, RUN_STATUS_NOT_RUN)
 REASON_NO_RUN_RECORDED = "no_run_recorded"
 CROSS_CONFIG_HINT_FIELD = "cross_config_hint"
+CROSS_ALGORITHM_HINT_FIELD = "cross_algorithm_hint"
 
 
 # --------------------------------------------------------------------------------------
@@ -94,6 +102,7 @@ class QueryFilters:
     kernel_id: str | None = None
     config_ref: str | None = None
     config_hash: str | None = None
+    algorithm_ref: str | None = None
     record_type: str | None = None
     component: str | None = None
     parameter_key: str | None = None
@@ -107,6 +116,7 @@ class QueryFilters:
     reason_code: str | None = None
     run_status: str | None = None
     include_cross_config_hints: bool = False
+    include_cross_algorithm_hints: bool = False
     limit: int | None = None
 
     def validate(self) -> None:
@@ -133,8 +143,13 @@ class QueryFilters:
 
     @property
     def names_scope(self) -> bool:
-        """True when the scope is named explicitly (a prerequisite for cross-config hints)."""
-        return self.config_ref is not None or self.config_hash is not None or self.kernel_id is not None
+        """True when the scope is named explicitly (a prerequisite for hints)."""
+        return (
+            self.config_ref is not None
+            or self.config_hash is not None
+            or self.algorithm_ref is not None
+            or self.kernel_id is not None
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -144,6 +159,7 @@ class QueryFilters:
 class QueryResult:
     items: list[dict[str, Any]]
     cross_config_hints: list[dict[str, Any]]
+    cross_algorithm_hints: list[dict[str, Any]]
     total: int
     truncated: bool
     index_used: bool
@@ -154,6 +170,7 @@ class QueryResult:
         return {
             "items": [dict(item) for item in self.items],
             "cross_config_hints": [dict(item) for item in self.cross_config_hints],
+            "cross_algorithm_hints": [dict(item) for item in self.cross_algorithm_hints],
             "total": self.total,
             "truncated": self.truncated,
             "index_used": self.index_used,
@@ -171,6 +188,7 @@ class _Scope:
     def __init__(self, records: ConfigRecords) -> None:
         self.records = records
         self.config_id = records.config_id
+        self.algorithm = records.algorithm
         self.run_refs_by_subject: dict[str, list[str]] = {
             subject: [run.record_id for run in runs] for subject, runs in records.runs_by_subject().items()
         }
@@ -309,6 +327,7 @@ def _type_fields(record: Record, scope: _Scope) -> dict[str, Any]:
     if t == "config":
         return {
             "kernel_id": p.kernel_id,
+            "algorithm_ref": p.algorithm_ref,
             "config_id": p.config_id,
             "config_hash": p.config_hash,
             "problem_schema_id": p.problem_schema_id,
@@ -316,6 +335,8 @@ def _type_fields(record: Record, scope: _Scope) -> dict[str, Any]:
         }
     if t == "kernel":
         return {"kernel_id": p.kernel_id, "display_name": p.display_name, "adapter_id": p.adapter_id}
+    if t == "algorithm":
+        return algorithm_summary(record)
     return {}
 
 
@@ -323,7 +344,7 @@ def _item(record: Record, scope: _Scope) -> dict[str, Any]:
     item: dict[str, Any] = {
         "record_ref": record.record_id,
         "record_type": record.record_type,
-        "config_ref": None if record.record_type == "kernel" else scope.config_id,
+        "config_ref": None if record.record_type in ("kernel", "algorithm") else scope.config_id,
     }
     item.update(_type_fields(record, scope))
     return item
@@ -338,14 +359,24 @@ def _scope_items(
     filters: QueryFilters,
     candidate_commit_ids: set[str] | None,
     seen_kernels: set[str] | None,
+    seen_algorithms: set[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Items of one config scope. ``seen_kernels`` (None to skip kernels) dedupes kernel records across scopes."""
+    """Items of one config scope.
+
+    ``seen_kernels`` / ``seen_algorithms`` (None to skip that type) dedupe kernel and algorithm
+    records across scopes; hints pass None for both so neither ever appears as a hint.
+    """
     out: list[dict[str, Any]] = []
     kernel = scope.records.kernel
     if seen_kernels is not None and kernel is not None and kernel.record_id not in seen_kernels:
         seen_kernels.add(kernel.record_id)
         if _matches(kernel, scope, filters):
             out.append(_item(kernel, scope))
+    algorithm = scope.algorithm
+    if seen_algorithms is not None and algorithm is not None and algorithm.record_id not in seen_algorithms:
+        seen_algorithms.add(algorithm.record_id)
+        if _matches(algorithm, scope, filters):
+            out.append(_item(algorithm, scope))
     for record in scope.records_in_order(candidate_commit_ids):
         if _matches(record, scope, filters):
             out.append(_item(record, scope))
@@ -359,11 +390,33 @@ def _by_id(records: Iterable[Record]) -> list[Record]:
     return sorted(records, key=lambda r: r.record_id)
 
 
+def _resolve_algorithm_ref(store: MemoryStore, filters: QueryFilters) -> str | None:
+    """The algorithm record id named by ``filters.algorithm_ref`` (record id or bare ``algorithm_id``).
+
+    A bare id is resolved within ``kernel_id`` when given, else it must be unique across the store.
+    An unresolvable value is returned unchanged (the scope becomes empty, like an unknown kernel_id).
+    """
+    value = filters.algorithm_ref
+    if value is None:
+        return None
+    record = store.get(value)
+    if record is not None and record.record_type == "algorithm":
+        return record.record_id
+    if filters.kernel_id is not None:
+        found = store.algorithm_by_id(filters.kernel_id, value)
+        return found.record_id if found is not None else value
+    matches = sorted(a.record_id for a in store.records("algorithm") if a.payload.algorithm_id == value)
+    return matches[0] if len(matches) == 1 else value
+
+
 def _resolve_scope(store: MemoryStore, filters: QueryFilters) -> list[Record]:
+    algorithm_ref = _resolve_algorithm_ref(store, filters)
     if filters.config_ref is not None:
         configs = [store.require(filters.config_ref, "config")]
     elif filters.config_hash is not None:
         configs = _by_id(store.configs_by_hash(filters.config_hash))
+    elif algorithm_ref is not None:
+        configs = _by_id(configs_for_algorithm(store, algorithm_ref))
     elif filters.kernel_id is not None:
         configs = _by_id(configs_for_kernel(store, filters.kernel_id))
     else:
@@ -373,6 +426,7 @@ def _resolve_scope(store: MemoryStore, filters: QueryFilters) -> list[Record]:
         c
         for c in configs
         if (filters.config_hash is None or c.payload.config_hash == filters.config_hash)
+        and (algorithm_ref is None or c.payload.algorithm_ref == algorithm_ref)
         and (filters.kernel_id is None or c.payload.kernel_id == filters.kernel_id)
     ]
 
@@ -408,9 +462,10 @@ def query_memory(store: MemoryStore, filters: QueryFilters) -> QueryResult:
 
     items: list[dict[str, Any]] = []
     seen_kernels: set[str] = set()
+    seen_algorithms: set[str] = set()
     for config in configs:
         scope = _Scope(collect_config_records(store, config.record_id))
-        items.extend(_scope_items(scope, filters, candidate_commit_ids, seen_kernels))
+        items.extend(_scope_items(scope, filters, candidate_commit_ids, seen_kernels, seen_algorithms))
     items.sort(key=_sort_key)
     total = len(items)
     truncated = False
@@ -418,18 +473,29 @@ def query_memory(store: MemoryStore, filters: QueryFilters) -> QueryResult:
         items = items[: filters.limit]
         truncated = True
 
-    hints: list[dict[str, Any]] = []
-    if filters.include_cross_config_hints and filters.names_scope:
+    config_hints: list[dict[str, Any]] = []
+    algorithm_hints: list[dict[str, Any]] = []
+    if filters.names_scope and (filters.include_cross_config_hints or filters.include_cross_algorithm_hints):
+        scope_hashes = {c.payload.config_hash for c in configs}
         for other in _other_configs_of_same_kernels(store, configs):
+            same_shape = other.payload.config_hash in scope_hashes
+            if same_shape and not filters.include_cross_algorithm_hints:
+                continue
+            if not same_shape and not filters.include_cross_config_hints:
+                continue
             scope = _Scope(collect_config_records(store, other.record_id))
-            for item in _scope_items(scope, filters, candidate_commit_ids, None):
-                item[CROSS_CONFIG_HINT_FIELD] = True
-                hints.append(item)
-        hints.sort(key=_sort_key)
+            flag = CROSS_ALGORITHM_HINT_FIELD if same_shape else CROSS_CONFIG_HINT_FIELD
+            bucket = algorithm_hints if same_shape else config_hints
+            for item in _scope_items(scope, filters, candidate_commit_ids, None, None):
+                item[flag] = True
+                bucket.append(item)
+        config_hints.sort(key=_sort_key)
+        algorithm_hints.sort(key=_sort_key)
 
     return QueryResult(
         items=items,
-        cross_config_hints=hints,
+        cross_config_hints=config_hints,
+        cross_algorithm_hints=algorithm_hints,
         total=total,
         truncated=truncated,
         index_used=index_used,
@@ -460,6 +526,7 @@ __all__ = [
     "RUN_STATUSES",
     "REASON_NO_RUN_RECORDED",
     "CROSS_CONFIG_HINT_FIELD",
+    "CROSS_ALGORITHM_HINT_FIELD",
     "QueryFilters",
     "QueryResult",
     "query_memory",

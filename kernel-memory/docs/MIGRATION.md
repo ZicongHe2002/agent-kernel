@@ -1,9 +1,15 @@
-# Migrating v0.1 data to v0.2
+# Migrating data: v0.1 exports → v0.2 records, and v0.2 stores/bundles → v0.3 (algorithm level)
 
-Code: `kernel_memory.migrations.v01` (`read_v01_source`, `migrate_v01`, `MigrationReport`,
-`NullResolver`, `MappingResolver`); CLI: `kmem migrate-v01`. Specification: section 20 of
-`../../kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md`; acceptance scenario T31.
-Tests: `tests/test_migration_v01.py` (synthetic input only).
+Two migrations exist:
+
+* **v0.1 → v0.2 records** (sections 1–9): `kernel_memory.migrations.v01` (`read_v01_source`, `migrate_v01`,
+  `MigrationReport`, `NullResolver`, `MappingResolver`); CLI `kmem migrate-v01`. Specification: section 20 of
+  `../../kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md`; acceptance scenario T31.
+  Tests: `tests/test_migration_v01.py` (synthetic input only). Since ADR-0004 the v0.1 path also mints the
+  placeholder algorithm described in section 10 and produces `0.3.0` records directly.
+* **v0.2 → v0.3** (section 10): `kernel_memory.migrations.v02` (`upgrade_v02_records`, `upgrade_bundle_v02`,
+  `read_legacy_store`, `migrate_v02_store`); CLI `kmem migrate-v02`; automatic for bundles passed to
+  `kmem import-bundle`. Tests: `tests/test_migration_v02.py`.
 
 ## 1. Purpose and scope
 
@@ -207,10 +213,71 @@ collected. Consequences for migrated data:
    `kmem --root R validate --deep --json` (must report `ok`).
 4. `--apply`, then repeat step 3. The count delta per type must equal the dry run's
    `record_counts`, and deep validation must still be `ok`.
-5. Rebuild derived views: `kmem --root R trajectory --config <cfg> --rebuild --json`, then
+5. Rebuild derived views: `kmem --root R trajectory --kernel <kernel_id> --rebuild --json`, then
    `--verify`. The old `trajectory.json` is not consulted.
 6. Optional: re-run the migration from the Python API with the same `created_at`; the publish
    outcome must list every record as idempotent and the counts must be unchanged.
 
 Fixture behaviour is unaffected by migration: migrated records carry no `provenance`, and only
 Runs carry one. Migrated data therefore never becomes a production confirmed-best by itself.
+
+## 10. v0.2 → v0.3: the algorithm level (ADR-0004)
+
+Schema `0.3.0` inserts an `algorithm` record between `kernel` and `config` (a config is a *shape*) and makes
+`config.payload.algorithm_ref` required. Published records are immutable, so nothing is rewritten in place:
+legacy input is upgraded **in memory** and the result is published as new `0.3.0` records.
+
+### 10.1 What the upgrade does (`upgrade_v02_records`)
+
+| Legacy fact | v0.3 result |
+|---|---|
+| any record with `schema_version 0.2.0` | `schema_version 0.3.0`; content otherwise untouched (`config_hash` never recomputed; record ids never change) |
+| `config` without `algorithm_ref` | `algorithm_ref = algorithm-<kernel_id>-unspecified` |
+| each `kernel` in the input | one appended placeholder record `algorithm-<kernel_id>-unspecified`: `algorithm_id "unspecified"`, `display_name "unspecified"`, `method_summary` literally `"unspecified (imported from v0.2)"`, `summary_author "program"`, `tags ["imported-v02"]`, `created_at` copied from the kernel record |
+| config whose kernel is absent from the input | the store is asked for an existing placeholder (`store.algorithm_by_id`); otherwise one is synthesized with `created_at` = the earliest `created_at` among that kernel's configs |
+
+The v0.1 path (`kmem migrate-v01`) mints the same placeholder (byte-identical payload; `created_at` = the reused
+or newly minted kernel record's `created_at`) and gives migrated configs ids `cfg-unspecified-<hint>-<hash12>` with
+`algorithm_ref` set; its identity map therefore carries two entries per v0.1 kernel (the kernel and the algorithm).
+
+The function is pure and idempotent: applying it to `0.3.0` input is a no-op, and applying it twice equals
+applying it once, so re-importing the same legacy bundle stays idempotent. Synthesized records are appended
+at the end so the original bundle indices in error messages stay valid. The placeholder says that no method
+was described; register real algorithms afterwards (`kmem register-algorithm`) and new shapes under them.
+It is never presented as knowledge (`is_placeholder: true` in views and query results).
+
+### 10.2 Bundles
+
+`kmem import-bundle` accepts `bundle_version` `0.2.0` and `0.3.0`. A `0.2.0` bundle is first validated against
+the verbatim legacy contract (`contracts/legacy/record.schema.v0.2.0.json`), then upgraded, then processed by the
+normal pipeline; the report carries `legacy_upgrade` (`records_rewritten`, `configs_linked`,
+`records_synthesized`). Mixed record versions inside one bundle are rejected (`MIXED_SCHEMA_VERSIONS`).
+`export_bundle` always emits `0.3.0` and includes a config's algorithm record.
+
+### 10.3 Stores
+
+A store created before this change has `layout_version: 1` in `manifest.json` (records under
+`kernels/<kernel>/configs/<config>/…`, views inside the config directory). It is refused on open
+(`UNSUPPORTED_STORE`). Migrate it into a **new** root:
+
+```bash
+.venv/bin/kmem --root /path/to/new-store migrate-v02 --source /path/to/old-store --json          # dry run
+.venv/bin/kmem --root /path/to/new-store migrate-v02 --source /path/to/old-store --apply --json  # write
+```
+
+The migration reads the old store directly (no lock file, nothing written there), validates every record
+against the legacy contract, compares files with the old journal (modified / corrupt / unjournaled /
+missing / duplicate → `SOURCE_INTEGRITY`, override with `--force`, findings recorded in the report), refuses
+pending `.runtime` state (`MIGRATE_PENDING_STATE`), upgrades in memory, publishes into the new root, copies
+artifact blobs (digest-verified) and registry descriptors, copies `requests/**` verbatim, records
+`migrated_from` in the new manifest, publishes every kernel trajectory, and runs an integrity scan.
+Provenance is preserved as stored: a store-to-store move of already-admitted facts is not an untrusted import.
+Old views, `.cache/` and `.runtime/` are not copied (views are regenerated).
+
+### 10.4 Verify before and after
+
+1. Hash the old tree before and after (`find OLD -type f -exec shasum -a 256 {} + | sort`): identical.
+2. `kmem --root NEW integrity --json` → `ok`; `kmem --root NEW validate --deep --json` → `ok`.
+3. `kmem --root NEW status --json`: record counts equal the old store's plus one `algorithm` per kernel.
+4. `kmem --root NEW trajectory --kernel <kernel_id> --verify --json` → `matches: true`.
+5. Re-applying into another fresh root yields identical record digests (journal digests equal).

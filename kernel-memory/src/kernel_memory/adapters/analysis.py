@@ -29,10 +29,23 @@ Public API
 ``analyze_artifacts(adapters, pairs, *, declared_metrics=KNOWN_METRICS) -> AnalysisReport``
     Dispatches ``(ArtifactRef, bytes)`` pairs to the adapters that accept them and
     always returns one metric per declared name; never raises for adapter failures.
+
+HLO text evidence
+-----------------
+``STABLEHLO_TEXT_KIND = "stablehlo_text"`` and ``COMPILED_HLO_TEXT_KIND = "compiled_hlo_text"`` name
+the compiler-text artifacts the JAX adapter stores after a successful compile
+(``Lowered.as_text()`` StableHLO MLIR and ``Compiled.as_text()`` optimised HLO, ``text/plain``,
+retention ``retain_for_decision``). They are evidence artifacts only: there is no parser for
+them and no metric is derived from them; ``KNOWN_METRICS`` is unchanged and ``analyze_artifacts``
+leaves every declared metric ``not_collected`` when they are the only artifacts present.
+``hlo_artifact_ids(artifacts) -> {"stablehlo_text": id | None, "compiled_hlo_text": id | None}``
+is a pure lookup by ``kind`` (first artifact of a kind wins, in the given order) so views can
+reference the evidence without interpreting it. ``LloAnalysisAdapter`` still raises
+``UnsupportedFormat`` for ``llo_dump``.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from ..domain.errors import InputError, KernelMemoryError, UnsupportedFormat
@@ -59,6 +72,9 @@ METRIC_STATUSES: tuple[str, ...] = ("observed", "not_collected", "unsupported", 
 MOCK_SPILL_FORMAT = "mock-spill-v1"
 MOCK_ANALYSIS_KIND = "mock_analysis"
 LLO_DUMP_KIND = "llo_dump"
+STABLEHLO_TEXT_KIND = "stablehlo_text"
+COMPILED_HLO_TEXT_KIND = "compiled_hlo_text"
+HLO_TEXT_KINDS: tuple[str, ...] = (STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND)
 _JSON_MEDIA_TYPES: frozenset[str] = frozenset({"application/json", "text/json"})
 
 
@@ -134,6 +150,26 @@ def _artifact_id_of(ref: Any) -> str:
     if not isinstance(artifact_id, str) or not artifact_id:
         raise InputError("artifact reference lacks an artifact_id", code="INVALID_ARTIFACT_REF")
     return artifact_id
+
+
+def hlo_artifact_ids(artifacts: Iterable[Any] | None) -> dict[str, str | None]:
+    """Map the HLO text kinds to the artifact id carrying them; ``None`` when absent.
+
+    Pure and order-preserving: the first artifact of each kind (in the given order) wins; only
+    ``artifact_id`` and ``kind`` are read, the text is never parsed and nothing is derived.
+    Accepts ``ArtifactRef`` instances or manifest dicts; anything else raises ``InputError``
+    (``INVALID_ARTIFACT_REF``). A manifest without a usable ``artifact_id`` is ignored, not invented.
+    """
+    found: dict[str, str | None] = {kind: None for kind in HLO_TEXT_KINDS}
+    for ref in artifacts or ():
+        manifest = _manifest_of(ref)
+        kind = manifest.get("kind")
+        if kind not in found or found[kind] is not None:
+            continue
+        artifact_id = manifest.get("artifact_id")
+        if isinstance(artifact_id, str) and artifact_id:
+            found[kind] = artifact_id
+    return found
 
 
 # --------------------------------------------------------------------------------------

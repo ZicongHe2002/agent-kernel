@@ -1,4 +1,13 @@
-"""JSON Schema (2020-12) validation of wire records against the companion contracts."""
+"""JSON Schema (2020-12) validation of wire records against the companion contracts.
+
+Two contracts are shipped:
+
+* ``contracts/record.schema.json`` — the current ``0.3.0`` contract (kernel -> algorithm ->
+  config/shape -> ...). Every record the system publishes validates against it.
+* ``contracts/legacy/record.schema.v0.2.0.json`` — the verbatim handoff contract, used only to
+  validate *legacy input* (v0.2 bundles and stores) before ``migrations.v02`` upgrades it in
+  memory. Nothing is ever published in the legacy shape.
+"""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -13,8 +22,10 @@ from .ids import parse_utc_timestamp
 from .jsonio import load_json_file
 
 CONTRACTS_DIR = Path(__file__).resolve().parent.parent / "contracts"
+LEGACY_CONTRACTS_DIR = CONTRACTS_DIR / "legacy"
 RECORD_TYPES: tuple[str, ...] = (
     "kernel",
+    "algorithm",
     "config",
     "pr",
     "pr_snapshot",
@@ -25,12 +36,22 @@ RECORD_TYPES: tuple[str, ...] = (
     "decision",
     "annotation",
 )
-SCHEMA_VERSION = "0.2.0"
+LEGACY_RECORD_TYPES: tuple[str, ...] = tuple(t for t in RECORD_TYPES if t != "algorithm")
+SCHEMA_VERSION = "0.3.0"
+LEGACY_SCHEMA_VERSION = "0.2.0"
 
 
 @lru_cache(maxsize=1)
 def record_schema() -> dict[str, Any]:
     schema = load_json_file(CONTRACTS_DIR / "record.schema.json")
+    Draft202012Validator.check_schema(schema)
+    return schema
+
+
+@lru_cache(maxsize=1)
+def legacy_record_schema() -> dict[str, Any]:
+    """The verbatim v0.2.0 contract (legacy input validation only)."""
+    schema = load_json_file(LEGACY_CONTRACTS_DIR / "record.schema.v0.2.0.json")
     Draft202012Validator.check_schema(schema)
     return schema
 
@@ -59,6 +80,17 @@ def _type_validator(record_type: str) -> Draft202012Validator:
 
 
 @lru_cache(maxsize=None)
+def _legacy_type_validator(record_type: str) -> Draft202012Validator:
+    schema = legacy_record_schema()
+    sub = {
+        "$schema": schema["$schema"],
+        "$ref": f"#/$defs/{record_type}",
+        "$defs": schema["$defs"],
+    }
+    return Draft202012Validator(sub, format_checker=FormatChecker())
+
+
+@lru_cache(maxsize=None)
 def _nested_validator(def_name: str) -> Draft202012Validator:
     schema = record_schema()
     sub = {"$schema": schema["$schema"], "$ref": f"#/$defs/{def_name}", "$defs": schema["$defs"]}
@@ -78,26 +110,37 @@ def best_error(errors: list[ValidationError]) -> str:
     return "; ".join(_format_error(e) for e in errors[:3])
 
 
-def validate_record_dict(data: Any) -> str:
-    """Validate a wire record dict. Returns the record_type. Raises SchemaValidationError."""
+def _validate_with(data: Any, *, known_types: tuple[str, ...], validator_for: Any, contract: str) -> str:
     if not isinstance(data, dict):
         raise SchemaValidationError("record must be a JSON object", details={"got": type(data).__name__})
     record_type = data.get("record_type")
-    if record_type not in RECORD_TYPES:
+    if record_type not in known_types:
         raise SchemaValidationError(
-            f"unknown record_type: {record_type!r}", details={"known": list(RECORD_TYPES)}
+            f"unknown record_type: {record_type!r}", details={"known": list(known_types), "contract": contract}
         )
-    validator = _type_validator(record_type)
+    validator = validator_for(record_type)
     errors = list(validator.iter_errors(data))
     if errors:
         raise SchemaValidationError(
             f"{record_type} record {data.get('record_id')!r} is invalid: {best_error(errors)}",
-            details={"record_id": data.get("record_id"), "record_type": record_type},
+            details={"record_id": data.get("record_id"), "record_type": record_type, "contract": contract},
         )
     # jsonschema only enforces `format: date-time` when an optional dependency is present;
     # enforce timezone-aware timestamps explicitly.
     parse_utc_timestamp(data["created_at"])
     return record_type
+
+
+def validate_record_dict(data: Any) -> str:
+    """Validate a wire record dict against the current contract. Returns the record_type."""
+    return _validate_with(data, known_types=RECORD_TYPES, validator_for=_type_validator, contract=SCHEMA_VERSION)
+
+
+def validate_legacy_record_dict(data: Any) -> str:
+    """Validate a wire record dict against the verbatim v0.2.0 contract (legacy input only)."""
+    return _validate_with(
+        data, known_types=LEGACY_RECORD_TYPES, validator_for=_legacy_type_validator, contract=LEGACY_SCHEMA_VERSION
+    )
 
 
 def validate_nested(def_name: str, data: Any) -> None:

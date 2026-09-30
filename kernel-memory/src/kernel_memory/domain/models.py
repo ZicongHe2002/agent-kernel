@@ -252,6 +252,7 @@ class Reference:
 
 ANY_RECORD: tuple[str, ...] = (
     "kernel",
+    "algorithm",
     "config",
     "pr",
     "pr_snapshot",
@@ -281,8 +282,31 @@ class KernelPayload:
 
 
 @dataclass(frozen=True)
+class AlgorithmPayload:
+    """One optimisation method of a kernel. ``method_summary`` is authored data, never a measurement.
+
+    Deliberately has no field named ``references``: that name is the reference-extraction
+    method shared by every payload. Citations belong in ``method_summary`` or in annotations
+    targeting the algorithm record.
+    """
+
+    kernel_id: str
+    algorithm_id: str
+    display_name: str
+    method_summary: str
+    summary_author: str
+    tags: list[str]
+
+    record_type: ClassVar[str] = "algorithm"
+
+    def references(self) -> list[Reference]:
+        return []
+
+
+@dataclass(frozen=True)
 class ConfigPayload:
     kernel_id: str
+    algorithm_ref: str
     config_id: str
     problem_schema_id: str
     problem_schema_digest: str
@@ -293,7 +317,7 @@ class ConfigPayload:
     record_type: ClassVar[str] = "config"
 
     def references(self) -> list[Reference]:
-        return []
+        return [Reference("algorithm_ref", self.algorithm_ref, ("algorithm",))]
 
 
 @dataclass(frozen=True)
@@ -500,6 +524,7 @@ class AnnotationPayload:
 
 Payload = (
     KernelPayload
+    | AlgorithmPayload
     | ConfigPayload
     | PrPayload
     | PrSnapshotPayload
@@ -513,6 +538,7 @@ Payload = (
 
 PAYLOAD_TYPES: dict[str, type] = {
     "kernel": KernelPayload,
+    "algorithm": AlgorithmPayload,
     "config": ConfigPayload,
     "pr": PrPayload,
     "pr_snapshot": PrSnapshotPayload,
@@ -609,6 +635,7 @@ __all__ = [
     "Source",
     "Reference",
     "KernelPayload",
+    "AlgorithmPayload",
     "ConfigPayload",
     "PrPayload",
     "PrSnapshotPayload",

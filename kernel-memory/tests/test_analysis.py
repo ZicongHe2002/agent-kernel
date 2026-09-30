@@ -9,10 +9,14 @@ import pytest
 
 from kernel_memory.adapters import analysis
 from kernel_memory.adapters.analysis import (
+    COMPILED_HLO_TEXT_KIND,
+    HLO_TEXT_KINDS,
     KNOWN_METRICS,
+    STABLEHLO_TEXT_KIND,
     LloAnalysisAdapter,
     MockSpillAnalysisAdapter,
     analyze_artifacts,
+    hlo_artifact_ids,
     metric_dict,
 )
 from kernel_memory.adapters.base import (
@@ -29,7 +33,7 @@ from kernel_memory.adapters.base import (
 )
 from kernel_memory.domain import hashing
 from kernel_memory.domain.errors import InputError, UnsupportedFormat
-from kernel_memory.domain.models import ArtifactRef, GitOid
+from kernel_memory.domain.models import ArtifactRef, GitOid, to_json
 from kernel_memory.domain.schema import validate_nested
 from kernel_memory.execution import runner as runner_module
 from kernel_memory.execution.runner import LocalRunner
@@ -282,6 +286,51 @@ def test_invalid_pairs_are_input_errors() -> None:
     ref = make_ref("run-req-a1-spill-report", "mock_analysis", b"{}")
     with pytest.raises(InputError):
         analyze_artifacts(both_adapters(), [(ref, "text not bytes")])  # type: ignore[list-item]
+
+
+# ------------------------------------------------------------------------------ HLO text evidence (no parser, no metric)
+STABLEHLO_BYTES = b"module @jit_good_kernel {\n  func.func public @main(%arg0: tensor<4x16xf32>) -> tensor<4x16xf32> {\n  }\n}\n"
+COMPILED_HLO_BYTES = b"HloModule jit_good_kernel, entry_computation_layout={(f32[4,16]{1,0})->f32[4,16]{1,0}}\n"
+
+
+def test_hlo_text_kinds_are_evidence_only_constants() -> None:
+    assert (STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND) == ("stablehlo_text", "compiled_hlo_text")
+    assert HLO_TEXT_KINDS == (STABLEHLO_TEXT_KIND, COMPILED_HLO_TEXT_KIND)
+    assert tuple(KNOWN_METRICS) == (METRIC,)  # no metric is derived from compiler text
+    assert "no parser" in analysis.__doc__ and "no metric" in analysis.__doc__
+
+
+def test_hlo_text_artifacts_are_not_parsed_and_yield_not_collected() -> None:
+    stablehlo = make_ref("run-req-a1-stablehlo", STABLEHLO_TEXT_KIND, STABLEHLO_BYTES, media_type="text/plain")
+    compiled = make_ref("run-req-a1-compiled-hlo", COMPILED_HLO_TEXT_KIND, COMPILED_HLO_BYTES, media_type="text/plain")
+    for adapter in both_adapters():
+        assert not adapter.accepts(to_json(stablehlo)) and not adapter.accepts(to_json(compiled))
+    report = analyze_artifacts(both_adapters(), [(stablehlo, STABLEHLO_BYTES), (compiled, COMPILED_HLO_BYTES)])
+    metric = only_metric(report)
+    assert metric["status"] == "not_collected" and metric["value"] is None and metric["source_artifact_ref"] is None
+    assert report.conclusion is None and report.artifacts == []
+
+
+def test_hlo_artifact_ids_maps_kinds_to_ids_without_reading_the_text() -> None:
+    none = {STABLEHLO_TEXT_KIND: None, COMPILED_HLO_TEXT_KIND: None}
+    samples = make_ref("run-req-a1-samples", "latency_samples", b"{}")
+    stablehlo = make_ref("run-req-a1-stablehlo", STABLEHLO_TEXT_KIND, STABLEHLO_BYTES, media_type="text/plain")
+    compiled = make_ref("run-req-a1-compiled-hlo", COMPILED_HLO_TEXT_KIND, COMPILED_HLO_BYTES, media_type="text/plain")
+    assert hlo_artifact_ids([]) == none and hlo_artifact_ids(None) == none and hlo_artifact_ids([samples]) == none
+    assert hlo_artifact_ids([samples, stablehlo]) == {STABLEHLO_TEXT_KIND: "run-req-a1-stablehlo", COMPILED_HLO_TEXT_KIND: None}
+    assert hlo_artifact_ids([compiled, stablehlo, samples]) == {
+        STABLEHLO_TEXT_KIND: "run-req-a1-stablehlo",
+        COMPILED_HLO_TEXT_KIND: "run-req-a1-compiled-hlo",
+    }
+    # manifest dicts are accepted; the first artifact of a kind wins in the given order; no text is read
+    assert hlo_artifact_ids([{"artifact_id": "b", "kind": STABLEHLO_TEXT_KIND}, {"artifact_id": "a", "kind": STABLEHLO_TEXT_KIND}]) == {
+        STABLEHLO_TEXT_KIND: "b",
+        COMPILED_HLO_TEXT_KIND: None,
+    }
+    assert hlo_artifact_ids([{"kind": COMPILED_HLO_TEXT_KIND}]) == none  # an id-less manifest is ignored, never invented
+    with pytest.raises(InputError) as info:
+        hlo_artifact_ids(["not a manifest"])  # type: ignore[list-item]
+    assert info.value.code == "INVALID_ARTIFACT_REF" and info.value.exit_code == 2
 
 
 # ------------------------------------------------------------------------------ end to end

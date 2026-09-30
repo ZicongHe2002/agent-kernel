@@ -39,9 +39,11 @@ from ..domain.schema import SCHEMA_VERSION, validate_nested
 from . import layout
 from .lock import StoreLock
 
-STORE_VERSION = "0.2.0"
-LAYOUT_VERSION = 1
+STORE_VERSION = "0.3.0"
+LAYOUT_VERSION = 2
+LEGACY_LAYOUT_VERSION = 1
 DEFAULT_MAX_ARTIFACT_BYTES = 200_000_000
+KERNEL_VIEW_FILE_NAMES = frozenset({"trajectory.json", "memory_records.jsonl"})
 
 
 @dataclass(frozen=True)
@@ -125,6 +127,7 @@ class MemoryStore:
         self._lock = StoreLock(self.root / layout.RUNTIME_DIR / "lock")
         self._index: dict[str, IndexEntry] | None = None
         self._kernel_index: dict[str, str] = {}
+        self._algorithm_index: dict[tuple[str, str], str] = {}
         self._record_cache: dict[str, Record] = {}
         self._index_journal_stamp: tuple[int, int] | None = None
 
@@ -156,7 +159,11 @@ class MemoryStore:
             "hash_version": "jcs-sha256-v1",
             "store_id": uuid.uuid4().hex,
             "created_at": utc_now_iso(),
-            "notes": "Readable JSON files under kernels/ are authoritative. trajectory.json, memory_records.jsonl and .cache/ are derived and rebuildable.",
+            "notes": (
+                "Readable JSON files under kernels/ are authoritative (kernel.json, <algorithm>/algorithm.json, "
+                "<algorithm>/<shape>/config.json and everything below). kernels/<kernel>/trajectory/ and .cache/ are "
+                "derived views and rebuildable."
+            ),
         }
         store._atomic_write(store.root / layout.MANIFEST_FILE, dumps_readable(manifest_data).encode("utf-8"), overwrite=False)
         return store
@@ -175,10 +182,20 @@ class MemoryStore:
         if not manifest.is_file():
             raise InputError(f"{self.root} is not a kernel-memory store (manifest.json missing)", code="NOT_A_STORE")
         data = load_json_file(manifest)
-        if not isinstance(data, dict) or data.get("layout_version") != LAYOUT_VERSION:
+        found = data.get("layout_version") if isinstance(data, dict) else None
+        if isinstance(data, dict) and found == LEGACY_LAYOUT_VERSION:
             raise InputError(
-                f"unsupported store layout version in {manifest}: {data.get('layout_version') if isinstance(data, dict) else data!r}",
+                f"{self.root} is a layout-version-1 (v0.2) store; this version reads layout {LAYOUT_VERSION}. "
+                f"Migrate it into a new root with: kmem --root <new-root> migrate-v02 --source {self.root} --apply "
+                "(the source store is never modified)",
                 code="UNSUPPORTED_STORE",
+                details={"root": str(self.root), "layout_version": found, "expected": LAYOUT_VERSION, "migrate_command": "migrate-v02"},
+            )
+        if not isinstance(data, dict) or found != LAYOUT_VERSION:
+            raise InputError(
+                f"unsupported store layout version in {manifest}: {found if isinstance(data, dict) else data!r}",
+                code="UNSUPPORTED_STORE",
+                details={"root": str(self.root), "layout_version": found, "expected": LAYOUT_VERSION},
             )
         return data
 
@@ -221,15 +238,23 @@ class MemoryStore:
     def _ensure_index(self) -> dict[str, IndexEntry]:
         if self._index is None:
             stamp = self._journal_stamp()
-            self._index, self._kernel_index, self._record_cache = self._scan_records()
+            self._index, self._kernel_index, self._algorithm_index, self._record_cache = self._scan_records()
             self._index_journal_stamp = stamp
         return self._index
 
     def invalidate_index(self) -> None:
         self._index = None
         self._kernel_index = {}
+        self._algorithm_index = {}
         self._record_cache = {}
         self._index_journal_stamp = None
+
+    def _index_secondary(self, record: Record) -> None:
+        """Maintain the kernel_id and (kernel_id, algorithm_id) lookup tables for a cached record."""
+        if record.record_type == "kernel":
+            self._kernel_index[record.payload.kernel_id] = record.record_id
+        elif record.record_type == "algorithm":
+            self._algorithm_index[(record.payload.kernel_id, record.payload.algorithm_id)] = record.record_id
 
     def _journal_stamp(self) -> tuple[int, int] | None:
         """(size, mtime_ns) of the publication journal; every publication appends to it."""
@@ -248,13 +273,14 @@ class MemoryStore:
         if self._index is not None and self._journal_stamp() != self._index_journal_stamp:
             self.invalidate_index()
 
-    def _scan_records(self) -> tuple[dict[str, IndexEntry], dict[str, str], dict[str, Record]]:
+    def _scan_records(self) -> tuple[dict[str, IndexEntry], dict[str, str], dict[tuple[str, str], str], dict[str, Record]]:
         index: dict[str, IndexEntry] = {}
         kernels: dict[str, str] = {}
+        algorithms: dict[tuple[str, str], str] = {}
         cache: dict[str, Record] = {}
         kernels_root = self.root / layout.KERNELS_DIR
         if not kernels_root.exists():
-            return index, kernels, cache
+            return index, kernels, algorithms, cache
         for path in sorted(kernels_root.rglob("*.json")):
             rel = PurePosixPath(path.relative_to(self.root).as_posix())
             if not layout.is_record_file(rel):
@@ -274,7 +300,9 @@ class MemoryStore:
             cache[record.record_id] = record
             if record.record_type == "kernel":
                 kernels[record.payload.kernel_id] = record.record_id
-        return index, kernels, cache
+            elif record.record_type == "algorithm":
+                algorithms[(record.payload.kernel_id, record.payload.algorithm_id)] = record.record_id
+        return index, kernels, algorithms, cache
 
     def index_entries(self) -> list[IndexEntry]:
         return sorted(self._ensure_index().values(), key=lambda e: (TYPE_ORDER[e.record_type], e.record_id))
@@ -321,8 +349,27 @@ class MemoryStore:
         rid = self._kernel_index.get(kernel_id)
         return self.get(rid) if rid else None
 
-    def configs_by_hash(self, config_hash: str) -> list[Record]:
-        return [r for r in self.iter_records("config") if r.payload.config_hash == config_hash]
+    def algorithm_by_id(self, kernel_id: str, algorithm_id: str) -> Record | None:
+        """The algorithm record with ``(kernel_id, algorithm_id)``, or None."""
+        self._ensure_index()
+        rid = self._algorithm_index.get((kernel_id, algorithm_id))
+        return self.get(rid) if rid else None
+
+    def algorithms_for_kernel(self, kernel_id: str) -> list[Record]:
+        return [r for r in self.iter_records("algorithm") if r.payload.kernel_id == kernel_id]
+
+    def configs_by_hash(self, config_hash: str, *, algorithm_ref: str | None = None) -> list[Record]:
+        """Configs (shapes) with this problem hash; optionally only those of one algorithm.
+
+        The same problem may legitimately exist once under each algorithm of a kernel (same
+        ``config_hash``, different record ids); callers that mean "this shape under this
+        algorithm" must pass ``algorithm_ref``.
+        """
+        return [
+            r
+            for r in self.iter_records("config")
+            if r.payload.config_hash == config_hash and (algorithm_ref is None or r.payload.algorithm_ref == algorithm_ref)
+        ]
 
     def record_path(self, record_id: str) -> Path:
         entry = self._ensure_index().get(record_id)
@@ -422,8 +469,7 @@ class MemoryStore:
                     outcome.idempotent.append(record.record_id)
                     index[record.record_id] = IndexEntry(record.record_id, record.record_type, str(rel), digest)
                     self._record_cache[record.record_id] = existing_record
-                    if record.record_type == "kernel":
-                        self._kernel_index[record.payload.kernel_id] = record.record_id
+                    self._index_secondary(record)
                     continue
                 plan.append((record, rel, digest))
             if not plan:
@@ -481,7 +527,8 @@ class MemoryStore:
                             f"{record.record_type} {rid!r} field {ref.field} refers to {target!r} of type "
                             f"{existing.record_type!r}; expected {list(ref.allowed_types)}"
                         )
-            if record.record_type == "config":
+            if record.record_type in ("config", "algorithm"):
+                # kernel_id is an identity field, not a record reference: order kernels first explicitly.
                 for other_id, other in new_records.items():
                     if other.record_type == "kernel" and other.payload.kernel_id == record.payload.kernel_id:
                         deps[rid].add(other_id)
@@ -529,8 +576,7 @@ class MemoryStore:
             index = self._ensure_index()
             index[record.record_id] = IndexEntry(record.record_id, record.record_type, entry["relpath"], entry["digest"])
             self._record_cache[record.record_id] = record
-            if record.record_type == "kernel":
-                self._kernel_index[record.payload.kernel_id] = record.record_id
+            self._index_secondary(record)
 
     def _journal_append(self, entry: dict[str, Any], txn_id: str) -> None:
         journal = self._journal_path()
@@ -847,26 +893,73 @@ class MemoryStore:
         return None
 
     # ------------------------------------------------------------------ generated views
+    # Every generated view lives under kernels/<kernel>/trajectory/ (never inside a shape
+    # directory), so integrity scans and record indexing exclude the whole subtree.
+    def shape_view_dir(self, config_record_id: str) -> Path:
+        config = self.require(config_record_id, "config")
+        return self.root / layout.shape_view_dir(config.payload.kernel_id, config.record_id)
+
+    def kernel_view_dir(self, kernel_id: str) -> Path:
+        if self.kernel_by_kernel_id(kernel_id) is None:
+            raise MissingReferenceError(f"kernel {kernel_id!r} not found", details={"kernel_id": kernel_id})
+        return self.root / layout.kernel_view_dir(kernel_id)
+
     def write_view(self, config_record_id: str, name: str, data: bytes) -> Path:
+        """Write a per-shape view file (trajectory.json / memory_records.jsonl / context.json)."""
         if name not in layout.VIEW_FILE_NAMES:
             raise InputError(f"{name!r} is not a permitted view file name", code="INVALID_VIEW")
-        dest = self.config_dir(config_record_id) / name
+        dest = self.shape_view_dir(config_record_id) / name
         with self.lock():
             self._atomic_write(dest, data, overwrite=True)
         return dest
 
     def read_view(self, config_record_id: str, name: str) -> bytes | None:
-        dest = self.config_dir(config_record_id) / name
+        dest = self.shape_view_dir(config_record_id) / name
         return dest.read_bytes() if dest.is_file() else None
 
     def delete_views(self, config_record_id: str) -> list[str]:
+        """Delete this shape's view files only. Returns the removed file names."""
         removed: list[str] = []
-        cfg = self.config_dir(config_record_id)
+        shape_dir = self.shape_view_dir(config_record_id)
         for name in sorted(layout.VIEW_FILE_NAMES):
-            p = cfg / name
+            p = shape_dir / name
             if p.exists():
                 p.unlink()
                 removed.append(name)
+        return removed
+
+    def write_kernel_view(self, kernel_id: str, name: str, data: bytes) -> Path:
+        """Write a kernel-level view file directly under kernels/<kernel>/trajectory/."""
+        if name not in KERNEL_VIEW_FILE_NAMES:
+            raise InputError(f"{name!r} is not a permitted kernel view file name", code="INVALID_VIEW")
+        dest = self.kernel_view_dir(kernel_id) / name
+        with self.lock():
+            self._atomic_write(dest, data, overwrite=True)
+        return dest
+
+    def read_kernel_view(self, kernel_id: str, name: str) -> bytes | None:
+        dest = self.kernel_view_dir(kernel_id) / name
+        return dest.read_bytes() if dest.is_file() else None
+
+    def delete_kernel_views(self, kernel_id: str) -> list[str]:
+        """Delete every generated view of a kernel (the whole trajectory/ subtree). Returns relpaths."""
+        view_dir = self.kernel_view_dir(kernel_id)
+        removed: list[str] = []
+        if not view_dir.exists():
+            return removed
+        for p in sorted(view_dir.rglob("*")):
+            if p.is_file():
+                p.unlink()
+                removed.append(str(PurePosixPath(p.relative_to(self.root).as_posix())))
+        for d in sorted((d for d in view_dir.rglob("*") if d.is_dir()), key=lambda d: len(d.parts), reverse=True):
+            try:
+                d.rmdir()
+            except OSError:
+                pass
+        try:
+            view_dir.rmdir()
+        except OSError:
+            pass
         return removed
 
     # ------------------------------------------------------------------ generic fact files (request ledger)

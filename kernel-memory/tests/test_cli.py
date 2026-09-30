@@ -7,8 +7,9 @@ failures, and the binding rules visible through the CLI (fixtures never promote,
 metrics stay null, different protocols are NOT_COMPARABLE, replays execute nothing, unknown
 backends are denied before any adapter is consulted, TPU execution is refused honestly).
 
-Fixture data: ``fixtures/handoff/examples/demo_bundle.json`` (18 synthetic records; the
-100/90 us medians are fictional and exist only to exercise the arithmetic).
+Fixture data: ``fixtures/handoff/examples/demo_bundle.json`` (18 verbatim v0.2 synthetic records,
+upgraded on import to 19 with the placeholder algorithm ``algorithm-demo_vector_add-unspecified``;
+the 100/90 us medians are fictional and exist only to exercise the arithmetic).
 """
 from __future__ import annotations
 
@@ -28,7 +29,8 @@ from kernel_memory.services.optimize import MOCK_PLANNER_NOTE
 from kernel_memory.storage import MemoryStore
 
 BUNDLE_REL = Path("examples") / "demo_bundle.json"
-FIXTURE_RECORD_COUNT = 18
+FIXTURE_RECORD_COUNT = 19  # 18 verbatim records + the placeholder algorithm synthesized by the v0.2 -> v0.3 upgrade
+PLACEHOLDER_ALGORITHM = "algorithm-demo_vector_add-unspecified"
 UNTESTED_COMMITS = {"commit-demo-a-in-102", "commit-demo-b"}
 TESTED_COMMITS = {"commit-demo-a", "commit-demo-c"}
 
@@ -167,7 +169,8 @@ def test_init_creates_store_and_second_init_is_noop(tmp_path: Path, capsys: pyte
     first = invoke(capsys, "init", "--root", str(root)).result
     assert first["created"] is True
     assert (root / "manifest.json").is_file()
-    assert first["manifest"]["schema_version"] == "0.2.0"
+    assert first["manifest"]["schema_version"] == "0.3.0"
+    assert first["manifest"]["layout_version"] == 2
     second = invoke(capsys, "init", "--root", str(root)).result
     assert second["created"] is False
     assert second["manifest"]["store_id"] == first["manifest"]["store_id"], "re-init must not overwrite the store identity"
@@ -303,6 +306,7 @@ def test_status_reports_counts_and_exact_missing_inputs(cli_root: Path, capsys: 
     result = invoke(capsys, "status", "--root", str(cli_root)).result
     assert Path(result["root"]) == cli_root
     assert result["records"] == {
+        "algorithm": 1,
         "annotation": 1,
         "baseline": 1,
         "commit": 4,
@@ -314,6 +318,11 @@ def test_status_reports_counts_and_exact_missing_inputs(cli_root: Path, capsys: 
         "relation": 1,
         "run": 4,
     }
+    kernel = result["kernels"]["demo_vector_add"]
+    assert kernel["kernel_ref"] == "kernel-demo" and kernel["shapes"] == 1
+    assert kernel["algorithms"] == {"unspecified": {"algorithm_ref": PLACEHOLDER_ALGORITHM, "shapes": 1, "is_placeholder": True}}
+    assert kernel["trajectory_dir"] == "kernels/demo_vector_add/trajectory"
+    assert result["store"] == {"store_version": "0.3.0", "schema_version": "0.3.0", "layout_version": 2}
     pending = {item["integration"]: item for item in result["pending_integrations"]}
     github = pending["live GitHub collection"]
     assert github["status"] == "unexecuted"
@@ -379,14 +388,94 @@ def test_t01_register_config_reuses_existing_by_config_hash(cli_root: Path, caps
     ).result
     assert same["created"] is False
     assert same["config"]["record_id"] == "cfg-demo"
+    assert same["algorithm_ref"] == PLACEHOLDER_ALGORITHM and same["algorithm_id"] == "unspecified"
     assert same["config_hash"] == MemoryStore.open(cli_root).get("cfg-demo").payload.config_hash
     other = invoke(
         capsys, "register-config", "--kernel-id", "demo_vector_add", "--problem", '{"n": 32, "dtype": "float32"}', "--root", str(cli_root)
     ).result
     assert other["created"] is True
-    assert other["config"]["record_id"].startswith("cfg-demo-n32-f32-")
+    assert other["config"]["record_id"].startswith("cfg-unspecified-demo-n32-f32-"), "new ids carry the algorithm"
     assert other["config_hash"] != same["config_hash"]
     assert len(store_ids(cli_root, "config")) == 2
+
+
+# --------------------------------------------------------------------------------------
+# register-algorithm and algorithm resolution (ADR-0004)
+# --------------------------------------------------------------------------------------
+def test_register_algorithm_creates_idempotently_and_conflicts_on_different_summary(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    created = invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "numpy-add",
+        "--method-summary", "numpy elementwise add on preallocated arrays", "--tag", "cpu-demo", "--root", str(cli_root),
+    ).result
+    assert created["created"] is True and created["algorithm"]["record_id"] == "algorithm-demo_vector_add-numpy-add"
+    assert created["algorithm_id"] == "numpy-add" and created["is_placeholder"] is False and created["summary_author"] == "human"
+    assert created["method_summary"] == "numpy elementwise add on preallocated arrays"
+    again = invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "numpy-add",
+        "--method-summary", "numpy elementwise add on preallocated arrays", "--tag", "cpu-demo", "--root", str(cli_root),
+    ).result
+    assert again["created"] is False
+    err = invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "numpy-add",
+        "--method-summary", "a different description", "--root", str(cli_root),
+    ).error(3)
+    assert err["error"] == "ID_CONFLICT"
+    store = MemoryStore.open(cli_root)
+    assert store.record_path("algorithm-demo_vector_add-numpy-add").relative_to(cli_root).as_posix() == "kernels/demo_vector_add/numpy-add/algorithm.json"
+
+
+def test_register_algorithm_rejects_reserved_slug_blank_summary_and_unknown_kernel(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    reserved = invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "trajectory", "--method-summary", "x", "--root", str(cli_root)
+    ).error(2)
+    assert reserved["error"] == "RESERVED_SLUG"
+    blank = invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "blank", "--method-summary", "   ", "--root", str(cli_root)
+    ).error(2)
+    assert blank["error"] == "METHOD_SUMMARY_REQUIRED"
+    missing = invoke(
+        capsys, "register-algorithm", "--kernel-id", "no_such_kernel", "--algorithm-id", "x", "--method-summary", "y", "--root", str(cli_root)
+    ).error(3)
+    assert missing["error"] == "MISSING_KERNEL"
+
+
+def test_register_config_requires_algorithm_when_several_exist_and_same_shape_is_comparable(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    invoke(
+        capsys, "register-algorithm", "--kernel-id", "demo_vector_add", "--algorithm-id", "numpy-add",
+        "--method-summary", "numpy elementwise add", "--root", str(cli_root),
+    ).result
+    ambiguous = invoke(
+        capsys, "register-config", "--kernel-id", "demo_vector_add", "--problem", '{"n": 16, "dtype": "f32"}', "--root", str(cli_root)
+    ).error(2)
+    assert ambiguous["error"] == "ALGORITHM_REQUIRED"
+    under_new = invoke(
+        capsys, "register-config", "--kernel-id", "demo_vector_add", "--algorithm", "numpy-add", "--problem", '{"n": 16, "dtype": "f32"}', "--root", str(cli_root)
+    ).result
+    assert under_new["created"] is True
+    assert under_new["config"]["record_id"].startswith("cfg-numpy-add-demo-n16-f32-")
+    assert under_new["algorithm_ref"] == "algorithm-demo_vector_add-numpy-add"
+    store = MemoryStore.open(cli_root)
+    same_hash = store.configs_by_hash(store.get("cfg-demo").payload.config_hash)
+    assert {c.record_id for c in same_hash} == {"cfg-demo", under_new["config"]["record_id"]}, "same shape, one record per algorithm"
+    assert under_new["config_hash"] == store.get("cfg-demo").payload.config_hash
+    unknown = invoke(
+        capsys, "register-config", "--kernel-id", "demo_vector_add", "--algorithm", "nope", "--problem", '{"n": 16, "dtype": "f32"}', "--root", str(cli_root)
+    ).error(3)
+    assert unknown["error"] == "MISSING_ALGORITHM"
+
+
+def test_query_by_algorithm_bare_id_needs_kernel_and_lists_placeholder_shape(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    result = invoke(
+        capsys, "query", "--kernel", "demo_vector_add", "--algorithm", "unspecified", "--record-type", "config", "--root", str(cli_root)
+    ).result
+    assert [item["record_ref"] for item in result["items"]] == ["cfg-demo"]
+    assert result["items"][0]["algorithm_ref"] == PLACEHOLDER_ALGORITHM
+    err = invoke(capsys, "query", "--algorithm", "unspecified", "--root", str(cli_root)).error(2)
+    assert err["error"] == "ALGORITHM_REQUIRED"
+    by_ref = invoke(capsys, "query", "--algorithm", PLACEHOLDER_ALGORITHM, "--record-type", "algorithm", "--root", str(cli_root)).result
+    assert [item["record_ref"] for item in by_ref["items"]] == [PLACEHOLDER_ALGORITHM]
+    assert by_ref["items"][0]["is_placeholder"] is True
+    assert by_ref["items"][0]["method_summary"] == "unspecified (imported from v0.2)"
 
 
 # --------------------------------------------------------------------------------------
@@ -424,6 +513,139 @@ def test_t24_tampered_trajectory_view_fails_verification(cli_root: Path, capsys:
 def test_trajectory_unknown_config_is_missing_reference(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
     err = invoke(capsys, "trajectory", "--config", "cfg-nope", "--rebuild", "--root", str(cli_root)).error(3)
     assert err["error"] == "MISSING_REFERENCE"
+
+
+def test_t24_kernel_trajectory_rebuild_verify_and_directory_deletion(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    rebuilt = invoke(capsys, "trajectory", "--kernel", "demo_vector_add", "--rebuild", "--root", str(cli_root)).result
+    assert rebuilt["kernel_id"] == "demo_vector_add" and rebuilt["publishable"] is True and rebuilt["forced"] is False
+    view_path = Path(rebuilt["path"])
+    assert view_path.relative_to(cli_root).as_posix() == "kernels/demo_vector_add/trajectory/trajectory.json"
+    records_path = Path(rebuilt["memory_records_path"])
+    assert records_path.relative_to(cli_root).as_posix() == "kernels/demo_vector_add/trajectory/memory_records.jsonl"
+    assert rebuilt["record_count"] == FIXTURE_RECORD_COUNT
+    assert [s["config_ref"] for s in rebuilt["shapes"]] == ["cfg-demo"]
+    assert (cli_root / "kernels/demo_vector_add/trajectory/shapes/cfg-demo/trajectory.json").is_file()
+    document = json.loads(view_path.read_text())
+    assert document["view"]["view_version"] == "kernel-trajectory-v1"
+    algorithms = document["view"]["algorithms"]
+    assert [a["algorithm_ref"] for a in algorithms] == [PLACEHOLDER_ALGORITHM]
+    assert algorithms[0]["is_placeholder"] is True and algorithms[0]["method_summary"] == "unspecified (imported from v0.2)"
+    assert [s["config_ref"] for s in algorithms[0]["shapes"]] == ["cfg-demo"]
+    verified = invoke(capsys, "trajectory", "--kernel", "demo_vector_add", "--verify", "--root", str(cli_root)).result
+    assert verified["matches"] is True and verified["stored_hash"] == rebuilt["view_hash"]
+    records_before = records_path.read_bytes()
+    # T24: delete the whole generated tree and the cache; the rebuild must reproduce the identical view.
+    import shutil
+
+    shutil.rmtree(cli_root / "kernels/demo_vector_add/trajectory")
+    shutil.rmtree(cli_root / ".cache", ignore_errors=True)
+    assert invoke(capsys, "integrity", "--root", str(cli_root)).result["ok"] is True, "deleting views never touches records"
+    again = invoke(capsys, "trajectory", "--kernel", "demo_vector_add", "--rebuild", "--root", str(cli_root)).result
+    assert again["view_hash"] == rebuilt["view_hash"]
+    assert records_path.read_bytes() == records_before
+    assert invoke(capsys, "integrity", "--root", str(cli_root)).result["ok"] is True, "views under trajectory/ are never scanned as records"
+
+
+def test_trajectory_requires_exactly_one_scope(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as info:
+        cli.main(["trajectory", "--rebuild", "--root", str(cli_root), "--json"])
+    assert info.value.code == 2
+    with pytest.raises(SystemExit) as info:
+        cli.main(["trajectory", "--kernel", "demo_vector_add", "--config", "cfg-demo", "--root", str(cli_root), "--json"])
+    assert info.value.code == 2
+    err = invoke(capsys, "trajectory", "--kernel", "no_such_kernel", "--rebuild", "--root", str(cli_root)).error(3)
+    assert err["error"] == "MISSING_REFERENCE"
+
+
+# --------------------------------------------------------------------------------------
+# migrate-v02 (layout 1 -> layout 2 into a new root)
+# --------------------------------------------------------------------------------------
+def build_legacy_store(root: Path, records: list[dict]) -> None:
+    """Hand-build a layout-1 (v0.2) store holding the given verbatim 0.2.0 records, journaled."""
+    from kernel_memory.domain.hashing import jcs_digest
+
+    def legacy_relpath(record: dict, by_id: dict[str, dict]) -> str:
+        t, rid, p = record["record_type"], record["record_id"], record["payload"]
+        cfg = "kernels/demo_vector_add/configs/cfg-demo"
+        if t == "kernel":
+            return "kernels/demo_vector_add/kernel.json"
+        if t == "config":
+            return f"{cfg}/config.json"
+        if t == "pr":
+            return f"{cfg}/attempt/{rid}/pr.json"
+        if t == "pr_snapshot":
+            return f"{cfg}/attempt/{p['pr_ref']}/snapshots/{rid}.json"
+        if t == "commit":
+            return f"{cfg}/attempt/{p['pr_ref']}/commits/{rid}/commit.json"
+        if t == "baseline":
+            return f"{cfg}/baselines/{rid}/baseline.json"
+        if t == "run":
+            subject = by_id[p["subject_ref"]]
+            if subject["record_type"] == "baseline":
+                return f"{cfg}/baselines/{subject['record_id']}/runs/{rid}/run.json"
+            return f"{cfg}/attempt/{subject['payload']['pr_ref']}/commits/{subject['record_id']}/runs/{rid}/run.json"
+        return f"{cfg}/{t}s/{rid}.json"
+
+    by_id = {r["record_id"]: r for r in records}
+    root.mkdir(parents=True)
+    (root / "manifest.json").write_text(
+        json.dumps({"store_version": "0.2.0", "schema_version": "0.2.0", "layout_version": 1, "hash_version": "jcs-sha256-v1", "store_id": "legacy-test", "created_at": "2026-09-08T00:00:00Z", "notes": "test"})
+    )
+    lines = []
+    for record in records:
+        rel = legacy_relpath(record, by_id)
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+        lines.append(json.dumps({"record_id": record["record_id"], "record_type": record["record_type"], "relpath": rel, "digest": jcs_digest(record), "txn_id": "txn-legacy", "published_at": "2026-09-08T00:00:00Z"}))
+    (root / "journal").mkdir()
+    (root / "journal" / "records.jsonl").write_text("\n".join(lines) + "\n")
+    for sub in ("artifacts", "requests", ".runtime"):
+        (root / sub).mkdir()
+
+
+def test_migrate_v02_dry_run_then_apply_into_new_root(tmp_path: Path, capsys: pytest.CaptureFixture[str], legacy_bundle_dicts: list[dict]) -> None:
+    old = tmp_path / "old-store"
+    # Runs are left out (their artifacts would have to be copied too), so records that cite runs
+    # (the decision and the annotation) are left out as well: the subset must be reference-closed.
+    subset = [r for r in legacy_bundle_dicts if r["record_type"] in ("kernel", "config", "baseline", "pr", "commit", "pr_snapshot", "relation")]
+    build_legacy_store(old, subset)
+    before = file_listing(old)
+    refused = invoke(capsys, "status", "--root", str(old)).error(2)
+    assert refused["error"] == "UNSUPPORTED_STORE" and "migrate-v02" in refused["message"]
+    new = tmp_path / "new-store"
+    dry = invoke(capsys, "migrate-v02", "--source", str(old), "--root", str(new)).result
+    assert dry["dry_run"] is True and dry["records_read"] == len(subset)
+    assert dry["records_synthesized"] == [PLACEHOLDER_ALGORITHM] and dry["records_linked"] == 1
+    assert not new.exists(), "a dry run writes nothing"
+    applied = invoke(capsys, "migrate-v02", "--source", str(old), "--root", str(new), "--apply").result
+    assert applied["dry_run"] is False and applied["records_published"] == len(subset) + 1
+    assert applied["provenance"] == "preserved"
+    assert file_listing(old) == before, "the source store is never modified"
+    status = invoke(capsys, "status", "--root", str(new)).result
+    assert status["records"]["algorithm"] == 1 and status["records"]["config"] == 1 and status["records"]["kernel"] == 1
+    assert status["kernels"]["demo_vector_add"]["algorithms"]["unspecified"]["is_placeholder"] is True
+    assert invoke(capsys, "integrity", "--root", str(new)).result["ok"] is True
+    deep = invoke(capsys, "validate", "--deep", "--root", str(new)).result
+    assert deep["ok"] is True
+    assert (new / "kernels/demo_vector_add/unspecified/cfg-demo/config.json").is_file()
+    assert MemoryStore.open(new).get("cfg-demo").payload.algorithm_ref == PLACEHOLDER_ALGORITHM
+    # idempotent re-apply into another fresh root yields identical record digests
+    third = tmp_path / "third-store"
+    invoke(capsys, "migrate-v02", "--source", str(old), "--root", str(third), "--apply").result
+    digests = lambda root: sorted((e.record_id, e.digest) for e in MemoryStore.open(root).index_entries())  # noqa: E731
+    assert digests(new) == digests(third)
+
+
+def test_migrate_v02_refuses_non_legacy_and_non_empty_destination(cli_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path, legacy_bundle_dicts: list[dict]) -> None:
+    not_legacy = invoke(capsys, "migrate-v02", "--source", str(cli_root), "--root", str(tmp_path / "x")).error(2)
+    assert not_legacy["error"] == "NOT_A_LEGACY_STORE"
+    missing = invoke(capsys, "migrate-v02", "--source", str(tmp_path / "absent"), "--root", str(tmp_path / "y")).error(2)
+    assert missing["error"] == "NOT_A_STORE"
+    old = tmp_path / "old-store"
+    build_legacy_store(old, [r for r in legacy_bundle_dicts if r["record_type"] in ("kernel", "config")])
+    occupied = invoke(capsys, "migrate-v02", "--source", str(old), "--root", str(cli_root), "--apply").error(2)
+    assert occupied["error"] == "ROOT_NOT_EMPTY"
 
 
 def test_t05_query_not_run_commits_are_derived_from_absence(cli_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -775,9 +997,12 @@ def test_migrate_v01_dry_run_writes_nothing(cli_root: Path, capsys: pytest.Captu
     # The dry run opens the existing store, so the fixture's kernel (kernel-demo) and config (cfg-demo, same
     # config_hash) are reused by identity (T01) instead of minted again: only the PR and commit are new records.
     assert result["record_counts"] == {"commit": 1, "pr": 1}
-    mapped = {(m["v01_kind"], m["v01_id"]): m for m in result["identity_map"]}
-    assert mapped[("kernel", "demo_vector_add")]["v02_record_id"] == "kernel-demo"
-    assert mapped[("kernel", "demo_vector_add")]["status"] == "mapped"
+    # A v0.1 kernel maps to two v0.2/v0.3 records: the kernel and its placeholder algorithm (reused here).
+    mapped = {(m["v01_kind"], m["v01_id"], m["v02_record_type"]): m for m in result["identity_map"]}
+    assert mapped[("kernel", "demo_vector_add", "kernel")]["v02_record_id"] == "kernel-demo"
+    assert mapped[("kernel", "demo_vector_add", "kernel")]["status"] == "mapped"
+    assert mapped[("kernel", "demo_vector_add", "algorithm")]["v02_record_id"] == PLACEHOLDER_ALGORITHM
+    mapped = {(kind, v01_id): m for (kind, v01_id, v02_type), m in mapped.items() if v02_type != "algorithm"}
     assert mapped[("config", "cfg-1")]["v02_record_id"] == "cfg-demo"
     assert mapped[("attempt", "att-1")]["v02_record_id"] == "pr-gh-42-pr-7"
     assert mapped[("revision", "rev-1")]["v02_record_id"] == "commit-gh-42-pr-7-a1b2c3d4e5f6"

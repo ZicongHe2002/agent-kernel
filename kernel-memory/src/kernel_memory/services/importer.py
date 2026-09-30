@@ -2,6 +2,12 @@
 
 A bundle is a JSON object ``{"bundle_version", "is_fixture", "description", "records": [...],
 "artifacts": [...]}`` (only ``records`` is required; any other top-level key is rejected).
+``bundle_version`` is ``"0.3.0"`` (current) or ``"0.2.0"`` (legacy input, validated against the verbatim
+0.2.0 contract, upgraded in memory by ``migrations.v02`` and never published in the legacy shape).
+When absent it is inferred: 0.2.0 if every record carries ``schema_version`` 0.2.0, 0.3.0 if every record
+carries 0.3.0 (or nothing recognisable, so the current contract reports the problem); a set that mixes the
+two versions, or contradicts a declared ``bundle_version``, is ``InputError`` ``MIXED_SCHEMA_VERSIONS``.
+Any other version is ``UnsupportedFormat`` ``UNSUPPORTED_BUNDLE_VERSION``.
 ``records`` are wire records; ``artifacts`` (optional, produced by ``export_bundle(...,
 include_artifacts=True)``) are ``{"sha256", "size_bytes", "encoding": "base64", "data"}`` blobs.
 
@@ -13,16 +19,25 @@ Public API
     *present* artifact reference; ``blobs_stored`` / ``blobs_idempotent`` count distinct
     content-addressed blobs), ``provenance_downgraded`` (run ids rewritten to
     ``imported_unverified``), ``issues`` (warnings from validation), ``dry_run``, ``txn_id``
-    (``None`` for dry runs and when nothing new was published). ``.ok`` is true when no
-    error-severity issue is present (a returned report never carries errors: errors abort).
+    (``None`` for dry runs and when nothing new was published), ``legacy_upgrade`` (``None`` for a
+    0.3.0 bundle; otherwise ``{from_version, to_version, records_rewritten (count), configs_linked
+    (ids), records_synthesized (ids), placeholder_method_summary}``). ``records_total`` counts the
+    upgraded list (19 for the handoff fixture), so ``records_total == records_published +
+    records_idempotent`` always holds. ``.ok`` is true when no error-severity issue is present (a
+    returned report never carries errors: errors abort).
 ``import_bundle(store, bundle_path, *, artifact_root=None, allow_fixture=False,
                 allow_missing_artifacts=False, trusted_source=False, registry=None,
                 dry_run=False, max_bundle_bytes=50_000_000, max_artifact_bytes=200_000_000)``
     All-or-nothing pipeline; nothing is written before every check passed:
       1. strict JSON load (size limit, duplicate keys, NaN/Infinity rejected) -> ``InputError``;
-      2. envelope check (object, ``records`` non-empty list, ``is_fixture`` bool) -> ``InputError``
-         (``INVALID_BUNDLE`` / ``UNKNOWN_BUNDLE_FIELD`` / ``EMPTY_BUNDLE``);
-      3. schema validation of every record -> ``SchemaValidationError`` naming bundle, index, id;
+      2. envelope check (object, ``records`` non-empty list, ``is_fixture`` bool, supported
+         ``bundle_version``) -> ``InputError`` (``INVALID_BUNDLE`` / ``UNKNOWN_BUNDLE_FIELD`` /
+         ``EMPTY_BUNDLE``) or ``UnsupportedFormat``; schema-version consistency -> ``MIXED_SCHEMA_VERSIONS``;
+      3. for a 0.2.0 bundle: every raw record dict is validated against the legacy contract FIRST
+         (``SchemaValidationError`` naming bundle, index and id, exactly as for current records), then
+         ``upgrade_v02_records(raw, algorithm_resolver=store.algorithm_by_id)`` links every config to its
+         kernel's placeholder algorithm and appends the placeholder record(s) (bundle indices stay valid);
+         then, for every bundle, schema validation of every (upgraded) record -> ``SchemaValidationError``;
       4. provenance policy: fixture data (bundle ``is_fixture`` or any ``provenance=fixture`` run)
          requires ``allow_fixture`` (``InputError`` ``FIXTURE_REQUIRES_FLAG``); in a fixture bundle
          every run must be a fixture (``InvariantViolation`` ``FIXTURE_CLAIMS_TRUST``); in a
@@ -37,17 +52,18 @@ Public API
          ``ARTIFACT_SIZE_MISMATCH``); a missing file is ``InputError`` ``MISSING_ARTIFACT`` unless
          ``allow_missing_artifacts`` (then a warning; ``deep_validate`` later reports
          ``MISSING_EVIDENCE``);
-      6. ``validation.validate_records`` over the in-memory set with the store as external resolver;
-         any error aborts with ``InvariantViolation`` whose ``code`` is the first error's code and
-         whose ``details.issues`` lists the first errors;
+      6. ``validation.validate_records`` over the in-memory set with the store as external, kernel,
+         algorithm and shape resolver; any error aborts with ``InvariantViolation`` whose ``code`` is
+         the first error's code and whose ``details.issues`` lists the first errors;
       7. ``dry_run`` returns the report without writing (an ``IdConflictError`` is still raised for
          same-id/different-content records); otherwise ``store.publish_bundle`` (``IdConflictError``
          propagates) followed by ``store.put_artifact_bytes`` for every resolved blob.
     Re-importing the same bundle is idempotent (all records idempotent, nothing rewritten).
 ``export_bundle(store, *, config_ref=None, include_artifacts=False) -> dict``
-    Deterministic bundle of all records (or the kernel, config and every record owned by
-    ``config_ref``), sorted by (type order, record_id); ``is_fixture`` is true when any exported run
-    is a fixture; artifact bytes are embedded base64 only when ``include_artifacts``.
+    Deterministic bundle of all records (or the kernel, the config's algorithm, the config and every
+    record owned by ``config_ref``; annotations targeting the algorithm are not included), sorted by
+    (type order, record_id); emits ``bundle_version`` 0.3.0; ``is_fixture`` is true when any exported
+    run is a fixture; artifact bytes are embedded base64 only when ``include_artifacts``.
 """
 from __future__ import annotations
 
@@ -72,11 +88,15 @@ from ..domain.ids import resolve_inside
 from ..domain.jsonio import load_json_file
 from ..domain.models import TYPE_ORDER, ArtifactRef, Record
 from ..domain.problems import ProblemRegistry
+from ..domain.schema import validate_legacy_record_dict
+from ..migrations.v02 import LEGACY_METHOD_SUMMARY, upgrade_v02_records
 from ..storage.store import MemoryStore
 from .common import config_of
 from .validation import ERROR, WARNING, Issue, validate_records
 
-BUNDLE_VERSION = "0.2.0"
+BUNDLE_VERSION = "0.3.0"
+LEGACY_BUNDLE_VERSION = "0.2.0"
+SUPPORTED_BUNDLE_VERSIONS = ("0.2.0", "0.3.0")
 ALLOWED_BUNDLE_KEYS = frozenset({"bundle_version", "is_fixture", "description", "records", "artifacts"})
 ALLOWED_EMBEDDED_KEYS = frozenset({"sha256", "size_bytes", "encoding", "data", "media_type"})
 ARTIFACT_URI_PREFIX = "artifact://sha256/"
@@ -101,6 +121,7 @@ class ImportReport:
     blobs_idempotent: int = 0
     published_ids: list[str] = dataclasses.field(default_factory=list)
     idempotent_ids: list[str] = dataclasses.field(default_factory=list)
+    legacy_upgrade: dict[str, Any] | None = None
 
     @property
     def errors(self) -> list[Issue]:
@@ -129,6 +150,7 @@ class ImportReport:
             "provenance_downgraded": list(self.provenance_downgraded),
             "published_ids": list(self.published_ids),
             "idempotent_ids": list(self.idempotent_ids),
+            "legacy_upgrade": dict(self.legacy_upgrade) if self.legacy_upgrade is not None else None,
             "issues": [i.to_dict() for i in self.issues],
             "warning_count": len(self.warnings),
             "dry_run": self.dry_run,
@@ -141,6 +163,8 @@ class _Envelope:
     records: list[Any]
     is_fixture: bool
     embedded: list[Any]
+    bundle_version: str
+    declared_version: bool
 
 
 # --------------------------------------------------------------------------------------
@@ -165,14 +189,15 @@ def _parse_envelope(data: Any, bundle_path: Path) -> _Envelope:
     is_fixture = data.get("is_fixture", False)
     if not isinstance(is_fixture, bool):
         raise InputError(f"{where}: bundle field 'is_fixture' must be a boolean", code="INVALID_BUNDLE", details={"bundle": where})
+    declared_version = "bundle_version" in data
     version = data.get("bundle_version", BUNDLE_VERSION)
     if not isinstance(version, str):
         raise InputError(f"{where}: bundle field 'bundle_version' must be a string", code="INVALID_BUNDLE", details={"bundle": where})
-    if version != BUNDLE_VERSION:
+    if version not in SUPPORTED_BUNDLE_VERSIONS:
         raise UnsupportedFormat(
-            f"{where}: bundle_version {version!r} is not supported (expected {BUNDLE_VERSION})",
+            f"{where}: bundle_version {version!r} is not supported (supported: {list(SUPPORTED_BUNDLE_VERSIONS)})",
             code="UNSUPPORTED_BUNDLE_VERSION",
-            details={"bundle": where, "bundle_version": version},
+            details={"bundle": where, "bundle_version": version, "supported": list(SUPPORTED_BUNDLE_VERSIONS)},
         )
     description = data.get("description", "")
     if not isinstance(description, str):
@@ -180,7 +205,57 @@ def _parse_envelope(data: Any, bundle_path: Path) -> _Envelope:
     embedded = data.get("artifacts", [])
     if not isinstance(embedded, list):
         raise InputError(f"{where}: bundle field 'artifacts' must be a list", code="INVALID_BUNDLE", details={"bundle": where})
-    return _Envelope(records=records, is_fixture=is_fixture, embedded=embedded)
+    return _Envelope(records=records, is_fixture=is_fixture, embedded=embedded, bundle_version=version, declared_version=declared_version)
+
+
+def _resolve_bundle_version(envelope: _Envelope, bundle_path: Path) -> str:
+    """Which contract the raw records are checked against; a set mixing 0.2.0 and 0.3.0 is refused."""
+    versions = {
+        index: item["schema_version"]
+        for index, item in enumerate(envelope.records)
+        if isinstance(item, dict) and isinstance(item.get("schema_version"), str)
+    }
+    known = {v for v in versions.values() if v in SUPPORTED_BUNDLE_VERSIONS}
+    version: str | None
+    if envelope.declared_version:
+        version = envelope.bundle_version
+    elif len(known) == 1:
+        version = next(iter(known))
+    elif not known:
+        version = BUNDLE_VERSION  # nothing recognisable: the current contract reports each record's problem
+    else:
+        version = None
+    offending = sorted(i for i, v in versions.items() if v in SUPPORTED_BUNDLE_VERSIONS and v != version)
+    if version is None or offending:
+        raise InputError(
+            f"{bundle_path.name}: records carry schema_version {sorted(set(versions.values()))} but the bundle is "
+            f"{version if version is not None else 'undeclared'}; a bundle must be entirely 0.2.0 (legacy, upgraded on "
+            "import) or entirely 0.3.0",
+            code="MIXED_SCHEMA_VERSIONS",
+            details={
+                "bundle": str(bundle_path),
+                "bundle_version": envelope.bundle_version if envelope.declared_version else None,
+                "record_versions": sorted(set(versions.values())),
+                "indices": offending[:50],
+            },
+        )
+    return version
+
+
+def _validate_legacy_dicts(items: list[Any], bundle_path: Path) -> None:
+    """Legacy (0.2.0) records must satisfy the verbatim handoff contract before anything is upgraded."""
+    for index, item in enumerate(items):
+        record_id = item.get("record_id") if isinstance(item, dict) else None
+        try:
+            validate_legacy_record_dict(item)
+        except InputError as exc:
+            details = dict(exc.details)
+            details.update({"bundle": str(bundle_path), "index": index, "record_id": record_id})
+            raise SchemaValidationError(
+                f"{bundle_path.name}: records[{index}] ({record_id!r}) is invalid: {exc.message}",
+                code=exc.code,
+                details=details,
+            ) from exc
 
 
 def _materialize_records(items: list[Any], bundle_path: Path) -> list[Record]:
@@ -419,7 +494,21 @@ def import_bundle(
     bundle_path = Path(bundle_path)
     data = load_json_file(bundle_path, max_bytes=max_bundle_bytes)
     envelope = _parse_envelope(data, bundle_path)
-    records = _materialize_records(envelope.records, bundle_path)
+    bundle_version = _resolve_bundle_version(envelope, bundle_path)
+    items = envelope.records
+    legacy_upgrade: dict[str, Any] | None = None
+    if bundle_version == LEGACY_BUNDLE_VERSION:
+        _validate_legacy_dicts(items, bundle_path)
+        items, upgrade = upgrade_v02_records(items, algorithm_resolver=store.algorithm_by_id)
+        legacy_upgrade = {
+            "from_version": upgrade.from_version,
+            "to_version": upgrade.to_version,
+            "records_rewritten": len(upgrade.records_rewritten),
+            "configs_linked": list(upgrade.configs_linked),
+            "records_synthesized": list(upgrade.records_synthesized),
+            "placeholder_method_summary": LEGACY_METHOD_SUMMARY,
+        }
+    records = _materialize_records(items, bundle_path)
     records, downgraded = _apply_provenance_policy(
         records,
         is_fixture_bundle=envelope.is_fixture,
@@ -452,6 +541,8 @@ def import_bundle(
         external_resolver=store.get,
         kernel_resolver=store.kernel_by_kernel_id,
         missing_evidence_severity=WARNING if allow_missing_artifacts else ERROR,
+        algorithm_resolver=store.algorithm_by_id,
+        shape_resolver=lambda algorithm_ref, config_hash: store.configs_by_hash(config_hash, algorithm_ref=algorithm_ref),
     )
     if not report.ok:
         errors = report.errors
@@ -502,6 +593,7 @@ def import_bundle(
             blobs_idempotent=len(blobs_existing),
             published_ids=published,
             idempotent_ids=idempotent,
+            legacy_upgrade=legacy_upgrade,
         )
 
     outcome = store.publish_bundle(records, label=f"import:{bundle_path.name}")
@@ -530,6 +622,7 @@ def import_bundle(
         blobs_idempotent=len(blobs_existing),
         published_ids=list(outcome.published),
         idempotent_ids=list(outcome.idempotent),
+        legacy_upgrade=legacy_upgrade,
     )
 
 
@@ -546,8 +639,11 @@ def export_bundle(store: MemoryStore, *, config_ref: str | None = None, include_
         kernel = store.kernel_by_kernel_id(config.payload.kernel_id)
         if kernel is not None:
             selected.append(kernel)
+        algorithm = store.get(config.payload.algorithm_ref)
+        if algorithm is not None and algorithm.record_type == "algorithm":
+            selected.append(algorithm)
         for record in store.records():
-            if record.record_type in ("kernel", "config"):
+            if record.record_type in ("kernel", "algorithm", "config"):
                 continue
             try:
                 owner = config_of(store, record)
@@ -586,4 +682,4 @@ def export_bundle(store: MemoryStore, *, config_ref: str | None = None, include_
     return bundle
 
 
-__all__ = ["ImportReport", "import_bundle", "export_bundle", "BUNDLE_VERSION"]
+__all__ = ["ImportReport", "import_bundle", "export_bundle", "BUNDLE_VERSION", "LEGACY_BUNDLE_VERSION", "SUPPORTED_BUNDLE_VERSIONS"]

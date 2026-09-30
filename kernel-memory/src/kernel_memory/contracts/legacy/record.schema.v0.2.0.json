@@ -1,14 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:kernel-memory:records:0.3.0",
-  "title": "Kernel Memory v0.3.0 record contracts",
-  "description": "P0 wire contracts extended with the algorithm level (kernel -> algorithm -> config/shape); cross-record and trust invariants are normative in the implementation specification and ADR-0004. The verbatim v0.2.0 contract is retained under contracts/legacy/ for legacy input only.",
+  "$id": "urn:kernel-memory:records:0.2.0",
+  "title": "Kernel Memory v0.2.0 record contracts",
+  "description": "P0 wire contracts; cross-record and trust invariants are normative in the implementation specification. No production system is included.",
   "oneOf": [
     {
       "$ref": "#/$defs/kernel"
-    },
-    {
-      "$ref": "#/$defs/algorithm"
     },
     {
       "$ref": "#/$defs/config"
@@ -672,7 +669,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "kernel"
@@ -720,81 +717,12 @@
         "payload"
       ]
     },
-    "algorithm": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "schema_version": {
-          "const": "0.3.0"
-        },
-        "record_type": {
-          "const": "algorithm"
-        },
-        "record_id": {
-          "type": "string",
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
-        },
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "payload": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "kernel_id": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
-            },
-            "algorithm_id": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
-            },
-            "display_name": {
-              "type": "string"
-            },
-            "method_summary": {
-              "type": "string",
-              "minLength": 1
-            },
-            "summary_author": {
-              "enum": [
-                "human",
-                "agent",
-                "program"
-              ]
-            },
-            "tags": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "kernel_id",
-            "algorithm_id",
-            "display_name",
-            "method_summary",
-            "summary_author",
-            "tags"
-          ]
-        }
-      },
-      "required": [
-        "schema_version",
-        "record_type",
-        "record_id",
-        "created_at",
-        "payload"
-      ]
-    },
     "config": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "config"
@@ -812,10 +740,6 @@
           "additionalProperties": false,
           "properties": {
             "kernel_id": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
-            },
-            "algorithm_ref": {
               "type": "string",
               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
             },
@@ -847,7 +771,6 @@
           },
           "required": [
             "kernel_id",
-            "algorithm_ref",
             "config_id",
             "problem_schema_id",
             "problem_schema_digest",
@@ -870,7 +793,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "pr"
@@ -966,7 +889,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "pr_snapshot"
@@ -1062,7 +985,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "commit"
@@ -1172,7 +1095,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "baseline"
@@ -1242,7 +1165,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "run"
@@ -1441,7 +1364,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "relation"
@@ -1511,7 +1434,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "decision"
@@ -1625,7 +1548,7 @@
       "additionalProperties": false,
       "properties": {
         "schema_version": {
-          "const": "0.3.0"
+          "const": "0.2.0"
         },
         "record_type": {
           "const": "annotation"

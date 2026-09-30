@@ -6,6 +6,7 @@ from typing import Any, Iterable
 from ..domain.errors import MissingReferenceError
 from ..domain.ids import utc_now_iso
 from ..domain.models import PAYLOAD_TYPES, Record, to_json
+from ..domain.schema import SCHEMA_VERSION
 from ..storage.store import MemoryStore
 
 
@@ -17,7 +18,7 @@ def new_record(record_type: str, record_id: str, payload: Any, *, created_at: st
     """Build a validated record from a typed payload dataclass (or a payload dict)."""
     if isinstance(payload, dict):
         data = {
-            "schema_version": "0.2.0",
+            "schema_version": SCHEMA_VERSION,
             "record_type": record_type,
             "record_id": record_id,
             "created_at": created_at or now(),
@@ -49,6 +50,31 @@ def kernel_of(store: MemoryStore, config: Record) -> Record:
     if kernel is None:
         raise MissingReferenceError(f"kernel {config.payload.kernel_id!r} not found")
     return kernel
+
+
+def algorithm_of(store: MemoryStore, config: Record) -> Record:
+    """The algorithm record a config (shape) belongs to; its kernel_id must match the config's."""
+    algorithm = store.require(config.payload.algorithm_ref, "algorithm")
+    if algorithm.payload.kernel_id != config.payload.kernel_id:
+        raise MissingReferenceError(
+            f"config {config.record_id!r} belongs to kernel {config.payload.kernel_id!r} but its algorithm "
+            f"{algorithm.record_id!r} belongs to kernel {algorithm.payload.kernel_id!r}",
+            code="ALGORITHM_KERNEL_MISMATCH",
+            details={"config_ref": config.record_id, "algorithm_ref": algorithm.record_id},
+        )
+    return algorithm
+
+
+def algorithms_for_kernel(store: MemoryStore, kernel_id: str) -> list[Record]:
+    return [a for a in store.records("algorithm") if a.payload.kernel_id == kernel_id]
+
+
+def configs_for_algorithm(store: MemoryStore, algorithm_ref: str) -> list[Record]:
+    return [c for c in store.records("config") if c.payload.algorithm_ref == algorithm_ref]
+
+
+def annotations_for_algorithm(store: MemoryStore, algorithm_ref: str) -> list[Record]:
+    return [a for a in store.records("annotation") if a.payload.target_ref == algorithm_ref]
 
 
 def pr_of(store: MemoryStore, commit: Record) -> Record:

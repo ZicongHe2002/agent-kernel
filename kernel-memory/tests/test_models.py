@@ -1,11 +1,12 @@
-"""Typed record models (spec 6): round trips, strict field validation, references, canonical digest (T32)."""
+"""Typed record models (spec 6; ADR-0004): round trips, strict field validation, references, canonical digest (T32)."""
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 
 import pytest
-from conftest import record_dict
+from conftest import FIXTURE_RECORD_COUNT, PLACEHOLDER_ALGORITHM_ID, record_dict
 
 from kernel_memory.domain import hashing
 from kernel_memory.domain.errors import InputError, SchemaValidationError
@@ -14,6 +15,7 @@ from kernel_memory.domain.models import (
     ANY_RECORD,
     PAYLOAD_TYPES,
     TYPE_ORDER,
+    AlgorithmPayload,
     AnnotationPayload,
     ArtifactRef,
     BaselinePayload,
@@ -31,7 +33,10 @@ from kernel_memory.domain.models import (
     records_from_iterable,
     to_json,
 )
+from kernel_memory.domain.schema import SCHEMA_VERSION
 
+# The verbatim v0.2 fixture order, plus the placeholder algorithm the in-memory upgrade appends LAST
+# (so the original bundle indices stay valid for error details).
 FIXTURE_RECORD_IDS = [
     "kernel-demo",
     "cfg-demo",
@@ -51,15 +56,18 @@ FIXTURE_RECORD_IDS = [
     "run-demo-c-failure",
     "decision-demo-blocked",
     "annotation-demo-grouped",
+    PLACEHOLDER_ALGORITHM_ID,
 ]
 
 
 # --------------------------------------------------------------------------------------
 # Round trips
 # --------------------------------------------------------------------------------------
-def test_fixture_bundle_has_eighteen_records(bundle_dicts: list[dict]) -> None:
+def test_fixture_bundle_has_nineteen_records(bundle_dicts: list[dict]) -> None:
     assert [r["record_id"] for r in bundle_dicts] == FIXTURE_RECORD_IDS
-    assert len(bundle_dicts) == 18
+    assert len(bundle_dicts) == FIXTURE_RECORD_COUNT == 19
+    assert bundle_dicts[-1]["record_type"] == "algorithm"
+    assert all(d["schema_version"] == SCHEMA_VERSION for d in bundle_dicts)
 
 
 @pytest.mark.parametrize("record_id", FIXTURE_RECORD_IDS)
@@ -85,6 +93,11 @@ def test_payload_type_table_covers_every_record_type() -> None:
     for record_type, cls in PAYLOAD_TYPES.items():
         assert cls.record_type == record_type
     assert [t for t, _ in sorted(TYPE_ORDER.items(), key=lambda kv: kv[1])] == list(ANY_RECORD)
+    # The algorithm sits between kernel and config so dependency ordering publishes it before configs.
+    assert list(ANY_RECORD)[:3] == ["kernel", "algorithm", "config"]
+    assert len(ANY_RECORD) == 11
+    assert TYPE_ORDER["algorithm"] == 1
+    assert PAYLOAD_TYPES["algorithm"] is AlgorithmPayload
 
 
 def test_typed_access_on_run_record(bundle_records: list[Record]) -> None:
@@ -127,7 +140,10 @@ def test_payload_dataclasses_are_frozen(bundle_records: list[Record]) -> None:
 # --------------------------------------------------------------------------------------
 # Rejections (T32)
 # --------------------------------------------------------------------------------------
-@pytest.mark.parametrize("record_id", ["kernel-demo", "cfg-demo", "run-demo-a", "decision-demo-blocked", "annotation-demo-grouped"])
+@pytest.mark.parametrize(
+    "record_id",
+    ["kernel-demo", PLACEHOLDER_ALGORITHM_ID, "cfg-demo", "run-demo-a", "decision-demo-blocked", "annotation-demo-grouped"],
+)
 def test_t32_unknown_payload_field_is_schema_invalid(bundle_dicts: list[dict], record_id: str) -> None:
     data = record_dict(bundle_dicts, record_id)
     data["payload"]["misspelled_property"] = "x"
@@ -378,7 +394,8 @@ def test_t07_same_source_commit_in_two_prs_has_distinct_records_and_memberships(
 def test_pr_relation_baseline_kernel_config_references(bundle_records: list[Record]) -> None:
     by_id = {r.record_id: r for r in bundle_records}
     assert _refs(by_id["kernel-demo"]) == {}
-    assert _refs(by_id["cfg-demo"]) == {}
+    assert _refs(by_id[PLACEHOLDER_ALGORITHM_ID]) == {}
+    assert _refs(by_id["cfg-demo"]) == {"algorithm_ref": (PLACEHOLDER_ALGORITHM_ID, ("algorithm",))}
     assert _refs(by_id["baseline-demo"]) == {"config_ref": ("cfg-demo", ("config",))}
     pr_refs = _refs(by_id["pr-demo-102"])
     assert pr_refs["config_ref"] == ("cfg-demo", ("config",))
@@ -402,7 +419,7 @@ def test_pr_local_trial_flag(bundle_records: list[Record]) -> None:
 def test_record_create_from_typed_payload_round_trips() -> None:
     payload = KernelPayload(kernel_id="k1", display_name="Kernel One", adapter_id="adapter-v1", contract_notes="n")
     record = Record.create("kernel", "kernel-k1", payload, created_at="2026-09-08T00:00:00Z")
-    assert record.schema_version == "0.2.0"
+    assert record.schema_version == SCHEMA_VERSION == "0.3.0"
     assert record.payload == payload
     assert record.to_dict()["payload"] == to_json(payload)
     assert Record.from_dict(record.to_dict()) == record
@@ -475,7 +492,7 @@ def test_canonical_digest_treats_integer_valued_floats_as_equal(bundle_dicts: li
 
 def test_all_fixture_digests_are_distinct(bundle_records: list[Record]) -> None:
     digests = {r.canonical_digest() for r in bundle_records}
-    assert len(digests) == len(bundle_records) == 18
+    assert len(digests) == len(bundle_records) == FIXTURE_RECORD_COUNT
 
 
 def test_to_json_handles_dataclasses_tuples_and_nested_dicts() -> None:
@@ -488,7 +505,103 @@ def test_to_json_handles_dataclasses_tuples_and_nested_dicts() -> None:
 
 def test_every_payload_type_has_references_method() -> None:
     for cls in (
-        KernelPayload, ConfigPayload, PrPayload, PrSnapshotPayload, CommitPayload, BaselinePayload,
+        KernelPayload, AlgorithmPayload, ConfigPayload, PrPayload, PrSnapshotPayload, CommitPayload, BaselinePayload,
         RunPayload, RelationPayload, DecisionPayload, AnnotationPayload,
     ):
         assert callable(getattr(cls, "references"))
+        # No payload may carry a field named `references`: it would shadow the extraction method.
+        assert "references" not in {f.name for f in dataclasses.fields(cls)}
+
+
+# --------------------------------------------------------------------------------------
+# Algorithm payload (ADR-0004)
+# --------------------------------------------------------------------------------------
+def test_algorithm_payload_round_trip(bundle_dicts: list[dict]) -> None:
+    original = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    record = Record.from_dict(json.loads(json.dumps(original)))
+    payload = record.payload
+    assert isinstance(payload, AlgorithmPayload)
+    assert record.record_type == "algorithm"
+    assert payload.kernel_id == "demo_vector_add"
+    assert payload.algorithm_id == "unspecified"
+    assert payload.display_name == "unspecified"
+    assert payload.method_summary == "unspecified (imported from v0.2)"  # verbatim placeholder, never paraphrased
+    assert payload.summary_author == "program"
+    assert payload.tags == ["imported-v02"]
+    assert record.created_at == record_dict(bundle_dicts, "kernel-demo")["created_at"]
+    assert record.to_dict() == original
+    assert Record.from_dict(record.to_dict()) == record
+
+    typed = AlgorithmPayload("k1", "m1", "M1", "one honest line about the method", "human", [])
+    created = Record.create("algorithm", "algorithm-k1-m1", typed, created_at="2026-09-08T00:00:00Z")
+    assert created.schema_version == SCHEMA_VERSION
+    assert created.payload == typed
+    assert created.to_dict()["payload"] == to_json(typed)
+    assert Record.from_dict(created.to_dict()) == created
+    # The reference-extraction method is reachable (no field collision) and yields nothing for an algorithm.
+    assert created.references() == []
+    assert created.record_references() == [] and created.artifact_references() == []
+    assert typed.references() == []
+
+
+def test_algorithm_payload_rejections(bundle_dicts: list[dict]) -> None:
+    def clone(**changes: object) -> dict:
+        data = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+        data["payload"].update(changes)
+        return data
+
+    with pytest.raises(SchemaValidationError) as info:
+        Record.from_dict(clone(summary_author="robot"))
+    assert "summary_author" in str(info.value)
+    with pytest.raises(SchemaValidationError) as info:
+        Record.from_dict(clone(method_summary=""))
+    assert "method_summary" in str(info.value)
+    with pytest.raises(SchemaValidationError) as info:
+        Record.from_dict(clone(algorithm_id="a" * 65))
+    assert "algorithm_id" in str(info.value)
+    with pytest.raises(SchemaValidationError):
+        Record.from_dict(clone(tags="imported-v02"))  # must be an array
+    missing = record_dict(bundle_dicts, PLACEHOLDER_ALGORITHM_ID)
+    del missing["payload"]["method_summary"]
+    with pytest.raises(SchemaValidationError) as info:
+        Record.from_dict(missing)
+    assert "method_summary" in str(info.value)
+    assert info.value.code == "SCHEMA_INVALID" and info.value.exit_code == 2
+    # Typed construction goes through the same contract.
+    with pytest.raises(SchemaValidationError):
+        Record.create("algorithm", "algorithm-k1-m1", AlgorithmPayload("k1", "m1", "M1", "", "human", []), created_at="2026-09-08T00:00:00Z")
+    with pytest.raises(InputError):
+        Record.create("config", "cfg-x", AlgorithmPayload("k1", "m1", "M1", "x", "human", []), created_at="2026-09-08T00:00:00Z")
+
+
+def test_config_payload_requires_algorithm_ref(bundle_dicts: list[dict]) -> None:
+    cfg = record_dict(bundle_dicts, "cfg-demo")["payload"]
+    assert cfg["algorithm_ref"] == PLACEHOLDER_ALGORITHM_ID
+    with pytest.raises(TypeError):
+        ConfigPayload(**{k: v for k, v in cfg.items() if k != "algorithm_ref"})  # type: ignore[arg-type]
+    data = record_dict(bundle_dicts, "cfg-demo")
+    del data["payload"]["algorithm_ref"]
+    with pytest.raises(SchemaValidationError) as info:
+        Record.from_dict(data)
+    assert info.value.code == "SCHEMA_INVALID"
+    assert info.value.exit_code == 2
+    assert "algorithm_ref" in str(info.value)
+    for bad in ("", "../x", "has space"):
+        data = record_dict(bundle_dicts, "cfg-demo")
+        data["payload"]["algorithm_ref"] = bad
+        with pytest.raises(SchemaValidationError):
+            Record.from_dict(data)
+    # The problem identity is untouched by the algorithm level: config_hash never includes algorithm_ref.
+    assert cfg["config_hash"] == hashing.config_hash(
+        kernel_id=cfg["kernel_id"],
+        problem_schema_id=cfg["problem_schema_id"],
+        problem_schema_digest=cfg["problem_schema_digest"],
+        problem=cfg["problem"],
+    )
+
+
+def test_config_references_yield_algorithm_reference(bundle_records: list[Record]) -> None:
+    cfg = next(r for r in bundle_records if r.record_id == "cfg-demo")
+    assert cfg.references() == [Reference("algorithm_ref", PLACEHOLDER_ALGORITHM_ID, ("algorithm",))]
+    assert cfg.record_references() == cfg.references()
+    assert cfg.artifact_references() == []

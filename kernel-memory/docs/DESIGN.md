@@ -8,10 +8,22 @@ contracts, which are copied verbatim into `src/kernel_memory/contracts/`.
 ## 1. Hierarchy and non-negotiables
 
 ```text
-Memory → kernel (name) → config → { trajectory (generated), attempt (collection of PRs) → PR → commit → run }
+Memory → kernel (name) → { trajectory (generated, kernel-wide), algorithm → shape (= config) → { attempt (PRs) → PR → commit → run, code, result } }
 ```
 
-* `attempt` is the *collection* of PRs under a config. Never a single PR.
+Since ADR-0004 (2026-09-28) the hierarchy follows the user's corrected whiteboard: an `algorithm` record
+(one optimisation method, with an authored `method_summary`) sits between the kernel and its shapes; a
+shape *is* a `config` record (one fixed computational problem) and carries `algorithm_ref`; the trajectory
+is generated once per kernel under `kernels/<kernel>/trajectory/` and spans every algorithm and shape.
+The board's `code` and `result` leaves are generated sections of each shape's trajectory view (diff
+artifacts + source digests; run results incl. HLO/LLO artifact slots), never moved records.
+
+* `config_hash` identifies the *problem* only (the algorithm is not part of it), so the same shape under
+  two algorithms yields two config records with the same `config_hash`/`comparison_key`: comparable by
+  construction. Decisions stay single-config; a cross-algorithm "best method" is only ever a view table.
+* Placeholder algorithm for legacy v0.2 data: `algorithm-<kernel_id>-unspecified`, `method_summary`
+  literally `"unspecified (imported from v0.2)"`, `summary_author="program"` — a placeholder, not knowledge.
+* `attempt` is the *collection* of PRs under a shape. Never a single PR.
 * Untested commits have no Run. `not_run` is derived at query time from absence, never stored as a fake Run.
 * Fixtures (`provenance=fixture`) and `imported_unverified` never become production confirmed-best.
 * Execution status, correctness, analysis metrics, and decisions are separate facts. Spill ≠ failure.
@@ -65,8 +77,26 @@ add functions/classes, never change existing signatures without updating all cal
   `validate_record_id`, `short_hash_id(prefix, *parts)`, `new_uuid_id(prefix)`.
 * `jsonio`: `load_json_file(path, max_bytes=)` strict (duplicate keys, NaN rejected), `loads_strict`,
   `dumps_readable`, `dumps_compact`, `load_yaml_strict`.
-* `schema`: `validate_record_dict`, `validate_nested("Environment"|"Protocol"|"Verifier"|"Policy"|"Artifact"|..., data)`,
+* `schema`: `SCHEMA_VERSION="0.3.0"`, `validate_record_dict`, `validate_legacy_record_dict` (verbatim 0.2.0 contract in
+  `contracts/legacy/`, legacy input only), `validate_nested("Environment"|"Protocol"|"Verifier"|"Policy"|"Artifact"|..., data)`,
   `validate_against(schema, data)`, `demo_problem_schema()`, `golden_hash_vectors()`.
+* `migrations.v02`: `upgrade_v02_records(dicts, *, algorithm_resolver=None) -> (dicts, UpgradeReport)` (pure,
+  idempotent, appends the placeholder algorithm per kernel with `created_at` copied from the kernel record),
+  `upgrade_bundle_v02`, `default_algorithm_record_id/payload/record`, `read_legacy_store`, `migrate_v02_store`.
+* `models.AlgorithmPayload(kernel_id, algorithm_id, display_name, method_summary, summary_author, tags)`;
+  `ConfigPayload.algorithm_ref` (a `Reference` to an `algorithm`). Never add a payload field named `references`.
+* `common`: `algorithm_of(store, config)`, `algorithms_for_kernel`, `configs_for_algorithm`, `annotations_for_algorithm`.
+* `services.register`: `register_algorithm(store, kernel_id, algorithm_id, *, method_summary, display_name=None,
+  summary_author="human", tags=None) -> (Record, created)` (`summary_author` is `human|agent` here; `program` is reserved
+  for the legacy placeholder), `resolve_algorithm(store, kernel_id, algorithm=None)` (bare id or record id; `None` →
+  the kernel's single algorithm, else `ALGORITHM_REQUIRED` / `MISSING_ALGORITHM`; never creates),
+  `register_config(store, kernel_id, raw_problem, *, registry=None, tags=None, algorithm=None)` (T01 reuse per
+  algorithm), `describe_algorithm(record)` (with `is_placeholder`).
+* `services.trajectory`: per-shape `build_trajectory` (`trajectory-v2`, with generated `code` / `result` sections) and
+  kernel-level `build_kernel_trajectory` (`kernel-trajectory-v1`), `publish_kernel_trajectory`, `verify_kernel_trajectory`,
+  `rebuild_kernel_trajectory`, `kernel_memory_records`, `kernel_view_path`; `services.query.QueryFilters.algorithm_ref`
+  / `include_cross_algorithm_hints`; `services.context` (`context-v2`) adds the `algorithm` block and
+  `same_shape_other_algorithms`.
 
 ### Storage (`kernel_memory.storage.MemoryStore`)
 * `MemoryStore.init(root)` / `MemoryStore.open(root, recover=True)`; `store.lock()` context manager (re-entrant).
@@ -81,8 +111,16 @@ add functions/classes, never change existing signatures without updating all cal
 * Artifacts: `put_artifact_bytes(bytes) -> sha256`, `import_artifact_file(path, expected_sha256=, expected_size=)`,
   `has_artifact(sha)`, `read_artifact(sha)` (verifies digest), `register_artifact_ref(ArtifactRef)`,
   `get_artifact_ref(artifact_id)`, `artifact_registry()`, `verify_artifact(ref) -> problem|None`.
-* Views: `write_view(config_record_id, "trajectory.json"|"memory_records.jsonl"|"context.json", bytes)`,
-  `read_view`, `delete_views`.
+* Views (all under `kernels/<kernel>/trajectory/`): per-shape `write_view(config_record_id,
+  "trajectory.json"|"memory_records.jsonl"|"context.json", bytes)` → `trajectory/shapes/<config-slug>/<name>`,
+  `read_view`, `delete_views`, `shape_view_dir(config_record_id)`; kernel-level `write_kernel_view(kernel_id,
+  "trajectory.json"|"memory_records.jsonl", bytes)`, `read_kernel_view`, `delete_kernel_views` (whole subtree),
+  `kernel_view_dir(kernel_id)`.
+* Algorithms: `algorithm_by_id(kernel_id, algorithm_id)`, `algorithms_for_kernel(kernel_id)`,
+  `configs_by_hash(config_hash, *, algorithm_ref=None)`. Layout: `layout.algorithm_dir`, `algorithm_slug`
+  (raises `RESERVED_SLUG`), `shape_slug`, `kernel_view_dir`, `shape_view_dir`, `is_view_path`.
+* Store layout version 2 (`STORE_VERSION 0.3.0`); a layout-1 store is refused on open (`UNSUPPORTED_STORE`) and
+  must be migrated into a new root with `kmem migrate-v02 --source OLD --apply` (`migrations.v02.migrate_v02_store`).
 * Facts for the request ledger: `write_fact(relpath, bytes)` (only under `requests/`; absent-or-identical),
   `write_runtime_state(relpath, bytes)` (only under `.runtime/`; overwritable), `read_fact`, `list_facts(prefix)`.
 * Maintenance: `recover() -> RecoveryReport`, `integrity_scan() -> IntegrityReport` (modified/missing/corrupt/
@@ -107,7 +145,8 @@ Read the module docstrings; they define `RunRequestSpec`, `SourceSpec`, `SourceS
 | Record | record_id pattern |
 |---|---|
 | kernel | `kernel-<kernel_id>` |
-| config | `cfg-<config_id_hint>-<config_hash hex[:12]>` (register looks up by `config_hash` first: T01) |
+| algorithm | `algorithm-<kernel_id>-<algorithm_id>` (`(kernel_id, algorithm_id)` unique; directory = `slug(algorithm_id)` under the kernel dir; reserved slugs `trajectory`, `annotations`, `kernel.json`) |
+| config (shape) | `cfg-<algorithm_id>-<config_id_hint>-<config_hash hex[:12]>` (register dedupes by `(algorithm_ref, config_hash)`: T01 per algorithm; legacy ids such as `cfg-demo` are never rewritten; reserved slugs `annotations`, `algorithm.json`) |
 | pr (github) | `pr-<pr_key>` where `pr_key = gh-<repo_id>-pr-<number>` and `repo_uid = github:<host>:repo:<repo_id>` |
 | pr (local) | `pr-<pr_key>` where `pr_key = local-<slug>-<short hash>`; `provider=local, number=null` |
 | pr_snapshot | `snapshot-<pr_key>-<seq:04d>` (append only when membership/head/base/status changed) |
@@ -169,9 +208,12 @@ Short SHAs are display-only; never pad or guess.
 * `pytest` from the project root using `.venv/bin/python -m pytest`. Tests live in `tests/test_<area>.py`.
 * Shared fixtures in `tests/conftest.py` (session-scoped paths, per-test stores): `project_root`, `fixtures_root`
   (`fixtures/handoff`, the project's own copy; the handoff directory itself is never read), `bundle_path`
-  (`examples/demo_bundle.json`), `artifact_root` (bundle artifact URIs resolve against it), `bundle_dicts` (the 18
-  bundle records as fresh dicts), `bundle_records` (as `Record`s), `store` (empty `MemoryStore` under `tmp_path`),
-  `demo_store` (bundle published + its artifacts stored). Helpers, imported with `from conftest import ...`:
+  (`examples/demo_bundle.json`, verbatim 0.2.0), `artifact_root` (bundle artifact URIs resolve against it),
+  `legacy_bundle_dicts` (the 18 verbatim 0.2.0 dicts), `bundle_dicts` (the bundle upgraded in memory to 0.3.0: 19
+  records, the placeholder `algorithm-demo_vector_add-unspecified` appended last; `FIXTURE_RECORD_COUNT`,
+  `PLACEHOLDER_ALGORITHM_ID`), `bundle_records` (as `Record`s), `store` (empty `MemoryStore` under `tmp_path`),
+  `demo_store` (upgraded bundle published + its artifacts stored; layout
+  `kernels/demo_vector_add/unspecified/cfg-demo/...`). Helpers, imported with `from conftest import ...`:
   `import_demo_bundle(store, records, artifact_root)` and `record_dict(bundle_dicts, record_id)` (deep copy of one
   bundle record).
 * Synthetic *trusted* runs come from `tests/synthetic_runs.py` (`from synthetic_runs import ...`), which drives the

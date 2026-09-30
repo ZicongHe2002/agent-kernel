@@ -1,4 +1,4 @@
-"""Explicit v0.1 -> v0.2 migration (specification section 20, acceptance T31).
+"""Explicit v0.1 -> v0.3 migration (specification section 20, acceptance T31; ADR-0004 algorithm level).
 
 Public API
 ----------
@@ -10,7 +10,7 @@ Public API
   --verify <sha>^{commit}`` for ``resolve`` and the "ambiguous argument" failure for
   ``is_ambiguous``). This module deliberately does not import ``adapters.git_local``.
 * ``MigrationReport`` (dataclass, ``to_dict()``): identity map, retained/discarded fields,
-  unresolved data, rejection reasons, produced v0.2 record dicts, source-file digests.
+  unresolved data, rejection reasons, produced record dicts (current contract), source-file digests.
 * ``read_v01_source(path) -> dict``: tolerant reader for a v0.1 export (single JSON/YAML file
   or a directory of them). See ``docs/MIGRATION.md`` for the expected structure. The
   structure is *inferred from the concepts named in specification section 20*; no real v0.1
@@ -21,13 +21,29 @@ Public API
 
 Guarantees
 ----------
-* Every produced record is validated with ``Record.from_dict`` (via ``services.common.new_record``);
-  identifiers follow ``docs/DESIGN.md`` section 4. Migration annotations use a deterministic
-  ``annotation-<16 hex>`` id derived from the v0.1 identity so that re-running the migration
-  with the same ``created_at`` is idempotent and a changed input surfaces as ``IdConflictError``.
+* Every produced record is validated with ``Record.from_dict`` against the current contract
+  (``schema_version`` 0.3.0, via ``services.common.new_record``); identifiers follow
+  ``docs/DESIGN.md`` section 4. Migration annotations use a deterministic ``annotation-<16 hex>`` id
+  derived from the v0.1 identity so that re-running the migration with the same ``created_at`` is
+  idempotent and a changed input surfaces as ``IdConflictError``.
+* v0.1 has no algorithm level (ADR-0004). For every migrated kernel that the export lists configs
+  for, the stage ``_migrate_default_algorithms`` links those configs to the kernel's placeholder
+  algorithm ``algorithm-<kernel_id>-unspecified`` built from the ``migrations.v02`` constants
+  (``method_summary`` literally ``"unspecified (imported from v0.2)"``, ``summary_author="program"``,
+  tag ``imported-v02``; a placeholder, never knowledge). An existing store placeholder is reused
+  (``store.algorithm_by_id``); otherwise it is minted with ``created_at`` = the kernel record's
+  ``created_at`` (the reused store kernel's when the kernel already existed, else this run's), so the
+  v0.2 importer's legacy upgrade and this path mint byte-identical records and a later v0.2 import
+  into the same store is idempotent, never ``ID_CONFLICT``. The placeholder is minted even when every
+  config of that kernel is later rejected (a v0.2 import of the kernel would synthesize the same empty
+  placeholder); kernels without config entries get none. It is recorded in the identity map
+  (``v01_kind`` ``kernel`` -> ``algorithm``) and in the record counts.
+* Config ids are ``cfg-unspecified-<config_id_hint>-<config_hash hex[:12]>``; ``config_hash`` is
+  problem identity only (unchanged by the algorithm level). T01 reuse of an existing store config
+  applies per ``(algorithm_ref, config_hash)``: the same shape under another algorithm is never reused.
 * Short SHAs are resolved through the resolver or left unresolved. They are never padded
   with zeros or guessed (T31). An unresolved revision produces no commit record.
-* A v0.1 ``result`` never becomes a ``run``: v0.2 Runs need environment/protocol/verifier
+* A v0.1 ``result`` never becomes a ``run``: v0.2+ Runs need environment/protocol/verifier
   snapshots, raw samples and tested-source identity. The original result fields are embedded
   verbatim (as JSON data) in an ``unverified`` note annotation on the commit. ``spill_bytes``
   is kept with the note "semantics unknown; not HBM traffic"; ``excessive_spill`` is kept as
@@ -40,7 +56,8 @@ Guarantees
 * Configs are normalised through the problem registry; kernels without a (complete) problem
   adapter have their configs rejected ("no problem adapter for kernel; cannot verify
   semantics"). No ``config_hash`` is ever fabricated for unknown semantics (``mla_forward``
-  stays unresolved). Existing store kernels/configs are reused by ``kernel_id`` / ``config_hash``.
+  stays unresolved). Existing store kernels/configs are reused by ``kernel_id`` /
+  ``(algorithm_ref, config_hash)``.
 * Unknown top-level keys and unknown per-entry fields are reported as discarded, never dropped
   silently. ``trajectory`` is always discarded (it is rebuilt from authoritative facts).
 * All text from the v0.1 export (titles, summaries, notes) is stored as data.
@@ -70,6 +87,7 @@ from ..domain.ids import (
 )
 from ..domain.jsonio import DEFAULT_MAX_BYTES, dumps_compact, load_json_file, load_yaml_strict
 from ..domain.models import (
+    AlgorithmPayload,
     AnnotationPayload,
     Change,
     CommitPayload,
@@ -83,6 +101,7 @@ from ..domain.models import (
 from ..domain.problems import ProblemRegistry, default_registry
 from ..services.common import new_record
 from ..storage.store import MemoryStore
+from .v02 import DEFAULT_ALGORITHM_ID, LEGACY_METHOD_SUMMARY, default_algorithm_payload, default_algorithm_record_id
 
 # --------------------------------------------------------------------------------------
 # Expected v0.1 structure (inferred from specification section 20; confirm against real data)
@@ -421,6 +440,8 @@ class _Migration:
         self.kernel_record_ids: dict[str, str] = {}  # v0.1 kernel_id -> kernel record id (new or reused)
         self.config_record_ids: dict[str, str] = {}  # v0.1 config_id -> config record id (new or reused)
         self.config_kernel: dict[str, str] = {}  # v0.1 config_id -> kernel_id
+        self.kernel_created_at: dict[str, str] = {}  # v0.1 kernel_id -> created_at of the (reused or minted) kernel record
+        self.algorithm_record_ids: dict[str, str] = {}  # v0.1 kernel_id -> placeholder algorithm record id (new or reused)
         self.attempts: dict[str, _AttemptCtx] = {}
         self.revision_attempt: dict[str, str] = {}  # every revision seen with a migrated attempt
         self.revision_commit: dict[str, str] = {}  # only revisions whose sha resolved
@@ -498,6 +519,7 @@ class _Migration:
     def run(self) -> None:
         self._check_top_level()
         self._migrate_kernels()
+        self._migrate_default_algorithms()
         self._migrate_configs()
         self._collect_attempts()
         self._migrate_revisions()
@@ -544,6 +566,7 @@ class _Migration:
                 # this migration's own record (the id minted below), fall through and mint it again: identical id +
                 # identical content is idempotent (spec 15) and a changed input surfaces as IdConflictError at publish.
                 self.kernel_record_ids[kernel_id] = existing.record_id
+                self.kernel_created_at[kernel_id] = existing.created_at
                 self._map("kernel", v01_id, "kernel", existing.record_id, "mapped")
                 self._note(f"kernel {kernel_id!r}: reused existing store record {existing.record_id!r}; v0.1 display_name/adapter_id not applied")
                 continue
@@ -577,7 +600,55 @@ class _Migration:
             )
             self._add_record(new_record("kernel", record_id, payload, created_at=self.created_at), v01_id)
             self.kernel_record_ids[kernel_id] = record_id
+            self.kernel_created_at[kernel_id] = self.created_at
             self._map("kernel", v01_id, "kernel", record_id, "mapped")
+
+    def _default_algorithm(self, kernel_id: str) -> str:
+        """Placeholder algorithm record id for a migrated kernel: reused from the store or minted once (idempotent)."""
+        known = self.algorithm_record_ids.get(kernel_id)
+        if known is not None:
+            return known
+        record_id = default_algorithm_record_id(kernel_id)
+        existing = self.store.algorithm_by_id(kernel_id, DEFAULT_ALGORITHM_ID) if self.store is not None else None
+        if existing is not None:
+            # The placeholder already exists (imported/upgraded v0.2 data or an earlier v0.1 run): link to it.
+            # Never re-minted, so a differing created_at can never surface as ID_CONFLICT for a placeholder.
+            self.algorithm_record_ids[kernel_id] = existing.record_id
+            self._map("kernel", kernel_id, "algorithm", existing.record_id, "mapped")
+            self._note(f"kernel {kernel_id!r}: reused existing placeholder algorithm {existing.record_id!r} (v0.1 has no algorithm level)")
+            return existing.record_id
+        # created_at of the kernel record this placeholder belongs to: the reused store kernel's, else this run's
+        # (the kernel minted above carries self.created_at).  This is exactly what migrations.v02 copies from the
+        # kernel dict, so both paths mint byte-identical records.
+        created_at = self.kernel_created_at.get(kernel_id, self.created_at)
+        payload = AlgorithmPayload(**default_algorithm_payload(kernel_id))
+        self._add_record(new_record("algorithm", record_id, payload, created_at=created_at), kernel_id)
+        self.algorithm_record_ids[kernel_id] = record_id
+        self._map("kernel", kernel_id, "algorithm", record_id, "mapped")
+        self._note(
+            f"kernel {kernel_id!r}: v0.1 has no algorithm level; placeholder algorithm {record_id!r} minted "
+            f"(method_summary {LEGACY_METHOD_SUMMARY!r}; created_at copied from the kernel record)"
+        )
+        return record_id
+
+    def _migrate_default_algorithms(self) -> None:
+        """One placeholder algorithm per migrated kernel that the v0.1 export lists configs for.
+
+        v0.1 has no algorithm level and the current contract requires ``config.algorithm_ref``. The
+        placeholder is the record the v0.2 importer synthesizes (``migrations.v02``): id
+        ``algorithm-<kernel_id>-unspecified``, ``created_at`` = the kernel record's. It is reused from the
+        store when present. It is minted even when every config of that kernel is later rejected (an empty
+        placeholder, never knowledge; a v0.2 import of the same kernel would synthesize the same record).
+        """
+        wanted: list[str] = []
+        for entry in self._entries("configs"):
+            if not isinstance(entry, dict):
+                continue
+            kernel_id = entry.get("kernel_id")
+            if isinstance(kernel_id, str) and kernel_id in self.kernel_record_ids and kernel_id not in wanted:
+                wanted.append(kernel_id)
+        for kernel_id in wanted:
+            self._default_algorithm(kernel_id)
 
     def _migrate_configs(self) -> None:
         for index, entry in enumerate(self._entries("configs")):
@@ -601,7 +672,7 @@ class _Migration:
             if not isinstance(problem, dict):
                 self._reject("config", v01_id, "config", "problem missing or not an object")
                 continue
-            self._retain("configs", "config_id", "identity_map.v01_id (v0.2 config_id is the normalized config_id_hint)")
+            self._retain("configs", "config_id", "identity_map.v01_id (config.config_id is the normalized config_id_hint; record id cfg-unspecified-<hint>-<hash12>)")
             self._retain("configs", "kernel_id", "config.kernel_id")
             self._retain("configs", "problem", "config.problem after registry normalization; config_hash recomputed")
             if kernel_id not in self.kernel_record_ids:
@@ -616,15 +687,20 @@ class _Migration:
                 self._reject("config", v01_id, "config", f"problem rejected by the {kernel_id!r} normalizer: {exc.message}")
                 continue
             self.config_kernel[config_id] = kernel_id
-            record_id = f"cfg-{normalized.config_id_hint}-{normalized.config_hash[len('sha256:'):][:12]}"
-            same_hash = self.store.configs_by_hash(normalized.config_hash) if self.store is not None else []
+            algorithm_ref = self._default_algorithm(kernel_id)  # already minted/reused by the stage; idempotent
+            record_id = f"cfg-{DEFAULT_ALGORITHM_ID}-{normalized.config_id_hint}-{normalized.config_hash[len('sha256:'):][:12]}"
+            same_hash = self.store.configs_by_hash(normalized.config_hash, algorithm_ref=algorithm_ref) if self.store is not None else []
             if same_hash and all(e.record_id != record_id for e in same_hash):
-                # T01 reuse applies to a *foreign* store config with this config_hash.  When the store already holds
-                # this migration's own record (the id minted above), fall through and mint it again: identical id +
-                # identical content is idempotent (spec 15) and a changed input surfaces as IdConflictError at publish.
+                # T01 reuse applies to a *foreign* store config with this config_hash UNDER THE SAME ALGORITHM (the same
+                # shape under another algorithm is a different record by design).  When the store already holds this
+                # migration's own record (the id minted above), fall through and mint it again: identical id + identical
+                # content is idempotent (spec 15) and a changed input surfaces as IdConflictError at publish.
                 self.config_record_ids[config_id] = same_hash[0].record_id
                 self._map("config", v01_id, "config", same_hash[0].record_id, "mapped")
-                self._note(f"config {config_id!r}: same config_hash as existing store record {same_hash[0].record_id!r}; reused (T01)")
+                self._note(
+                    f"config {config_id!r}: same config_hash as existing store record {same_hash[0].record_id!r} "
+                    f"under algorithm {algorithm_ref!r}; reused (T01)"
+                )
                 continue
             try:
                 validate_record_id(record_id)
@@ -633,6 +709,7 @@ class _Migration:
                 continue
             payload = ConfigPayload(
                 kernel_id=kernel_id,
+                algorithm_ref=algorithm_ref,
                 config_id=normalized.config_id_hint,
                 problem_schema_id=normalized.problem_schema_id,
                 problem_schema_digest=normalized.problem_schema_digest,
@@ -642,7 +719,7 @@ class _Migration:
             )
             record = new_record("config", record_id, payload, created_at=self.created_at)
             if record_id in self._records:
-                self._note(f"config {config_id!r}: same config_hash as v0.1 config(s) {self._origins[record_id]}; one v0.2 config (T01)")
+                self._note(f"config {config_id!r}: same config_hash as v0.1 config(s) {self._origins[record_id]}; one config record (T01)")
             self._add_record(record, v01_id)
             self.config_record_ids[config_id] = record_id
             self._map("config", v01_id, "config", record_id, "mapped")
@@ -1093,7 +1170,7 @@ def migrate_v01(
     dry_run: bool = True,
     created_at: str | None = None,
 ) -> MigrationReport:
-    """Migrate a v0.1 export at ``path`` into v0.2 records (dry run by default).
+    """Migrate a v0.1 export at ``path`` into current-contract (0.3.0) records (dry run by default).
 
     * ``store``: used to reuse existing kernels/configs and to detect conflicts; records are
       published (``publish_bundle(..., allow_dangling=False)``) only when ``dry_run`` is False.

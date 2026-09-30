@@ -18,10 +18,11 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-from ..domain.errors import InputError, KernelMemoryError, NotComparableError, PrerequisiteMissingError
+from ..domain.errors import InputError, KernelMemoryError, MissingReferenceError, NotComparableError, PrerequisiteMissingError
 from ..domain.jsonio import load_json_file, loads_strict
 from ..domain.models import GitOid, to_json
 from ..storage import MemoryStore
+from ..storage import layout as layout_module
 
 CommandResult = dict[str, Any] | tuple[dict[str, Any], int]
 
@@ -166,6 +167,25 @@ def cmd_register_kernel(args: argparse.Namespace) -> CommandResult:
     return {"kernel": _record_summary(record), "kernel_id": record.payload.kernel_id}
 
 
+def cmd_register_algorithm(args: argparse.Namespace) -> CommandResult:
+    from ..services.register import describe_algorithm, register_algorithm
+
+    store = _open_store(args)
+    summary = args.method_summary
+    if isinstance(summary, str) and summary.startswith("@"):
+        summary = Path(summary[1:]).read_text(encoding="utf-8")
+    record, created = register_algorithm(
+        store,
+        args.kernel_id,
+        args.algorithm_id,
+        method_summary=summary,
+        display_name=args.display_name,
+        summary_author=args.summary_author,
+        tags=args.tag or [],
+    )
+    return {"algorithm": _record_summary(record), "created": created, **describe_algorithm(record)}
+
+
 def cmd_register_config(args: argparse.Namespace) -> CommandResult:
     from ..services.register import register_config
 
@@ -173,12 +193,15 @@ def cmd_register_config(args: argparse.Namespace) -> CommandResult:
     problem = _json_arg(args.problem, what="--problem")
     if not isinstance(problem, dict):
         raise InputError("--problem must be a JSON object")
-    record, created = register_config(store, args.kernel_id, problem, tags=args.tag or [])
+    record, created = register_config(store, args.kernel_id, problem, tags=args.tag or [], algorithm=args.algorithm)
+    algorithm = store.get(record.payload.algorithm_ref)
     return {
         "config": _record_summary(record),
         "created": created,
         "config_hash": record.payload.config_hash,
         "config_id": record.payload.config_id,
+        "algorithm_ref": record.payload.algorithm_ref,
+        "algorithm_id": algorithm.payload.algorithm_id if algorithm is not None else None,
         "problem": record.payload.problem,
     }
 
@@ -445,9 +468,22 @@ def cmd_decide(args: argparse.Namespace) -> CommandResult:
 
 
 def cmd_trajectory(args: argparse.Namespace) -> CommandResult:
+    """Kernel-level (``--kernel``) or per-shape (``--config``) trajectory views; both live under
+    ``kernels/<kernel>/trajectory/``."""
     from ..services import trajectory as traj
 
     store = _open_store(args)
+    if args.kernel:
+        kernel_id = args.kernel
+        if args.verify:
+            return _to_dict(traj.verify_kernel_trajectory(store, kernel_id))
+        if args.rebuild:
+            result = _to_dict(traj.rebuild_kernel_trajectory(store, kernel_id, force=args.force))
+        else:
+            result = _to_dict(traj.publish_kernel_trajectory(store, kernel_id, force=args.force))
+        if args.print_view:
+            result["view"] = traj.build_kernel_trajectory(store, kernel_id)
+        return result
     if args.verify:
         return _to_dict(traj.verify_trajectory(store, args.config))
     if args.rebuild:
@@ -463,10 +499,28 @@ def cmd_query(args: argparse.Namespace) -> CommandResult:
     from ..services.query import QueryFilters, query_memory
 
     store = _open_store(args)
+    algorithm_ref = args.algorithm
+    if algorithm_ref and not store.exists(algorithm_ref):
+        # A bare algorithm_id is accepted when the kernel is named too.
+        if args.kernel:
+            resolved = store.algorithm_by_id(args.kernel, algorithm_ref)
+            if resolved is None:
+                raise MissingReferenceError(
+                    f"kernel {args.kernel!r} has no algorithm {algorithm_ref!r}",
+                    code="MISSING_ALGORITHM",
+                    details={"kernel_id": args.kernel, "algorithm_id": algorithm_ref},
+                )
+            algorithm_ref = resolved.record_id
+        else:
+            raise InputError(
+                f"--algorithm {algorithm_ref!r} is not a record id; pass --kernel to resolve a bare algorithm_id",
+                code="ALGORITHM_REQUIRED",
+            )
     filters = QueryFilters(
         kernel_id=args.kernel,
         config_ref=args.config,
         config_hash=args.config_hash,
+        algorithm_ref=algorithm_ref,
         record_type=args.record_type,
         component=args.component,
         parameter_key=args.parameter,
@@ -480,6 +534,7 @@ def cmd_query(args: argparse.Namespace) -> CommandResult:
         reason_code=args.reason_code,
         run_status=args.run_status,
         include_cross_config_hints=args.cross_config_hints,
+        include_cross_algorithm_hints=args.cross_algorithm_hints,
         limit=args.limit,
     )
     return _to_dict(query_memory(store, filters))
@@ -627,6 +682,15 @@ def cmd_migrate_v01(args: argparse.Namespace) -> CommandResult:
     return _to_dict(report)
 
 
+def cmd_migrate_v02(args: argparse.Namespace) -> CommandResult:
+    """Migrate a layout-1 (v0.2) store into the root given by --root (dry run unless --apply)."""
+    from ..migrations.v02 import migrate_v02_store
+
+    dest = _root(args)
+    report = migrate_v02_store(Path(args.source), dest, dry_run=args.dry_run, force=args.force)
+    return _to_dict(report)
+
+
 def cmd_status(args: argparse.Namespace) -> CommandResult:
     from ..settings import default_settings, pending_integrations
 
@@ -653,6 +717,25 @@ def cmd_status(args: argparse.Namespace) -> CommandResult:
         for entry in store.index_entries():
             counts[entry.record_type] = counts.get(entry.record_type, 0) + 1
         result["records"] = counts
+        kernels: dict[str, Any] = {}
+        for kernel in store.records("kernel"):
+            kid = kernel.payload.kernel_id
+            algorithms = store.algorithms_for_kernel(kid)
+            kernels[kid] = {
+                "kernel_ref": kernel.record_id,
+                "algorithms": {
+                    a.payload.algorithm_id: {
+                        "algorithm_ref": a.record_id,
+                        "shapes": len([c for c in store.records("config") if c.payload.algorithm_ref == a.record_id]),
+                        "is_placeholder": a.payload.algorithm_id == "unspecified",
+                    }
+                    for a in algorithms
+                },
+                "shapes": len([c for c in store.records("config") if c.payload.kernel_id == kid]),
+                "trajectory_dir": str(layout_module.kernel_view_dir(kid)),
+            }
+        result["kernels"] = kernels
+        result["store"] = {k: store.manifest().get(k) for k in ("store_version", "schema_version", "layout_version")}
     return result
 
 
@@ -711,9 +794,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--display-name", required=True)
     p.add_argument("--adapter-id", required=True)
     p.add_argument("--notes", default="")
-    p = add("register-config", cmd_register_config, "register a normalized computational problem")
+    p = add("register-algorithm", cmd_register_algorithm, "register an optimisation method (algorithm) of a kernel")
+    p.add_argument("--kernel-id", required=True)
+    p.add_argument("--algorithm-id", required=True)
+    p.add_argument("--method-summary", required=True, help="authored description of the method (text or @file); data, not a measurement")
+    p.add_argument("--display-name")
+    p.add_argument("--summary-author", default="human", choices=["human", "agent"])
+    p.add_argument("--tag", action="append")
+    p = add("register-config", cmd_register_config, "register a normalized computational problem (a shape) under an algorithm")
     p.add_argument("--kernel-id", required=True)
     p.add_argument("--problem", required=True, help="inline JSON or @file")
+    p.add_argument("--algorithm", help="algorithm_id or algorithm record id; optional when the kernel has exactly one algorithm")
     p.add_argument("--tag", action="append")
     p = add("register-local", cmd_register_local, "register a local trial context (not a GitHub PR)")
     p.add_argument("--config", required=True)
@@ -796,8 +887,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--policy")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--supersedes")
-    p = add("trajectory", cmd_trajectory, "deterministically (re)build the trajectory view")
-    p.add_argument("--config", required=True)
+    p = add("trajectory", cmd_trajectory, "deterministically (re)build the kernel-level (--kernel) or per-shape (--config) trajectory view")
+    scope = p.add_mutually_exclusive_group(required=True)
+    scope.add_argument("--kernel", help="kernel_id: the whole-kernel view (all algorithms and shapes)")
+    scope.add_argument("--config", help="config record id: one shape's view")
     p.add_argument("--rebuild", action="store_true")
     p.add_argument("--verify", action="store_true")
     p.add_argument("--force", action="store_true")
@@ -818,7 +911,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--decision-outcome")
     p.add_argument("--reason-code")
     p.add_argument("--run-status", choices=["tested", "not_run"])
+    p.add_argument("--algorithm", help="algorithm record id, or a bare algorithm_id together with --kernel")
     p.add_argument("--cross-config-hints", action="store_true")
+    p.add_argument("--cross-algorithm-hints", action="store_true", help="also list the same shape under other algorithms (never mixed into items)")
     p.add_argument("--limit", type=int)
     p = add("export-context", cmd_export_context, "export agent context with original record ids")
     p.add_argument("--config", required=True)
@@ -848,7 +943,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--resolver", help="map:@file.json (\"repo_uid|shortsha\": fullhex) or git:<repo path>")
     p.add_argument("--created-at", help="fixed RFC 3339 UTC timestamp for all migrated records (re-applying with the same value is idempotent)")
     p.set_defaults(dry_run=True)
-    add("status", cmd_status, "store counts and pending integrations")
+    p = add("migrate-v02", cmd_migrate_v02, "migrate a layout-1 (v0.2) store into --root (dry-run by default; the source is never modified)")
+    p.add_argument("--source", required=True, help="root of the old layout-1 store")
+    p.add_argument("--apply", dest="dry_run", action="store_false")
+    p.add_argument("--force", action="store_true", help="migrate despite source integrity problems (they are recorded in the report)")
+    p.set_defaults(dry_run=True)
+    add("status", cmd_status, "store counts, per-kernel algorithms/shapes, and pending integrations")
     p = add("cpu-demo-defaults", cmd_cpu_demo_defaults, "write default CPU-demo protocol/verifier files and print the demo source commit")
     p.add_argument("--out", required=True)
     p.add_argument("--repetitions", type=int, default=100)

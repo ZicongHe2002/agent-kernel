@@ -4,7 +4,8 @@
 （Python 包名 `kernel_memory`，命令行工具 `kmem`）：以文件为权威数据源的记忆系统，
 用于存储、校验、检索、比较和重建内核优化历史，按以下层级组织数据：
 
-`kernel（内核）→ config（配置）→ attempt（PR 集合）→ PR → commit（提交）→ run（运行）`。
+`kernel（内核）→ { trajectory（整核生成视图）, algorithm（算法/方法）→ shape（= config，固定计算问题）→ attempt（PR 集合）→ PR → commit（提交）→ run（运行）}`
+（2026-09-28 起，见 `kernel-memory/docs/adr/ADR-0004-algorithm-shape-hierarchy.md`）。
 
 ## 目录结构
 

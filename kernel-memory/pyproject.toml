@@ -26,7 +26,7 @@ kmem = "kernel_memory.cli.main:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-kernel_memory = ["contracts/*.json"]
+kernel_memory = ["contracts/*.json", "contracts/legacy/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
