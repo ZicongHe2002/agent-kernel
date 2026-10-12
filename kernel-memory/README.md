@@ -27,7 +27,7 @@ v0.2 数据导入时会为每个 kernel 补上占位算法 `unspecified`（其 `
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"      # 此处使用的固定依赖版本见 requirements.lock.txt
+.venv/bin/python -m pip install -e ".[dev,jax]"
 .venv/bin/python -m pytest tests -q
 ```
 
@@ -35,11 +35,28 @@ Windows PowerShell：
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev,cpu-demo]"
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,jax]"
 $env:PYTHONPATH = "$PWD\src"
 & .\.venv\Scripts\python.exe -m pytest tests -q
 & .\.venv\Scripts\python.exe -m kernel_memory.cli.main --help
 ```
+
+`dev` 包含 pytest、NumPy、PyYAML；`jax` 用于真实 JAX CPU 测试。只安装 `.[dev]` 时，
+真实 JAX 测试会明确跳过。WSL 使用上面的 Bash 命令，并创建自己的 Linux `.venv`，
+不要复用 Windows 虚拟环境。换行及校验失败的排查见 [使用指南](docs/MEMORY_GUIDE.zh-CN.md#wsl-测试与换行排查)。
+
+在 WSL 中一条命令检查并保存完整日志（从 `kernel-memory/` 运行）：
+
+```bash
+bash scripts/check_wsl.sh
+# 包含真实 JAX CPU 测试：bash scripts/check_wsl.sh --with-jax
+```
+
+脚本创建或使用 Linux `.venv`，先安装 `.[dev]`（含 PyYAML），然后运行 pytest、P0 演示、CPU 演示。
+这些阶段的全部标准输出和报错写入 `.demo/checks/latest.txt`；终端仅显示进度、退出码和文件位置。
+失败或 Ctrl+C 时停止后续阶段，保留日志及非零退出码。每次运行覆盖日志，需要保留时请先另存。
+演示会重建默认的 `.demo/p0-memory`、`.demo/cpu-memory` 和 `.demo/cpu-demo-files`。
+以后直接让 Codex 读取 `kernel-memory/.demo/checks/latest.txt`，无需粘贴终端输出。
 
 macOS 注意事项：如果在虚拟环境中执行 `import kernel_memory` 失败，请运行
 `chflags nohidden .venv/lib/python3.11/site-packages/*.pth`（Python 会跳过隐藏的 `.pth` 文件），

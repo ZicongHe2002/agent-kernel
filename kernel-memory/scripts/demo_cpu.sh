@@ -76,6 +76,9 @@ $KMEM --root "$ROOT" optimize --config "$CFG" --planner mock --subject baseline-
 $KMEM --root "$ROOT" optimize --config "$CFG" --planner mock --subject baseline-cpu-demo-reference \
   --baseline-run run-request-cpu-baseline-1-a1 --backend cpu --entrypoint kernel_memory.adapters.cpu_demo:vector_add_numpy_chunked \
   --protocol "$OUT/cpu_protocol.json" --verifier "$OUT/cpu_verifier.json" --budget "$OUT/budget.json" --job-id job-cpu-demo --json
+echo "== refresh trajectory after optimization (include all new runs and annotations) =="
+$KMEM --root "$ROOT" trajectory --kernel demo_vector_add --rebuild --json
+$KMEM --root "$ROOT" trajectory --kernel demo_vector_add --verify --json
 echo "== export context (algorithm block with the human-authored method summary) =="
 $KMEM --root "$ROOT" export-context --config "$CFG" --json
 echo "== status / store layout =="

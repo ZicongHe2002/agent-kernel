@@ -1,8 +1,10 @@
 """Deep validation of Kernel Memory records (specification sections 6, 7, 9.2, 11.2, 13, 15).
 
 Schema validation (``domain.schema``) proves that a record is well formed. Deep validation
-proves that a *set* of records is internally consistent and that every recorded number and
-hash is backed by evidence that can be recomputed. Nothing here invents measurements:
+proves that a *set* of records is internally consistent and checks retained evidence.
+Explicit ``summary_only`` imports retain results without evidence, remain unverified,
+and emit ``SUMMARY_ONLY_RUN`` instead of claiming numerical verification. Other runs
+retain the full evidence requirements. Nothing here invents measurements:
 medians/p90s come from ``domain.stats`` over the raw samples artifact, every digest from
 ``domain.hashing``.
 
@@ -72,6 +74,8 @@ run: ``TESTED_SOURCE_MISMATCH``, ``RUN_CONFIG_MISMATCH``, ``REPO_UID_MISMATCH``,
 ``ARTIFACT_SIZE_MISMATCH``, W ``EVIDENCE_UNAVAILABLE`` (expired/missing tombstone),
 ``INVALID_SAMPLES_ARTIFACT``, ``UNKNOWN_UNIT``, ``INVALID_SAMPLES``, ``SAMPLE_COUNT_MISMATCH``,
 ``SUMMARY_MISMATCH``, ``TIMING_NOT_RUN_WITH_RESULTS``, ``FABRICATED_RESULT``,
+``SUMMARY_ONLY_PROVENANCE``, ``SUMMARY_ONLY_WITH_EVIDENCE``, ``INVALID_SAMPLE_COUNT``,
+``INVALID_TIMING_SUMMARY``, W ``SUMMARY_ONLY_RUN``,
 W ``MISSING_FAILURE_REASON``, W ``FAILURE_REASON_ON_SUCCESS``,
 ``OBSERVED_METRIC_WITHOUT_EVIDENCE``, ``INVALID_METRIC_VALUE``, ``UNKNOWN_METRIC_NOT_NULL``,
 W ``DUPLICATE_METRIC``, W ``FIXTURE_RUN``, W ``RERUN_SUBJECT_MISMATCH``.
@@ -1015,6 +1019,33 @@ class _Validator:
         p = record.payload
         rid = record.record_id
         src = p.source
+        summary_only = p.evidence_mode == "summary_only"
+        if summary_only:
+            if p.provenance != "imported_unverified":
+                self.error(
+                    "SUMMARY_ONLY_PROVENANCE",
+                    f"run {rid!r}: summary_only requires imported_unverified provenance",
+                    rid,
+                    "provenance",
+                )
+            if (
+                p.artifacts
+                or p.correctness.report_artifact_ref is not None
+                or p.timing.samples_artifact_ref is not None
+                or any(m.source_artifact_ref is not None for m in p.analysis_metrics)
+            ):
+                self.error(
+                    "SUMMARY_ONLY_WITH_EVIDENCE",
+                    f"run {rid!r}: summary_only requires no artifacts or artifact references",
+                    rid,
+                    "evidence_mode",
+                )
+            self.warning(
+                "SUMMARY_ONLY_RUN",
+                f"run {rid!r}: imported summary retained without evidence; measurements and correctness cannot be independently verified",
+                rid,
+                "evidence_mode",
+            )
 
         subject = self.resolve_typed(p.subject_ref, *SUBJECT_TYPES)
         if subject is not None:
@@ -1174,7 +1205,7 @@ class _Validator:
                     cases_total=c.cases_total,
                     cases_passed=c.cases_passed,
                 )
-            if c.report_artifact_ref is None:
+            if c.report_artifact_ref is None and not summary_only:
                 self.error("MISSING_CORRECTNESS_EVIDENCE", f"run {rid!r}: correctness pass without report_artifact_ref", rid, "correctness.report_artifact_ref")
             else:
                 in_run(c.report_artifact_ref, "correctness.report_artifact_ref")
@@ -1203,6 +1234,8 @@ class _Validator:
         # timing -----------------------------------------------------------------
         t = p.timing
         if t.status == "recorded":
+            if summary_only and t.sample_count <= 0:
+                self.error("INVALID_SAMPLE_COUNT", f"run {rid!r}: recorded summary requires a positive sample_count", rid, "timing.sample_count")
             if t.median_us is None or t.p90_us is None:
                 self.error("SUMMARY_MISSING", f"run {rid!r}: recorded timing requires median_us and p90_us", rid, "timing")
             if t.sample_count != p.protocol.repetitions:
@@ -1214,7 +1247,15 @@ class _Validator:
                     sample_count=t.sample_count,
                     repetitions=p.protocol.repetitions,
                 )
-            if t.samples_artifact_ref is None:
+            if summary_only and t.median_us is not None and t.p90_us is not None:
+                if not math.isfinite(t.median_us) or not math.isfinite(t.p90_us) or t.median_us <= 0 or t.p90_us < t.median_us:
+                    self.error(
+                        "INVALID_TIMING_SUMMARY",
+                        f"run {rid!r}: timing summaries must be finite, positive and p90_us >= median_us",
+                        rid,
+                        "timing",
+                    )
+            if t.samples_artifact_ref is None and not summary_only:
                 self.error("MISSING_TIMING_EVIDENCE", f"run {rid!r}: recorded timing without samples_artifact_ref", rid, "timing.samples_artifact_ref")
             elif in_run(t.samples_artifact_ref, "timing.samples_artifact_ref"):
                 self._check_samples(record, local[t.samples_artifact_ref], loaded.get(t.samples_artifact_ref))
@@ -1254,7 +1295,7 @@ class _Validator:
                 self.warning("DUPLICATE_METRIC", f"run {rid!r}: metric {m.name!r} with scope {m.scope!r} appears twice", rid, field)
             seen_metrics.add(key)
             if m.status == "observed":
-                if m.value is None or m.source_artifact_ref is None:
+                if m.value is None or (m.source_artifact_ref is None and not summary_only):
                     self.error(
                         "OBSERVED_METRIC_WITHOUT_EVIDENCE",
                         f"run {rid!r}: observed metric {m.name!r} requires a value and a source_artifact_ref",

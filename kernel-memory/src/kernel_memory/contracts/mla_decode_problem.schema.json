@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:kernel-memory:problem:mla-decode:v1",
+  "title": "MLA decode fixed runtime contract",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "operation": {"const": "mla_decode"},
+    "interface": {"enum": ["contiguous_native", "paged_native", "dense_reference"]},
+    "batch": {"type": "integer", "minimum": 1},
+    "num_q_heads": {"type": "integer", "minimum": 1},
+    "query_tokens_per_request": {"const": 1},
+    "latent_dim": {"type": "integer", "minimum": 1},
+    "rope_dim": {"type": "integer", "minimum": 0},
+    "q_dim": {"type": "integer", "minimum": 1},
+    "cache_feature_dim": {"type": "integer", "minimum": 1},
+    "capacity": {"type": "integer", "minimum": 1},
+    "timed_length": {"type": "integer", "minimum": 0},
+    "dtype": {"const": "bfloat16"},
+    "score_dtype": {"const": "float32"},
+    "probability_dtype": {"const": "bfloat16"},
+    "block_size": {"type": "integer", "minimum": 1},
+    "sm_scale": {"type": "number"},
+    "sliding_window": {"type": "integer", "minimum": 0},
+    "soft_cap": {"type": "number"},
+    "cache_layout": {"enum": ["contiguous", "paged", "dense"]},
+    "physical_cache_shape": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "length_semantics": {"const": "append_then_attend"},
+    "input_signature": {"$ref": "#/$defs/signature"},
+    "output_signature": {"$ref": "#/$defs/signature"},
+    "input_generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "distribution": {"const": "standard_normal"},
+        "seed": {"type": "integer"},
+        "quantization": {"const": "exact_bfloat16"}
+      },
+      "required": ["distribution", "seed", "quantization"]
+    },
+    "page_size": {"type": ["integer", "null"], "minimum": 1},
+    "pages_per_block": {"type": ["integer", "null"], "minimum": 1},
+    "block_kv": {"type": ["integer", "null"], "minimum": 1},
+    "decode_batch_size": {"type": ["integer", "null"], "minimum": 1},
+    "transpose_cache": {"type": "boolean"},
+    "two_step": {"type": "boolean"}
+  },
+  "required": [
+    "operation", "interface", "batch", "num_q_heads", "query_tokens_per_request",
+    "latent_dim", "rope_dim", "q_dim", "cache_feature_dim", "capacity", "timed_length",
+    "dtype", "score_dtype", "probability_dtype", "block_size", "sm_scale", "sliding_window",
+    "soft_cap", "cache_layout", "physical_cache_shape", "length_semantics", "input_signature",
+    "output_signature", "input_generation", "page_size", "pages_per_block", "block_kv",
+    "decode_batch_size", "transpose_cache", "two_step"
+  ],
+  "$defs": {
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9_]*$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dtype": {"type": "string"},
+            "shape": {"type": "array", "minItems": 1, "items": {"type": ["integer", "string"]}},
+            "layout": {"type": "string"}
+          },
+          "required": ["dtype", "shape", "layout"]
+        }
+      },
+      "minProperties": 1
+    }
+  }
+}

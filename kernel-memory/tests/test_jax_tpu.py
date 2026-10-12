@@ -16,7 +16,8 @@ Two families:
   by the CPU adapter, never ``tpu``.
 
 Exactly one test is marked ``integration`` (T29): on this CPU-only host the TPU adapter must
-refuse with ``actual_backend == "cpu"``.  It executes here; it is never skipped.
+refuse with ``actual_backend == "cpu"``.  Real-jax tests require the optional ``jax`` extra;
+without it they are skipped, which does not count as evidence for T29.
 """
 from __future__ import annotations
 
@@ -634,9 +635,7 @@ def test_compile_never_treats_empty_or_non_string_as_text_as_evidence(text: Any,
 # ------------------------------------------------------------------------------ real jax on CPU
 @pytest.fixture(scope="module")
 def real_jax() -> Any:
-    import jax  # imported once for the module; this host is CPU-only
-
-    return jax
+    return pytest.importorskip("jax", reason="real JAX tests require the optional 'jax' extra")
 
 
 def cpu_adapter(resolver: Any) -> JaxAdapter:
@@ -832,12 +831,8 @@ def test_cpu_interface_never_requires_tpu_authorization_but_tpu_label_is_refused
         JaxAdapter(entrypoint_resolver=RecordingResolver(resolved(good_kernel))).prepare(make_spec("req-tpu-auth", authorization=AUTHORIZED), PROBLEM)
 
 
-def test_cpu_interface_compile_captures_real_stablehlo_and_compiled_hlo_text() -> None:
-    try:
-        import jax
-    except ImportError as exc:  # pragma: no cover - this host has jax; the reason is exact when it does not
-        pytest.skip(f"jax cannot be imported: {exc}")
-    adapter = cpu_adapter(RecordingResolver(resolved(jax.jit(good_kernel), inputs=jax_inputs)))
+def test_cpu_interface_compile_captures_real_stablehlo_and_compiled_hlo_text(real_jax: Any) -> None:
+    adapter = cpu_adapter(RecordingResolver(resolved(real_jax.jit(good_kernel), inputs=jax_inputs)))
     prepared = adapter.prepare(cpu_spec("req-cpu-hlo"), PROBLEM)
     report = adapter.compile(prepared)
     assert report.status == "ok"
@@ -871,14 +866,14 @@ def test_compile_log_backend_is_never_tpu_on_this_host(real_jax: Any) -> None:
         JaxAdapter(entrypoint_resolver=RecordingResolver(resolved(good_kernel))).prepare(make_spec("req-tpu-label", authorization=AUTHORIZED), PROBLEM)
 
 
-# ------------------------------------------------------------------------------ T29 (integration, executes here)
+# ------------------------------------------------------------------------------ T29 (integration, requires real jax)
 @pytest.mark.integration
 def test_t29_tpu_adapter_refuses_honestly_on_this_cpu_only_host(real_jax: Any) -> None:
     """T29: without a TPU the adapter refuses with BackendUnavailable; it never runs on CPU labelled tpu.
 
-    This runs against the real jax installation of this host.  It is deliberately not skipped:
-    a skip would not be evidence.  If this host ever gains a TPU the assertion fails loudly and
-    the positive T29 path must be exercised there instead.
+    This runs against the optional real jax installation of this host.  Without that
+    dependency the fixture skips the test; a skip is not evidence.  If this host ever gains
+    a TPU the assertion fails loudly and the positive T29 path must be exercised there instead.
     """
     if real_jax.default_backend() == "tpu":
         pytest.fail("this host reports a TPU backend; the negative T29 path is not observable here")

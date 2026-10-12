@@ -69,6 +69,8 @@ def _from_json(tp: Any, value: Any, path: str) -> Any:
             raise SchemaValidationError(f"{path}: unknown fields {sorted(unknown)}")
         for f in dataclasses.fields(tp):
             if f.name not in value:
+                if f.metadata.get("omit_none") and f.default is None:
+                    continue
                 raise SchemaValidationError(f"{path}: missing field {f.name!r}")
             kwargs[f.name] = _from_json(hints[f.name], value[f.name], f"{path}.{f.name}")
         return tp(**kwargs)
@@ -88,7 +90,11 @@ def _from_json(tp: Any, value: Any, path: str) -> Any:
 
 def to_json(value: Any) -> JSONValue:
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        return {f.name: to_json(getattr(value, f.name)) for f in dataclasses.fields(value)}
+        return {
+            f.name: to_json(getattr(value, f.name))
+            for f in dataclasses.fields(value)
+            if not (f.metadata.get("omit_none") and getattr(value, f.name) is None)
+        }
     if isinstance(value, list):
         return [to_json(v) for v in value]
     if isinstance(value, tuple):
@@ -432,6 +438,8 @@ class RunPayload:
     session_id: str | None
     pair_id: str | None
     role_in_pair: str | None
+    # Absence retains the original evidence contract and canonical record bytes.
+    evidence_mode: str | None = field(default=None, metadata={"omit_none": True})
 
     record_type: ClassVar[str] = "run"
 

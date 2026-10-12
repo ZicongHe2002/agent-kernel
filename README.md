@@ -23,9 +23,9 @@
 ```bash
 cd kernel-memory
 python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
+.venv/bin/python -m pip install -e ".[dev,jax]"
 # 仅限 macOS：若 `.venv/bin/python -c "import kernel_memory"` 因 .pth 文件被隐藏而失败，执行下一行：
-chflags nohidden .venv/lib/python3.11/site-packages/*.pth
+if [ "$(uname -s)" = Darwin ]; then chflags nohidden .venv/lib/python3.11/site-packages/*.pth; fi
 .venv/bin/python -m pytest tests -q
 bash scripts/demo_p0.sh                     # 使用合成数据包进行离线演示
 REPS=50 WARMUP=10 bash scripts/demo_cpu.sh   # 在本机 CPU 上实际运行向量加法演示内核
@@ -36,7 +36,7 @@ Windows PowerShell 可使用原生 Python CLI（演示脚本本身是 Bash）：
 ```powershell
 cd kernel-memory
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev,cpu-demo]"
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,jax]"
 $env:PYTHONPATH = "$PWD\src"
 & .\.venv\Scripts\python.exe -m pytest tests -q
 & .\.venv\Scripts\python.exe -m kernel_memory.cli.main --help
@@ -44,6 +44,27 @@ $env:PYTHONPATH = "$PWD\src"
 
 演示脚本仅向 `kernel-memory/.demo/` 写入数据，该目录已被 Git 忽略。
 运行 `.venv/bin/kmem --help` 可查看命令行帮助。
+
+WSL 中先进入 `/mnt/c/Users/fengluo/Desktop/agent-kernel`，再执行上面的 Bash 命令。
+Windows 和 WSL 的 `.venv` 不能共用；如果两边都要运行，请使用不同 checkout。
+`dev` 包含 pytest、NumPy 和 PyYAML；`jax` 用于真实 JAX CPU 测试，无需 TPU。
+只安装 `.[dev]` 也可以测试 Memory，但真实 JAX 测试会明确跳过。
+
+WSL 中需要保留完整输出时，推荐在仓库根目录运行：
+
+```bash
+bash kernel-memory/scripts/check_wsl.sh
+```
+
+脚本会创建或使用项目的 Linux `.venv`、安装 `.[dev]`（包含 PyYAML），再依次运行测试、
+P0 演示和 CPU 演示。这些阶段的标准输出和报错都保存到 `kernel-memory/.demo/checks/latest.txt`，
+终端仅显示阶段、退出码和日志路径；失败或 Ctrl+C 中断后停止，保留已写入的日志。
+每次运行覆盖该文件，需要保留旧结果时先另存。之后可以直接让 Codex 读取这个文件，无需复制终端内容。
+加 `--with-jax` 会安装 `.[dev,jax]` 并包含真实 JAX CPU 测试。
+
+`.gitattributes` 要求 Bash、fixture 和契约文件使用 LF。已有 CRLF 文件不会因为添加该配置而自动修复；
+若出现大量 `artifact checksum mismatch`、legacy schema hash 不符或 Bash `pipefail` 报错，
+请看 [WSL 测试与换行排查](kernel-memory/docs/MEMORY_GUIDE.zh-CN.md#wsl-测试与换行排查)。
 
 ## 文档导航
 

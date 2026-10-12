@@ -1,0 +1,621 @@
+{
+  "forced": false,
+  "generated_at": "2026-10-10T08:38:06Z",
+  "view": {
+    "algorithm_id": "paged-native",
+    "algorithm_ref": "algorithm-mla_decode-paged-native",
+    "annotations": [],
+    "baselines": [
+      {
+        "baseline_id": "m_t0_k4096_b2-75c11175e846",
+        "baseline_ref": "baseline-m_t0_k4096_b2-75c11175e846",
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "description": "Project2 measured candidate M_T0_K4096_B2 retained as imported reference.",
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native",
+        "repo_uid": "project2:mla_decode",
+        "role": "both",
+        "runs": [
+          {
+            "analysis_conclusion": "Historical result retained without evidence attachments; values have not been independently reproduced and raw samples are not retained.",
+            "artifact_refs": [],
+            "attempt_no": 1,
+            "checkout_mode": "exact_commit",
+            "comparison_key": "sha256:8899413f85bfe5199af529eda5f1493083b32f1c17878f834f7442c97ee3eba7",
+            "correctness": {
+              "cases_passed": 12,
+              "cases_total": 12,
+              "status": "pass"
+            },
+            "dirty": false,
+            "execution_status": "succeeded",
+            "failure_reason": null,
+            "metrics": [
+              {
+                "kind": "derived",
+                "name": "device_median_ms",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 0.014296094
+              },
+              {
+                "kind": "measurement",
+                "name": "device_median_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 14.296094
+              },
+              {
+                "kind": "derived",
+                "name": "device_p10_ms",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 0.014243828
+              },
+              {
+                "kind": "derived",
+                "name": "device_p90_ms",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 0.014415
+              },
+              {
+                "kind": "derived",
+                "name": "logical_bandwidth_gbps",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "GB/s",
+                "value": 332.49697434837793
+              },
+              {
+                "kind": "derived",
+                "name": "logical_bandwidth_percent",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "percent",
+                "value": 20.298960582929055
+              },
+              {
+                "kind": "derived",
+                "name": "tokens_per_second",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "per_second",
+                "value": 69949.17632746398
+              },
+              {
+                "kind": "derived",
+                "name": "boundary_minimum_bandwidth_gbps",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "GB/s",
+                "value": 332.5775557995072
+              },
+              {
+                "kind": "derived",
+                "name": "boundary_minimum_bandwidth_percent",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "percent",
+                "value": 20.30388008544
+              },
+              {
+                "kind": "derived",
+                "name": "effective_mfu_percent",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "percent",
+                "value": 1.0866226298777315
+              },
+              {
+                "kind": "measurement",
+                "name": "custom_call_median_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 9.518828
+              },
+              {
+                "kind": "measurement",
+                "name": "outside_custom_call_median_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 4.741016
+              },
+              {
+                "kind": "derived",
+                "name": "cache_storage_bytes",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "bytes",
+                "value": 5242880
+              },
+              {
+                "kind": "derived",
+                "name": "speedup_vs_baseline",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 0.8341384716692545
+              },
+              {
+                "kind": "derived",
+                "name": "host_wall_median_ms",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 0.23438999778591096
+              },
+              {
+                "kind": "derived",
+                "name": "compile_wall_seconds",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "seconds",
+                "value": 2.0114287470023555
+              },
+              {
+                "kind": "derived",
+                "name": "logical_minimum_bytes",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "bytes",
+                "value": 4753408
+              },
+              {
+                "kind": "derived",
+                "name": "boundary_minimum_bytes",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "bytes",
+                "value": 4754560
+              },
+              {
+                "kind": "derived",
+                "name": "requests_per_second",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "per_second",
+                "value": 69949.17632746398
+              },
+              {
+                "kind": "derived",
+                "name": "cache_tokens_per_second",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "per_second",
+                "value": 286511826.23729247
+              },
+              {
+                "kind": "derived",
+                "name": "arithmetic_intensity_flop_per_byte",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 30.000861697544163
+              },
+              {
+                "kind": "derived",
+                "name": "boundary_arithmetic_intensity_flop_per_byte",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "scalar",
+                "value": 29.99359267734554
+              },
+              {
+                "kind": "derived",
+                "name": "ideal_compute_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 0.1553445925925926
+              },
+              {
+                "kind": "derived",
+                "name": "ideal_boundary_io_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 2.9026617826617827
+              },
+              {
+                "kind": "derived",
+                "name": "ideal_boundary_roofline_us",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "microseconds",
+                "value": 2.9026617826617827
+              },
+              {
+                "kind": "derived",
+                "name": "boundary_roofline_percent",
+                "scope": "candidate",
+                "status": "observed",
+                "unit": "percent",
+                "value": 20.30388008544
+              }
+            ],
+            "pair_id": null,
+            "provenance": "imported_unverified",
+            "request_id": "run-m_t0_k4096_b2-75c11175e846",
+            "rerun_of": null,
+            "role_in_pair": null,
+            "run_ref": "run-m_t0_k4096_b2-75c11175e846",
+            "session_id": "project2-75c11175e846",
+            "stage": "benchmark",
+            "tested_commit": {
+              "algorithm": "sha1",
+              "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+            },
+            "timing": {
+              "median_us": 14.296094,
+              "p90_us": 14.415000000000001,
+              "sample_count": 11,
+              "status": "recorded"
+            },
+            "variant_digest": "sha256:d94f56d047f5d15e9624a89af7f3c5264e807b404943136b761a47ff4e3c9043"
+          }
+        ]
+      }
+    ],
+    "best_known": [],
+    "code": [
+      {
+        "baseline_ref": "baseline-m_t0_k4096_b2-75c11175e846",
+        "change_status": null,
+        "commit_oid": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "commit_ref": null,
+        "diff_artifact": null,
+        "diff_artifact_ref": null,
+        "diff_base_oid": null,
+        "pr_ref": null,
+        "run_sources": [
+          {
+            "checkout_mode": "exact_commit",
+            "dirty": false,
+            "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native",
+            "implementation_overrides": {
+              "candidate": "M_T0_K4096_B2",
+              "interface": "paged_native",
+              "precision_category": "controlled_fp32_scores_bf16_prob"
+            },
+            "patch_digest": null,
+            "run_ref": "run-m_t0_k4096_b2-75c11175e846",
+            "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+            "tested_commit": {
+              "algorithm": "sha1",
+              "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+            },
+            "variant_digest": "sha256:d94f56d047f5d15e9624a89af7f3c5264e807b404943136b761a47ff4e3c9043"
+          }
+        ],
+        "source_available": null,
+        "subject_ref": "baseline-m_t0_k4096_b2-75c11175e846",
+        "subject_type": "baseline"
+      }
+    ],
+    "config_hash": "sha256:e9a752060ca891de1d01fdeb7374e72f01865227b5c349c26325c4e7c80d0d25",
+    "config_ref": "cfg-b1-h16-n4096-e9a752060ca8",
+    "counts": {
+      "annotations": 0,
+      "baselines": 1,
+      "code_entries": 1,
+      "commits": 0,
+      "decisions": 0,
+      "diagnostics": 0,
+      "edges": 1,
+      "errors": 0,
+      "nodes": 2,
+      "prs": 0,
+      "relations": 0,
+      "result_entries": 1,
+      "runs": 1,
+      "snapshots": 0,
+      "untested_commits": 0
+    },
+    "decisions": [],
+    "diagnostics": [],
+    "edges": [
+      {
+        "from": "run-m_t0_k4096_b2-75c11175e846",
+        "kind": "run_of",
+        "source": "structure",
+        "to": "baseline-m_t0_k4096_b2-75c11175e846"
+      }
+    ],
+    "kernel_id": "mla_decode",
+    "kernel_ref": "kernel-mla_decode",
+    "nodes": [
+      {
+        "id": "baseline-m_t0_k4096_b2-75c11175e846",
+        "type": "baseline"
+      },
+      {
+        "id": "run-m_t0_k4096_b2-75c11175e846",
+        "type": "run"
+      }
+    ],
+    "prs": [],
+    "publishable": true,
+    "relations": [],
+    "result": [
+      {
+        "analysis_metrics": [
+          {
+            "kind": "derived",
+            "name": "device_median_ms",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 0.014296094
+          },
+          {
+            "kind": "measurement",
+            "name": "device_median_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 14.296094
+          },
+          {
+            "kind": "derived",
+            "name": "device_p10_ms",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 0.014243828
+          },
+          {
+            "kind": "derived",
+            "name": "device_p90_ms",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 0.014415
+          },
+          {
+            "kind": "derived",
+            "name": "logical_bandwidth_gbps",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "GB/s",
+            "value": 332.49697434837793
+          },
+          {
+            "kind": "derived",
+            "name": "logical_bandwidth_percent",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "percent",
+            "value": 20.298960582929055
+          },
+          {
+            "kind": "derived",
+            "name": "tokens_per_second",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "per_second",
+            "value": 69949.17632746398
+          },
+          {
+            "kind": "derived",
+            "name": "boundary_minimum_bandwidth_gbps",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "GB/s",
+            "value": 332.5775557995072
+          },
+          {
+            "kind": "derived",
+            "name": "boundary_minimum_bandwidth_percent",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "percent",
+            "value": 20.30388008544
+          },
+          {
+            "kind": "derived",
+            "name": "effective_mfu_percent",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "percent",
+            "value": 1.0866226298777315
+          },
+          {
+            "kind": "measurement",
+            "name": "custom_call_median_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 9.518828
+          },
+          {
+            "kind": "measurement",
+            "name": "outside_custom_call_median_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 4.741016
+          },
+          {
+            "kind": "derived",
+            "name": "cache_storage_bytes",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "bytes",
+            "value": 5242880
+          },
+          {
+            "kind": "derived",
+            "name": "speedup_vs_baseline",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 0.8341384716692545
+          },
+          {
+            "kind": "derived",
+            "name": "host_wall_median_ms",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 0.23438999778591096
+          },
+          {
+            "kind": "derived",
+            "name": "compile_wall_seconds",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "seconds",
+            "value": 2.0114287470023555
+          },
+          {
+            "kind": "derived",
+            "name": "logical_minimum_bytes",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "bytes",
+            "value": 4753408
+          },
+          {
+            "kind": "derived",
+            "name": "boundary_minimum_bytes",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "bytes",
+            "value": 4754560
+          },
+          {
+            "kind": "derived",
+            "name": "requests_per_second",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "per_second",
+            "value": 69949.17632746398
+          },
+          {
+            "kind": "derived",
+            "name": "cache_tokens_per_second",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "per_second",
+            "value": 286511826.23729247
+          },
+          {
+            "kind": "derived",
+            "name": "arithmetic_intensity_flop_per_byte",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 30.000861697544163
+          },
+          {
+            "kind": "derived",
+            "name": "boundary_arithmetic_intensity_flop_per_byte",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "scalar",
+            "value": 29.99359267734554
+          },
+          {
+            "kind": "derived",
+            "name": "ideal_compute_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 0.1553445925925926
+          },
+          {
+            "kind": "derived",
+            "name": "ideal_boundary_io_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 2.9026617826617827
+          },
+          {
+            "kind": "derived",
+            "name": "ideal_boundary_roofline_us",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "microseconds",
+            "value": 2.9026617826617827
+          },
+          {
+            "kind": "derived",
+            "name": "boundary_roofline_percent",
+            "scope": "candidate",
+            "source_artifact_ref": null,
+            "status": "observed",
+            "unit": "percent",
+            "value": 20.30388008544
+          }
+        ],
+        "artifacts": [],
+        "correctness": {
+          "cases_passed": 12,
+          "cases_total": 12,
+          "status": "pass"
+        },
+        "execution_status": "succeeded",
+        "failure_reason": null,
+        "hlo": {
+          "compiled_hlo_text": null,
+          "stablehlo_text": null
+        },
+        "llo": {
+          "artifact_id": null,
+          "status": "unsupported"
+        },
+        "provenance": "imported_unverified",
+        "run_ref": "run-m_t0_k4096_b2-75c11175e846",
+        "stage": "benchmark",
+        "subject_ref": "baseline-m_t0_k4096_b2-75c11175e846",
+        "timing": {
+          "median_us": 14.296094,
+          "p90_us": 14.415000000000001,
+          "sample_count": 11,
+          "samples_artifact_ref": null,
+          "status": "recorded"
+        }
+      }
+    ],
+    "view_version": "trajectory-v2"
+  },
+  "view_hash": "sha256:5f4ee80cc1c52fb29dd665a57c3fe25042c0f746d9960c4ee4ee4db5ca03f23f"
+}

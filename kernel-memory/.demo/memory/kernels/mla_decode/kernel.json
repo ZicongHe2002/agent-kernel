@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-20T02:02:48.930543Z",
+  "payload": {
+    "adapter_id": "project2-mla-v1",
+    "contract_notes": "Single-token MLA decode: q[B,H,latent_dim+rope_dim], new_kv[B,latent_dim+rope_dim], a resident native KV cache, and lengths[B] produce latent attention output[B,H,latent_dim] and updated_cache. Lengths count valid tokens after append; append at lengths-1 before attending. Empty requests produce zero output and do not append. The final latent-to-value projection is excluded. For paged caches, only valid token/feature positions are guaranteed; future slots and padding are unspecified, and historical KV values must be finite. Tensor shapes, layouts and numerical settings are specified per config. Historical project2 runs are imported_unverified.",
+    "display_name": "MLA decode",
+    "kernel_id": "mla_decode"
+  },
+  "record_id": "kernel-mla_decode",
+  "record_type": "kernel",
+  "schema_version": "0.3.0"
+}

@@ -17,6 +17,7 @@ from kernel_memory.domain.errors import (
 )
 from kernel_memory.domain.problems import (
     DemoVectorAddProblem,
+    MlaDecodeProblem,
     MlaForwardProblem,
     NormalizedProblem,
     ProblemRegistry,
@@ -335,8 +336,75 @@ def test_mla_forward_refuses_every_operation() -> None:
 
 def test_mla_forward_is_listed_but_never_produces_a_hash() -> None:
     registry = default_registry()
-    assert registry.kernel_ids() == ["demo_vector_add", "mla_forward"]
+    assert registry.kernel_ids() == ["demo_vector_add", "mla_decode", "mla_forward"]
     assert isinstance(registry.get("mla_forward"), MlaForwardProblem)
+
+
+def test_mla_decode_problem_normalizes_the_paged_project2_abi() -> None:
+    adapter = MlaDecodeProblem()
+    problem = {
+        "operation": "mla_decode",
+        "interface": "paged",
+        "batch": 8,
+        "num_q_heads": 16,
+        "query_tokens_per_request": 1,
+        "latent_dim": 512,
+        "rope_dim": 64,
+        "q_dim": 576,
+        "cache_feature_dim": 640,
+        "capacity": 16384,
+        "timed_length": 16384,
+        "dtype": "bfloat16",
+        "score_dtype": "float32",
+        "probability_dtype": "bfloat16",
+        "block_size": 2048,
+        "sm_scale": 0.07216878364870323,
+        "sliding_window": 0,
+        "soft_cap": 0.0,
+        "cache_layout": "paged",
+        "physical_cache_shape": [1024, 64, 2, 640],
+        "length_semantics": "append_then_attend",
+        "input_signature": {
+            "q": {"dtype": "bfloat16", "shape": [8, 16, 576], "layout": "BHQ"},
+            "new_kv": {"dtype": "bfloat16", "shape": [8, 576], "layout": "BQ"},
+            "cache": {"dtype": "bfloat16", "shape": [1024, 64, 2, 640], "layout": "P64x2F"},
+            "lengths": {"dtype": "int32", "shape": [8], "layout": "B"},
+        },
+        "output_signature": {
+            "attention": {"dtype": "bfloat16", "shape": [8, 16, 512], "layout": "BHL"},
+            "updated_cache": {"dtype": "bfloat16", "shape": [1024, 64, 2, 640], "layout": "P64x2F"},
+        },
+        "input_generation": {"distribution": "standard_normal", "seed": 0, "quantization": "exact_bfloat16"},
+        "page_size": 128,
+        "pages_per_block": 16,
+        "block_kv": 2048,
+        "decode_batch_size": 2,
+        "transpose_cache": False,
+        "two_step": True,
+    }
+    normalized = adapter.normalize(problem)
+    assert normalized["interface"] == "paged_native"
+    assert normalized["q_dim"] == normalized["latent_dim"] + normalized["rope_dim"]
+    assert normalized["physical_cache_shape"] == [1024, 64, 2, 640]
+
+
+def test_mla_decode_problem_rejects_a_wrong_cache_feature_shape() -> None:
+    adapter = MlaDecodeProblem()
+    with pytest.raises(InputError, match="physical_cache_shape"):
+        # Keep the test input small while checking the fixed physical-shape rule.
+        adapter.normalize({
+            "operation": "mla_decode", "interface": "paged", "batch": 1, "num_q_heads": 1,
+            "query_tokens_per_request": 1, "latent_dim": 2, "rope_dim": 2, "q_dim": 4,
+            "cache_feature_dim": 8, "capacity": 128, "timed_length": 128, "dtype": "bfloat16",
+            "score_dtype": "float32", "probability_dtype": "bfloat16", "block_size": 128,
+            "sm_scale": 1.0, "sliding_window": 0, "soft_cap": 0.0, "cache_layout": "paged",
+            "physical_cache_shape": [1, 64, 2, 7], "length_semantics": "append_then_attend",
+            "input_signature": {"q": {"dtype": "bfloat16", "shape": [1, 1, 4], "layout": "BHQ"}, "new_kv": {"dtype": "bfloat16", "shape": [1, 4], "layout": "BQ"}, "cache": {"dtype": "bfloat16", "shape": [1, 64, 2, 7], "layout": "P64x2F"}, "lengths": {"dtype": "int32", "shape": [1], "layout": "B"}},
+            "output_signature": {"attention": {"dtype": "bfloat16", "shape": [1, 1, 2], "layout": "BHL"}, "updated_cache": {"dtype": "bfloat16", "shape": [1, 64, 2, 7], "layout": "P64x2F"}},
+            "input_generation": {"distribution": "standard_normal", "seed": 0, "quantization": "exact_bfloat16"},
+            "page_size": 128, "pages_per_block": 1, "block_kv": 128, "decode_batch_size": 1,
+            "transpose_cache": False, "two_step": False,
+        })
 
 
 def test_unregistered_kernel_is_incomplete_contract() -> None:

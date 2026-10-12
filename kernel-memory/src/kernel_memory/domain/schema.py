@@ -64,6 +64,13 @@ def demo_problem_schema() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
+def mla_decode_problem_schema() -> dict[str, Any]:
+    schema = load_json_file(CONTRACTS_DIR / "mla_decode_problem.schema.json")
+    Draft202012Validator.check_schema(schema)
+    return schema
+
+
+@lru_cache(maxsize=1)
 def golden_hash_vectors() -> dict[str, Any]:
     return load_json_file(CONTRACTS_DIR / "hash_vectors.json")
 

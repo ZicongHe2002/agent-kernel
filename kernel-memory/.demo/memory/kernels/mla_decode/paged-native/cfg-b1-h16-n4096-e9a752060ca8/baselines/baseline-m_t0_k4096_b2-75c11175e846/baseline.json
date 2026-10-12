@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-09-18T11:44:05.534526Z",
+  "payload": {
+    "baseline_id": "m_t0_k4096_b2-75c11175e846",
+    "commit_oid": {
+      "algorithm": "sha1",
+      "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+    },
+    "config_ref": "cfg-b1-h16-n4096-e9a752060ca8",
+    "description": "Project2 measured candidate M_T0_K4096_B2 retained as imported reference.",
+    "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native",
+    "repo_uid": "project2:mla_decode",
+    "role": "both"
+  },
+  "record_id": "baseline-m_t0_k4096_b2-75c11175e846",
+  "record_type": "baseline",
+  "schema_version": "0.3.0"
+}

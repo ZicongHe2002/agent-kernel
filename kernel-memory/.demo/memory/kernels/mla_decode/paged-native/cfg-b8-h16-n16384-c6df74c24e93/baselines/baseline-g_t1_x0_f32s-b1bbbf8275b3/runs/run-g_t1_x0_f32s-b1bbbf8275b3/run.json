@@ -1,0 +1,431 @@
+{
+  "created_at": "2026-09-20T02:02:48.930543Z",
+  "payload": {
+    "analysis_conclusion": "Historical result retained without evidence attachments; values have not been independently reproduced and raw samples are not retained.",
+    "analysis_metrics": [
+      {
+        "definition": "project2 performance.csv field device_median_ms",
+        "kind": "derived",
+        "name": "device_median_ms",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 0.123453594
+      },
+      {
+        "definition": "project2 performance.csv field device_median_us",
+        "kind": "measurement",
+        "name": "device_median_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 123.453594
+      },
+      {
+        "definition": "project2 performance.csv field device_p10_ms",
+        "kind": "derived",
+        "name": "device_p10_ms",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 0.123251172
+      },
+      {
+        "definition": "project2 performance.csv field device_p90_ms",
+        "kind": "derived",
+        "name": "device_p90_ms",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 0.125106172
+      },
+      {
+        "definition": "project2 performance.csv field logical_bandwidth_gbps",
+        "kind": "derived",
+        "name": "logical_bandwidth_gbps",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "GB/s",
+        "value": 1225.3468457143501
+      },
+      {
+        "definition": "project2 performance.csv field logical_bandwidth_percent",
+        "kind": "derived",
+        "name": "logical_bandwidth_percent",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "percent",
+        "value": 74.80749973836082
+      },
+      {
+        "definition": "project2 performance.csv field tokens_per_second",
+        "kind": "derived",
+        "name": "tokens_per_second",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "per_second",
+        "value": 64801.67762471136
+      },
+      {
+        "definition": "project2 performance.csv field boundary_minimum_bandwidth_gbps",
+        "kind": "derived",
+        "name": "boundary_minimum_bandwidth_gbps",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "GB/s",
+        "value": 1225.4214972469736
+      },
+      {
+        "definition": "project2 performance.csv field boundary_minimum_bandwidth_percent",
+        "kind": "derived",
+        "name": "boundary_minimum_bandwidth_percent",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "percent",
+        "value": 74.81205721898496
+      },
+      {
+        "definition": "project2 performance.csv field effective_mfu_percent",
+        "kind": "derived",
+        "name": "effective_mfu_percent",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "percent",
+        "value": 4.026636083970923
+      },
+      {
+        "definition": "project2 performance.csv field custom_call_median_us",
+        "kind": "measurement",
+        "name": "custom_call_median_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 113.17648399999999
+      },
+      {
+        "definition": "project2 performance.csv field outside_custom_call_median_us",
+        "kind": "measurement",
+        "name": "outside_custom_call_median_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 10.215704
+      },
+      {
+        "definition": "project2 performance.csv field cache_storage_bytes",
+        "kind": "derived",
+        "name": "cache_storage_bytes",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "bytes",
+        "value": 167772160
+      },
+      {
+        "definition": "project2 performance.csv field speedup_vs_baseline",
+        "kind": "derived",
+        "name": "speedup_vs_baseline",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 1
+      },
+      {
+        "definition": "project2 performance.csv field host_wall_median_ms",
+        "kind": "derived",
+        "name": "host_wall_median_ms",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 0.36158999955659965
+      },
+      {
+        "definition": "project2 performance.csv field compile_wall_seconds",
+        "kind": "derived",
+        "name": "compile_wall_seconds",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "seconds",
+        "value": 0.9601443060000747
+      },
+      {
+        "definition": "project2 performance.csv field logical_minimum_bytes",
+        "kind": "derived",
+        "name": "logical_minimum_bytes",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "bytes",
+        "value": 151273472
+      },
+      {
+        "definition": "project2 performance.csv field boundary_minimum_bytes",
+        "kind": "derived",
+        "name": "boundary_minimum_bytes",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "bytes",
+        "value": 151282688
+      },
+      {
+        "definition": "project2 performance.csv field requests_per_second",
+        "kind": "derived",
+        "name": "requests_per_second",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "per_second",
+        "value": 64801.67762471136
+      },
+      {
+        "definition": "project2 performance.csv field cache_tokens_per_second",
+        "kind": "derived",
+        "name": "cache_tokens_per_second",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "per_second",
+        "value": 1061710686.2032709
+      },
+      {
+        "definition": "project2 performance.csv field arithmetic_intensity_flop_per_byte",
+        "kind": "derived",
+        "name": "arithmetic_intensity_flop_per_byte",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 30.16657641070075
+      },
+      {
+        "definition": "project2 performance.csv field boundary_arithmetic_intensity_flop_per_byte",
+        "kind": "derived",
+        "name": "boundary_arithmetic_intensity_flop_per_byte",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "scalar",
+        "value": 30.164738691052342
+      },
+      {
+        "definition": "project2 performance.csv field ideal_compute_us",
+        "kind": "derived",
+        "name": "ideal_compute_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 4.971026962962963
+      },
+      {
+        "definition": "project2 performance.csv field ideal_boundary_io_us",
+        "kind": "derived",
+        "name": "ideal_boundary_io_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 92.35817338217338
+      },
+      {
+        "definition": "project2 performance.csv field ideal_boundary_roofline_us",
+        "kind": "derived",
+        "name": "ideal_boundary_roofline_us",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "microseconds",
+        "value": 92.35817338217338
+      },
+      {
+        "definition": "project2 performance.csv field boundary_roofline_percent",
+        "kind": "derived",
+        "name": "boundary_roofline_percent",
+        "parser_id": "project2-results-v1",
+        "parser_version": "1",
+        "scope": "candidate",
+        "source_artifact_ref": null,
+        "status": "observed",
+        "unit": "percent",
+        "value": 74.81205721898495
+      }
+    ],
+    "artifacts": [],
+    "attempt_no": 1,
+    "comparison_key": "sha256:5f7ed84e8443f31f045f036d06eed78f8656adddf2a3c08222b068a569acd177",
+    "config_ref": "cfg-b8-h16-n16384-c6df74c24e93",
+    "correctness": {
+      "cases_passed": 16,
+      "cases_total": 16,
+      "max_abs_error": 0.00724315017997057,
+      "max_rel_error": 0.0019055924650307839,
+      "report_artifact_ref": null,
+      "status": "pass"
+    },
+    "environment": {
+      "accelerator_model": "TPU v6 lite",
+      "backend": "tpu",
+      "device_count": 1,
+      "environment_hash": "sha256:76dd8e9b26f19ec2e28a118711f00cc84f0e24c6868a1b1e8fc8df3ef0cc8843",
+      "execution_flags": {
+        "candidate": "G_T1_X0_F32S",
+        "timing_boundary": "native"
+      },
+      "host_timer_environment": {
+        "timing_scope": "resident native cache + newest KV -> append + attention + updated cache; repeated fixed-length snapshots, cache carried forward"
+      },
+      "software": {
+        "bandwidth_gbps": "1638.0",
+        "bandwidth_source": "https://docs.cloud.google.com/tpu/docs/v6e?hl=en (1638 GB/s per chip)",
+        "client_reused": "True",
+        "device_kind": "TPU v6 lite",
+        "device_platform": "tpu",
+        "jax": "0.8.1",
+        "jaxlib": "0.8.1",
+        "libtpu": "0.0.30",
+        "peak_source": "v6e BF16 dense per-chip spec",
+        "peak_tflops": "918.0",
+        "python": "3.13.15",
+        "selected_device": "TPU_0(process=0,(0,0,0,0))"
+      },
+      "topology": "single",
+      "unknown_required_fields": []
+    },
+    "evidence_mode": "summary_only",
+    "execution_status": "succeeded",
+    "failure_reason": null,
+    "pair_id": null,
+    "protocol": {
+      "capture_profile": true,
+      "include_compile": false,
+      "include_transfers": false,
+      "input_suite_hash": "sha256:cf93d0f9120a7610e5d1503fefc278942728aae89923ff6e2bdd30ea6be58588",
+      "measurement_scope": "resident native cache + newest KV -> append + attention + updated cache; repeated fixed-length snapshots, cache carried forward",
+      "protocol_hash": "sha256:1137899d264f023aae032a83a60134aae61a05e2b972e473a754309a83d3fec5",
+      "protocol_id": "project2-mla-native-v1",
+      "quantile_method": "linear",
+      "repetitions": 11,
+      "statistic": "median",
+      "timing_method": "device_profiler",
+      "warmup": 5
+    },
+    "provenance": "imported_unverified",
+    "request_id": "run-g_t1_x0_f32s-b1bbbf8275b3",
+    "rerun_of": null,
+    "role_in_pair": null,
+    "session_id": "project2-b1bbbf8275b3",
+    "source": {
+      "checkout_mode": "exact_commit",
+      "dirty": false,
+      "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native",
+      "implementation_overrides": {
+        "candidate": "G_T1_X0_F32S",
+        "interface": "paged_native",
+        "precision_category": "controlled_fp32_scores_bf16_prob"
+      },
+      "merge_parent_oids": [],
+      "patch_digest": null,
+      "repo_uid": "project2:mla_decode",
+      "source_digest": "sha256:8626c0083e5537ab6e2470c93f9bc8cdef8473cabcd48048ca1d08644d3804eb",
+      "target_commit": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "tested_commit": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "tested_tree": null,
+      "variant_digest": "sha256:a61dd1b184e06ec3b91f8f6f0b881d7e6d6627d2af6cd94ee4c05f038b407666"
+    },
+    "stage": "benchmark",
+    "subject_ref": "baseline-g_t1_x0_f32s-b1bbbf8275b3",
+    "timing": {
+      "median_us": 123.453594,
+      "p90_us": 125.10617199999999,
+      "sample_count": 11,
+      "samples_artifact_ref": null,
+      "status": "recorded"
+    },
+    "verifier": {
+      "nonfinite_policy": "reject",
+      "reference_source_hash": "sha256:22adffaa5b78a01cb5f9bdd772104e88c0620fbcdc28dbc05e2873fd71f386b1",
+      "suite_hash": "sha256:468e13de4f53aa00229603bd0c989e71d646ac7936b970a9aa16cdcc609dde6d",
+      "tolerances": {
+        "atol": 0.01,
+        "rtol": 0.01
+      },
+      "verifier_hash": "sha256:b413355755358c028ed74baa8e559d2ab578241b827e3f28c70f006a8a5da956",
+      "verifier_id": "project2-mla-reference-v1"
+    }
+  },
+  "record_id": "run-g_t1_x0_f32s-b1bbbf8275b3",
+  "record_type": "run",
+  "schema_version": "0.3.0"
+}

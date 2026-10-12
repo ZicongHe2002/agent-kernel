@@ -1301,6 +1301,10 @@
                 "imported_unverified"
               ]
             },
+            "evidence_mode": {
+              "const": "summary_only",
+              "description": "Explicit imported summary without retained evidence. When absent, the original strict evidence requirements apply."
+            },
             "source": {
               "$ref": "#/$defs/Source"
             },
@@ -1425,6 +1429,25 @@
             "session_id",
             "pair_id",
             "role_in_pair"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "required": ["evidence_mode"],
+                "properties": {"evidence_mode": {"const": "summary_only"}}
+              },
+              "then": {
+                "properties": {
+                  "provenance": {"const": "imported_unverified"},
+                  "artifacts": {"maxItems": 0},
+                  "correctness": {"properties": {"report_artifact_ref": {"type": "null"}}},
+                  "timing": {"properties": {"samples_artifact_ref": {"type": "null"}}},
+                  "analysis_metrics": {
+                    "items": {"properties": {"source_artifact_ref": {"type": "null"}}}
+                  }
+                }
+              }
+            }
           ]
         }
       },

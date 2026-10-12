@@ -17,7 +17,7 @@ dependencies = [
 cpu-demo = ["numpy>=1.26"]
 jax = ["jax>=0.4.30"]
 yaml = ["PyYAML>=6.0"]
-dev = ["pytest>=7.4", "numpy>=1.26"]
+dev = ["pytest>=7.4", "numpy>=1.26", "PyYAML>=6.0"]
 
 [project.scripts]
 kmem = "kernel_memory.cli.main:main"

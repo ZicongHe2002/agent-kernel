@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import pytest
-from conftest import PLACEHOLDER_ALGORITHM_ID, record_dict
+from conftest import FIXTURE_RECORD_COUNT, PLACEHOLDER_ALGORITHM_ID, record_dict
 
 from kernel_memory.domain.errors import (
     IdConflictError,
@@ -97,7 +97,7 @@ def test_import_fixture_bundle_into_fresh_store(store: MemoryStore, fixtures_roo
     report = import_bundle(store, bundle_path, artifact_root=fixtures_root, allow_fixture=True)
     assert report.ok
     assert report.is_fixture is True and report.dry_run is False and report.txn_id is not None
-    assert report.records_total == 19 and report.records_published == 19 and report.records_idempotent == 0
+    assert report.records_total == FIXTURE_RECORD_COUNT and report.records_published == FIXTURE_RECORD_COUNT and report.records_idempotent == 0
     assert report.artifacts_stored == 7 and report.artifacts_idempotent == 0
     assert report.blobs_stored == 5 and report.blobs_idempotent == 0  # three correctness reports share one digest
     assert report.provenance_downgraded == []
@@ -121,7 +121,9 @@ def test_import_fixture_bundle_into_fresh_store(store: MemoryStore, fixtures_roo
                 assert store.has_artifact(ref.sha256)
                 assert store.get_artifact_ref(ref.artifact_id) == ref
     data = report.to_dict()
-    assert data["ok"] is True and data["records_published"] == 18 and len(data["published_ids"]) == 18
+    assert data["ok"] is True and data["records_published"] == FIXTURE_RECORD_COUNT
+    assert len(data["published_ids"]) == FIXTURE_RECORD_COUNT
+    assert set(data["published_ids"]) == {record.record_id for record in bundle_records}
     assert deep_validate(store).ok
 
 
