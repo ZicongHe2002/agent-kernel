@@ -1,0 +1,111 @@
+{
+  "algorithm_ref": "algorithm-mla_fwd-bf16-score-attention",
+  "document_type": "config",
+  "kernel_id": "mla_fwd",
+  "problem": {
+    "batch": 1,
+    "causal": true,
+    "d_nope": 128,
+    "d_rope": 64,
+    "d_value": 128,
+    "dtype": "bfloat16",
+    "input_signature": {
+      "k_pe": {
+        "dtype": "bfloat16",
+        "shape": [
+          1,
+          4096,
+          64
+        ]
+      },
+      "kv_latent": {
+        "dtype": "bfloat16",
+        "shape": [
+          1,
+          4096,
+          512
+        ]
+      },
+      "q_latent": {
+        "dtype": "bfloat16",
+        "shape": [
+          1,
+          4096,
+          1536
+        ]
+      },
+      "q_pe": {
+        "dtype": "bfloat16",
+        "shape": [
+          1,
+          16,
+          4096,
+          64
+        ]
+      },
+      "w_k_nope": {
+        "dtype": "bfloat16",
+        "shape": [
+          16,
+          512,
+          128
+        ]
+      },
+      "w_q_nope": {
+        "dtype": "bfloat16",
+        "shape": [
+          16,
+          1536,
+          128
+        ]
+      },
+      "w_v": {
+        "dtype": "bfloat16",
+        "shape": [
+          16,
+          512,
+          128
+        ]
+      }
+    },
+    "kv_rank": 512,
+    "num_q_heads": 16,
+    "operation": "mla_fwd",
+    "output_mode": "output_only",
+    "output_signature": {
+      "O": {
+        "dtype": "bfloat16",
+        "shape": [
+          1,
+          16,
+          4096,
+          128
+        ]
+      }
+    },
+    "q_rank": 1536,
+    "scope": "whole",
+    "seq_len": 4096,
+    "sm_scale": 0.07216878364870322
+  },
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-5b6152f4-b1-h16-s4096-90dec5fb83a8"
+  ],
+  "source_configs": [
+    {
+      "config_hash": "sha256:90dec5fb83a8d0eb56f2a75f2722588b8a6972b7bb93fb911c9d0b6bc6ce1d50",
+      "config_ref": "cfg-fwd-5b6152f4-b1-h16-s4096-90dec5fb83a8",
+      "problem_schema_digest": "sha256:259951aed8534dbbb56090bb002e2596ae446a28cb5f7c9492bab1c672991720",
+      "problem_schema_id": "urn:kernel-memory:problem:mla-fwd-project2:v1"
+    }
+  ],
+  "tags": [
+    "forward",
+    "imported",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

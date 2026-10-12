@@ -1,0 +1,117 @@
+{
+  "algorithm_ref": "algorithm-mla_decode-paged-attention",
+  "document_type": "config",
+  "kernel_id": "mla_decode",
+  "problem": {
+    "batch": 8,
+    "cache_feature_dim": 576,
+    "cache_layout": "paged",
+    "capacity": 4096,
+    "dtype": "bfloat16",
+    "input_generation": {
+      "distribution": "standard_normal",
+      "quantization": "exact_bfloat16",
+      "seed": 0
+    },
+    "input_signature": {
+      "cache": {
+        "dtype": "bfloat16",
+        "layout": "paged packed cache",
+        "shape": [
+          256,
+          576,
+          128
+        ]
+      },
+      "lengths": {
+        "dtype": "int32",
+        "layout": "[B]",
+        "shape": [
+          8
+        ]
+      },
+      "new_kv": {
+        "dtype": "bfloat16",
+        "layout": "[B,q_dim]",
+        "shape": [
+          8,
+          576
+        ]
+      },
+      "q": {
+        "dtype": "bfloat16",
+        "layout": "[B,H,q_dim]",
+        "shape": [
+          8,
+          16,
+          576
+        ]
+      }
+    },
+    "interface": "paged_native",
+    "latent_dim": 512,
+    "length_semantics": "append_then_attend",
+    "num_q_heads": 16,
+    "operation": "mla_decode",
+    "output_signature": {
+      "attention": {
+        "dtype": "bfloat16",
+        "layout": "[B,H,latent_dim]",
+        "shape": [
+          8,
+          16,
+          512
+        ]
+      },
+      "updated_cache": {
+        "dtype": "bfloat16",
+        "layout": "same as cache",
+        "shape": [
+          256,
+          576,
+          128
+        ]
+      }
+    },
+    "page_size": 128,
+    "physical_cache_shape": [
+      256,
+      576,
+      128
+    ],
+    "probability_dtype": "bfloat16",
+    "q_dim": 576,
+    "query_tokens_per_request": 1,
+    "rope_dim": 64,
+    "score_dtype": "float32",
+    "sliding_window": 0,
+    "sm_scale": 0.07216878364870323,
+    "soft_cap": 0.0,
+    "timed_length": 4096
+  },
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:ad50a564adb7bd68dae47fa889688a92a95d3958f7065cfef92ada50d5390d71",
+  "source_config_refs": [
+    "cfg-pa-b8-h16-n4096-01e19ae880a5",
+    "cfg-pa-b8-h16-n4096-2aa8062fcb61"
+  ],
+  "source_configs": [
+    {
+      "config_hash": "sha256:01e19ae880a55e824e346dd92629b5109a0924ee84242672d66cf41313791477",
+      "config_ref": "cfg-pa-b8-h16-n4096-01e19ae880a5",
+      "problem_schema_digest": "sha256:3fdf6a5349dedb658f57a6c589a0ff28a1b7c50a18bf4ba60f12c9eadfab26eb",
+      "problem_schema_id": "urn:kernel-memory:problem:mla-decode:v2"
+    },
+    {
+      "config_hash": "sha256:2aa8062fcb6134dadec5e02708f8be5b9f57fb8c063108615218bda7ef703301",
+      "config_ref": "cfg-pa-b8-h16-n4096-2aa8062fcb61",
+      "problem_schema_digest": "sha256:3fdf6a5349dedb658f57a6c589a0ff28a1b7c50a18bf4ba60f12c9eadfab26eb",
+      "problem_schema_id": "urn:kernel-memory:problem:mla-decode:v2"
+    }
+  ],
+  "tags": [
+    "imported",
+    "mla",
+    "project2"
+  ]
+}

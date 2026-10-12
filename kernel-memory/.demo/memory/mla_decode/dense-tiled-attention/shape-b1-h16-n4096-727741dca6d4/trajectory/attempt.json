@@ -1,0 +1,510 @@
+{
+  "attempts": [
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-0309f4827d8a",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-0309f4827d8a",
+        "pr_ref": "attempt-0309f4827d8a",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_08_qk256_k2048",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 2048,
+              "capacity_multiple": 2048,
+              "description": null,
+              "dma2": false,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_08_qk256_k2048",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 256,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-0309f4827d8a",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-0309f4827d8a",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-0309f4827d8a",
+      "subject_type": "commit",
+      "summary": "R2_08_qk256_k2048: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_08_qk256_k2048"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-06b3ba09dfca",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-06b3ba09dfca",
+        "pr_ref": "attempt-06b3ba09dfca",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_04_local_k1024_bf16",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 1024,
+              "capacity_multiple": 1024,
+              "description": null,
+              "dma2": false,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_04_local_k1024_bf16",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 1024,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-06b3ba09dfca",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-06b3ba09dfca",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-3330c0051469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-06b3ba09dfca",
+      "subject_type": "commit",
+      "summary": "R2_04_local_k1024_bf16: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_04_local_k1024_bf16"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-08217ad86884",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-08217ad86884",
+        "pr_ref": "attempt-08217ad86884",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_05_local_k2048_bf16",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 2048,
+              "capacity_multiple": 2048,
+              "description": null,
+              "dma2": false,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_05_local_k2048_bf16",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 2048,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-08217ad86884",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-08217ad86884",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-08217ad86884",
+      "subject_type": "commit",
+      "summary": "R2_05_local_k2048_bf16: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_05_local_k2048_bf16"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-448823d61524",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-448823d61524",
+        "pr_ref": "attempt-448823d61524",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_03_local_k4096_bf16",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 4096,
+              "capacity_multiple": 4096,
+              "description": null,
+              "dma2": false,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_03_local_k4096_bf16",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 4096,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-448823d61524",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-448823d61524",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-1f58d2aa4a13",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-448823d61524",
+      "subject_type": "commit",
+      "summary": "R2_03_local_k4096_bf16: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_03_local_k4096_bf16"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-b256eb569fe8",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-b256eb569fe8",
+        "pr_ref": "attempt-b256eb569fe8",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "C01_dma_bf16_base2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "base2": true,
+              "bf16_p": true,
+              "bf16_qk": true,
+              "block_kv": 512,
+              "compute_kv": 0,
+              "first_block": true,
+              "head_group": 0,
+              "mode": "manual_dma",
+              "name": "C01_dma_bf16_base2",
+              "prune": true,
+              "split_qk": false,
+              "transpose_scores": false
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "BF16_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-b256eb569fe8",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-b256eb569fe8",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-d31f4aae0f11",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-b256eb569fe8",
+      "subject_type": "commit",
+      "summary": "C01_dma_bf16_base2: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "C01_dma_bf16_base2"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-c1c908413197",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-c1c908413197",
+        "pr_ref": "attempt-c1c908413197",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_07_qk256_k1024",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 1024,
+              "capacity_multiple": 1024,
+              "description": null,
+              "dma2": false,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_07_qk256_k1024",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 256,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-c1c908413197",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-c1c908413197",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-3330c0051469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-c1c908413197",
+      "subject_type": "commit",
+      "summary": "R2_07_qk256_k1024: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_07_qk256_k1024"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+      },
+      "context_ref": "attempt-f2dea4a7b6b1",
+      "created_at": "2026-09-18T08:18:56.549246Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-f2dea4a7b6b1",
+        "pr_ref": "attempt-f2dea4a7b6b1",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "R2_06_local_k2048_dma2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "bf16": true,
+              "block_kv": 2048,
+              "capacity_multiple": 2048,
+              "description": null,
+              "dma2": true,
+              "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+              "name": "R2_06_local_k2048_dma2",
+              "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "qk_compute": 2048,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-f2dea4a7b6b1",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-f2dea4a7b6b1",
+          "session_id": "project2-005103585a95",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-f2dea4a7b6b1",
+      "subject_type": "commit",
+      "summary": "R2_06_local_k2048_dma2: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "R2_06_local_k2048_dma2"
+    }
+  ],
+  "document_type": "attempt",
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+  "source_config_refs": [
+    "cfg-dt-b1-h16-n4096-01944e306469",
+    "cfg-dt-b1-h16-n4096-1f58d2aa4a13",
+    "cfg-dt-b1-h16-n4096-3330c0051469",
+    "cfg-dt-b1-h16-n4096-d31f4aae0f11"
+  ]
+}

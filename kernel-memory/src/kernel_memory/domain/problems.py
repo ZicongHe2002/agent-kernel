@@ -20,7 +20,7 @@ from typing import Any, Protocol as TypingProtocol
 from .errors import IncompleteProblemContract, InputError, SchemaValidationError
 from .hashing import config_hash as compute_config_hash
 from .hashing import problem_schema_digest
-from .schema import demo_problem_schema, mla_decode_problem_schema, validate_against
+from .schema import demo_problem_schema, mla_decode_problem_schema, mla_decode_problem_v2_schema, validate_against
 
 
 class ProblemAdapter(TypingProtocol):
@@ -172,7 +172,7 @@ class MlaDecodeProblem:
         return copy.deepcopy(mla_decode_problem_schema())
 
     def schema_digest(self) -> str:
-        return problem_schema_digest(mla_decode_problem_schema())
+        return problem_schema_digest(self.schema())
 
     @staticmethod
     def _int(value: Any, name: str, *, minimum: int = 0) -> int:
@@ -219,6 +219,8 @@ class MlaDecodeProblem:
             if page_size % 2:
                 raise InputError("paged_native page_size must be even for the packed [page/2, 2, feature] layout", code="INVALID_PROBLEM")
             expected_shape = [batch * ((capacity + page_size - 1) // page_size), page_size // 2, 2, cache_feature]
+            if getattr(self, "allow_dense_lengths", False) and raw["transpose_cache"]:
+                expected_shape = [batch * ((capacity + page_size - 1) // page_size), cache_feature, page_size]
             expected_layout = "paged"
         elif interface == "contiguous_native":
             expected_shape = [batch, capacity, cache_feature]
@@ -240,6 +242,8 @@ class MlaDecodeProblem:
         if not isinstance(inputs, dict) or not isinstance(outputs, dict):
             raise InputError("input_signature and output_signature must be objects", code="INVALID_PROBLEM")
         expected_inputs = {"q", "new_kv", "cache", "lengths"} if interface != "dense_reference" else {"q", "kv"}
+        if interface == "dense_reference" and getattr(self, "allow_dense_lengths", False) and "lengths" in inputs:
+            expected_inputs.add("lengths")
         expected_outputs = {"attention", "updated_cache"} if interface != "dense_reference" else {"output"}
         if set(inputs) != expected_inputs or set(outputs) != expected_outputs:
             raise InputError(f"signature names do not match interface {interface}", code="INVALID_PROBLEM")
@@ -275,17 +279,17 @@ class MlaDecodeProblem:
             "operation": "mla_decode", "interface": interface, "batch": batch, "num_q_heads": heads,
             "query_tokens_per_request": 1, "latent_dim": latent, "rope_dim": rope, "q_dim": q_dim,
             "capacity": capacity, "timed_length": timed_length, "cache_feature_dim": cache_feature,
-            "dtype": "bfloat16", "score_dtype": "float32", "probability_dtype": "bfloat16",
+            "dtype": "bfloat16", "score_dtype": raw["score_dtype"], "probability_dtype": raw["probability_dtype"],
             "block_size": block_size, "page_size": page_size, "pages_per_block": pages_per_block,
             "block_kv": block_kv, "decode_batch_size": decode_batch_size,
-            "length_semantics": "append_then_attend", "cache_layout": expected_layout,
+            "length_semantics": raw["length_semantics"] if getattr(self, "allow_dense_lengths", False) else "append_then_attend", "cache_layout": expected_layout,
             "physical_cache_shape": expected_shape,
         })
         self.validate(problem)
         return problem
 
     def validate(self, problem: dict[str, Any]) -> None:
-        validate_against(mla_decode_problem_schema(), problem, what="MLA decode problem")
+        validate_against(self.schema(), problem, what="MLA decode problem")
         # JSON Schema can constrain the presence of signature entries, but the
         # dimensions are cross-field values (batch/capacity/etc.).  Keep those
         # ABI checks here so a direct ``validate`` call is just as strict as
@@ -347,11 +351,28 @@ class MlaDecodeProblem:
             # element type remains part of this fixed contract.
             require_tensor(inputs, "q", dtype="bfloat16")
             require_tensor(inputs, "kv", dtype="bfloat16")
+            if "lengths" in inputs:
+                require_tensor(inputs, "lengths", dtype="int32", shape=[batch], layout="[B]")
             require_tensor(outputs, "output", dtype="bfloat16")
 
     def config_id_hint(self, problem: dict[str, Any]) -> str:
         interface = str(problem["interface"]).replace("_native", "")
         return f"mla-{interface}-b{problem['batch']}-h{problem['num_q_heads']}-n{problem['capacity']}-l{problem['latent_dim']}-r{problem['rope_dim']}"
+
+
+class Project2MlaDecodeProblem(MlaDecodeProblem):
+    """Recorded decode variants with explicit precision and dense length input.
+
+    v1 remains the default registration contract. This version is used by the
+    historical matrix importer and selected by its recorded schema identity.
+    """
+
+    schema_id = "urn:kernel-memory:problem:mla-decode:v2"
+    normalizer_version = "mla-decode-v2"
+    allow_dense_lengths = True
+
+    def schema(self) -> dict[str, Any]:
+        return copy.deepcopy(mla_decode_problem_v2_schema())
 
 
 class ProblemRegistry:
@@ -403,6 +424,8 @@ class ProblemRegistry:
         """
         kernel_id = payload["kernel_id"]
         adapter = self._adapters.get(kernel_id)
+        if isinstance(adapter, MlaDecodeProblem) and payload["problem_schema_id"] == Project2MlaDecodeProblem.schema_id:
+            adapter = Project2MlaDecodeProblem()
         if adapter is not None and getattr(adapter, "status", "complete") != "incomplete":
             if payload["problem_schema_id"] != adapter.schema_id:
                 raise SchemaValidationError(

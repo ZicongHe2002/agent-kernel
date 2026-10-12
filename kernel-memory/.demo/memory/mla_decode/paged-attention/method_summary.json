@@ -1,0 +1,16 @@
+{
+  "algorithm_id": "paged-attention",
+  "algorithm_ref": "algorithm-mla_decode-paged-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "paged-attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_decode",
+  "method_summary": "基于 TPU Pallas 的分页 KV 缓存 MLA attention：将新增 token 写入已有缓存后，按 KV 分块计算 latent 与 RoPE 分数并进行 softmax，返回 latent 输出和更新缓存。G/M 候选分别记录单/双阶段调度、score 精度、缓存转置、分块、内部 batch 以及全部请求非空时的处理分支。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "decode",
+    "mla",
+    "project2"
+  ]
+}

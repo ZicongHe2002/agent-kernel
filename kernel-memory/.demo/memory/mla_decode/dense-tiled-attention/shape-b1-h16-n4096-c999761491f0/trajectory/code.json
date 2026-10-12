@@ -1,0 +1,408 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 256,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-70d3a3a05e15",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=B00_fullscan",
+        "implementation_overrides": {
+          "candidate": "B00_fullscan",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "base2": false,
+            "bf16_p": false,
+            "bf16_qk": false,
+            "block_kv": 256,
+            "compute_kv": 0,
+            "first_block": false,
+            "head_group": 0,
+            "mode": "unrolled",
+            "name": "B00_fullscan",
+            "prune": false,
+            "split_qk": false,
+            "transpose_scores": false
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "FP32_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:80b85c1ad29280eccdf7fedc19b105d787b3e470d0b6f9adcd4efe826a7bf02d"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-5fb6d86d6cdd",
+      "subject_ref": "commit-70d3a3a05e15"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 256,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-b92ef333d25b",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=D02_prune",
+        "implementation_overrides": {
+          "candidate": "D02_prune",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "base2": false,
+            "bf16_p": false,
+            "bf16_qk": false,
+            "block_kv": 256,
+            "compute_kv": 0,
+            "first_block": false,
+            "head_group": 0,
+            "mode": "rolled",
+            "name": "D02_prune",
+            "prune": true,
+            "split_qk": false,
+            "transpose_scores": false
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "FP32_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:00d22cf22495445a8dff71f798c7b42042a0f071c3fdcae1244a148536643cc7"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-5fb6d86d6cdd",
+      "subject_ref": "commit-b92ef333d25b"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-bec5f7fcf7f3",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_02_local_k2048_fp32",
+        "implementation_overrides": {
+          "candidate": "R2_02_local_k2048_fp32",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": false,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_02_local_k2048_fp32",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "fp32_operands_fp32_accumulation",
+            "qk_compute": 2048,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "fp32_operands_fp32_accumulation",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:68220f95eafc12bfebfb4550cb4fb16647adbb86cf42df4cfac226a8015a199f"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-3a2b2feace55",
+      "subject_ref": "commit-bec5f7fcf7f3"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-c0354a8b4ced",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=D04_k1024",
+        "implementation_overrides": {
+          "candidate": "D04_k1024",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "base2": false,
+            "bf16_p": false,
+            "bf16_qk": false,
+            "block_kv": 1024,
+            "compute_kv": 0,
+            "first_block": false,
+            "head_group": 0,
+            "mode": "rolled",
+            "name": "D04_k1024",
+            "prune": true,
+            "split_qk": false,
+            "transpose_scores": false
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": true,
+          "precision_category": "FP32_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:010101343585fa15b99223db58c216b36dd99741e2a141ff015f06ed8d2858c9"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+      "subject_ref": "commit-c0354a8b4ced"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-fa855d23d0b5",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_01_local_k1024_fp32",
+        "implementation_overrides": {
+          "candidate": "R2_01_local_k1024_fp32",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": false,
+            "block_kv": 1024,
+            "capacity_multiple": 1024,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_01_local_k1024_fp32",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "fp32_operands_fp32_accumulation",
+            "qk_compute": 1024,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "fp32_operands_fp32_accumulation",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:d1f69116be321136b691565b235da5785f8f5876c2f385de9db31478329bd64e"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+      "subject_ref": "commit-fa855d23d0b5"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-3056a8c7d19a",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=D04_k1024",
+        "implementation_overrides": {
+          "candidate": "D04_k1024",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "base2": false,
+            "bf16_p": false,
+            "bf16_qk": false,
+            "block_kv": 1024,
+            "compute_kv": 0,
+            "first_block": false,
+            "head_group": 0,
+            "mode": "rolled",
+            "name": "D04_k1024",
+            "prune": true,
+            "split_qk": false,
+            "transpose_scores": false
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": true,
+          "precision_category": "FP32_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:5ff90e06f692598090295487bb4a48ac911e3f9453995ad04b6824428c00cea9"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+      "subject_ref": "commit-3056a8c7d19a"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:c999761491f0705ca00feea0d89df2b03be072bda4137cd7b7ea603e4417cd40",
+  "source_config_refs": [
+    "cfg-dt-b1-h16-n4096-3a2b2feace55",
+    "cfg-dt-b1-h16-n4096-5fb6d86d6cdd",
+    "cfg-dt-b1-h16-n4096-f4fed0206215"
+  ]
+}

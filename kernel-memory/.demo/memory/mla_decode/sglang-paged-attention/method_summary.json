@@ -1,0 +1,16 @@
+{
+  "algorithm_id": "sglang-paged-attention",
+  "algorithm_ref": "algorithm-mla_decode-sglang-paged-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "sglang-paged-attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_decode",
+  "method_summary": "SGLang-JAX 的分页 MLA attention：使用每请求固定容量的分页缓存，追加新 token 后计算 latent attention。SGL_A/B/C 及 B1 变体比较每块页数、KV tile 大小和内部 decode batch 分组；这些调度变体分别保存在 attempt 中。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "decode",
+    "mla",
+    "project2"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {},
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-e2-kv-head-group2-643156dc376d",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+        "implementation_overrides": {
+          "candidate": "E2_kv_head_group2",
+          "compiler_evidence": {
+            "hlo": {
+              "file_count": 0,
+              "sha256": [],
+              "status": "not_collected"
+            },
+            "llo": {
+              "archive_file_count": 22,
+              "bundle_owners": [
+                "attention",
+                "kv_projection"
+              ],
+              "file_count": 2,
+              "sha256": [
+                "sha256:92dc0d60431e00c86c037ddb70cd5e77c4c08a92dbe809063f4f9d9551252f0c",
+                "sha256:579890f1e0b8db71200dbd79416dd180749167450c7428083584131793a4d9d5"
+              ],
+              "status": "recorded"
+            }
+          },
+          "numeric_class": "exact",
+          "options": {
+            "diagonal_panel": 512,
+            "full_visible_mask_bypass": true,
+            "fused_kv_projection": true,
+            "kv_projection_head_group": 2,
+            "qk_dot_256": true
+          },
+          "source_identity_kind": "source_archive_content_address",
+          "source_run_id": "s4096_next_round_dv128__production_s4096_dv128__whole__output_only__E2_kv_head_group2__q1024_kv1024",
+          "tiling": {
+            "block_b": null,
+            "block_kv": 1024,
+            "block_q": 1024,
+            "block_rkv": 128,
+            "block_rq": 256
+          }
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_fwd",
+        "source_digest": "sha256:842ef64807bfd049e6ad26a9c16c8b490d15121201aa0fd6c4bcf5f4bd8e2362",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:78fb267db9edaa292df370ef98910646391106e61e32280a29414b9c66cf7d45"
+      },
+      "source_config_ref": "cfg-fwd-b754d581-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-643156dc376d"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-b754d581-b1-h16-s4096-90dec5fb83a8"
+  ]
+}

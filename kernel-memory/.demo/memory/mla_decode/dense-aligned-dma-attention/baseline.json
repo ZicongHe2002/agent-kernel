@@ -1,0 +1,20 @@
+{
+  "algorithm_ref": "algorithm-mla_decode-dense-aligned-dma-attention",
+  "document_type": "baseline",
+  "kernel_id": "mla_decode",
+  "schema_version": "2.0.0",
+  "selection": "declared_baselines_per_shape",
+  "shapes": [
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-727741dca6d4",
+      "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-dma-b1-h16-n4096-01944e306469",
+        "cfg-dma-b1-h16-n4096-1f58d2aa4a13",
+        "cfg-dma-b1-h16-n4096-3330c0051469"
+      ]
+    }
+  ]
+}

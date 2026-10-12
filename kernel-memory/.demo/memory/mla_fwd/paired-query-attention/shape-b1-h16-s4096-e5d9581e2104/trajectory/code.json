@@ -1,0 +1,144 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {},
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-n13-kv-resident-paired-q512-3672181fe419",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+        "implementation_overrides": {
+          "candidate": "N13_kv_resident_paired_q512",
+          "compiler_evidence": {
+            "hlo": {
+              "file_count": 0,
+              "sha256": [],
+              "status": "not_collected"
+            },
+            "llo": {
+              "archive_file_count": 22,
+              "bundle_owners": [
+                "attention",
+                "kv_projection"
+              ],
+              "file_count": 2,
+              "sha256": [
+                "sha256:31eca6c47c310e81c6c9a677833dd79e7b03a846b9655dfcf428292f490fd09f",
+                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
+              ],
+              "status": "recorded"
+            }
+          },
+          "numeric_class": "exact",
+          "options": {
+            "diagonal_panel": 512,
+            "full_visible_mask_bypass": true,
+            "paired_q512": true,
+            "qk_dot_256": true
+          },
+          "source_identity_kind": "source_archive_content_address",
+          "source_run_id": "s4096_next_round_dv128__production_s4096_dv128__whole__output_only__N13_kv_resident_paired_q512__q1024_kv1024",
+          "tiling": {
+            "block_b": null,
+            "block_kv": 1024,
+            "block_q": 1024,
+            "block_rkv": 128,
+            "block_rq": 256
+          }
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_fwd",
+        "source_digest": "sha256:842ef64807bfd049e6ad26a9c16c8b490d15121201aa0fd6c4bcf5f4bd8e2362",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:15d3b625a5e97bc78ec7dc560311d20b3adb115ae09dbced89c1be85b7429e98"
+      },
+      "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-3672181fe419"
+    },
+    {
+      "config_implementation_parameters": {},
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-n14-paired-q512-diagonal256-c5eefeed5c04",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+        "implementation_overrides": {
+          "candidate": "N14_paired_q512_diagonal256",
+          "compiler_evidence": {
+            "hlo": {
+              "file_count": 0,
+              "sha256": [],
+              "status": "not_collected"
+            },
+            "llo": {
+              "archive_file_count": 22,
+              "bundle_owners": [
+                "attention",
+                "kv_projection"
+              ],
+              "file_count": 2,
+              "sha256": [
+                "sha256:5d5eefe56c60bb9cd28e946727481a42c972b1080b7d51e27176f2f7b30f27d1",
+                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
+              ],
+              "status": "recorded"
+            }
+          },
+          "numeric_class": "exact",
+          "options": {
+            "diagonal_panel": 512,
+            "diagonal_schedule": "recursive",
+            "diagonal_subpanel": 256,
+            "full_visible_mask_bypass": true,
+            "paired_q512": true,
+            "qk_dot_256": true
+          },
+          "source_identity_kind": "source_archive_content_address",
+          "source_run_id": "s4096_next_round_dv128__production_s4096_dv128__whole__output_only__N14_paired_q512_diagonal256__q1024_kv1024",
+          "tiling": {
+            "block_b": null,
+            "block_kv": 1024,
+            "block_q": 1024,
+            "block_rkv": 128,
+            "block_rq": 256
+          }
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_fwd",
+        "source_digest": "sha256:842ef64807bfd049e6ad26a9c16c8b490d15121201aa0fd6c4bcf5f4bd8e2362",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:d12ae5e19d55b4a8a26d481cd44eed728bfa026960c5eb4835d2b42a61701ecb"
+      },
+      "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-c5eefeed5c04"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8"
+  ]
+}

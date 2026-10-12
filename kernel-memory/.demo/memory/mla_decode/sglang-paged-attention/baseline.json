@@ -1,0 +1,254 @@
+{
+  "algorithm_ref": "algorithm-mla_decode-sglang-paged-attention",
+  "document_type": "baseline",
+  "kernel_id": "mla_decode",
+  "schema_version": "2.0.0",
+  "selection": "declared_baselines_per_shape",
+  "shapes": [
+    {
+      "baselines": [
+        {
+          "baseline_id": "sgl_a-2e8031bcd28d",
+          "baseline_ref": "baseline-81230e19e786",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+          },
+          "config_ref": "cfg-sgl-b3-h16-n4096-fbcb0bf8bd71",
+          "description": "Source-declared baseline candidate SGL_A; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_A",
+          "repo_uid": "project2:sglang-jax",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "SGL_A",
+              "comparison_key": "sha256:7ce11d27884c28d64dc7275d259dc54a06a92d6e53c29433e1be5a251bef3a63",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 45.59,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 312.793,
+              "logical_bandwidth_utilization": 0.191,
+              "mfu": 0.0102,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 45.676,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-81230e19e786",
+              "samples": 7,
+              "source_config_ref": "cfg-sgl-b3-h16-n4096-fbcb0bf8bd71",
+              "subject_ref": "commit-81230e19e786"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b3-h16-n4096-3f8fb2b3daaf",
+      "shape_hash": "sha256:3f8fb2b3daafeb5054a76847406ed4b3676611efb65420fdf9f2bba7ff534001",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-sgl-b3-h16-n4096-1cb731917677",
+        "cfg-sgl-b3-h16-n4096-78a3804ce50c",
+        "cfg-sgl-b3-h16-n4096-a4b4bb7ec5e8",
+        "cfg-sgl-b3-h16-n4096-c4ea0adafa56",
+        "cfg-sgl-b3-h16-n4096-cbc5aea7e97a",
+        "cfg-sgl-b3-h16-n4096-fbcb0bf8bd71"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "sgl_a-73eb664f13ad",
+          "baseline_ref": "baseline-7c30bd1515ba",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+          },
+          "config_ref": "cfg-sgl-b1-h16-n4096-ab2864262f18",
+          "description": "Source-declared baseline candidate SGL_A; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_A",
+          "repo_uid": "project2:sglang-jax",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "SGL_A",
+              "comparison_key": "sha256:e7c3f881772019b17ff768c7a137f4bc6a9d8f43c788986c6820b673e4b6f85b",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 17.55,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 270.851,
+              "logical_bandwidth_utilization": 0.1654,
+              "mfu": 0.0089,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 17.69,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-7c30bd1515ba",
+              "samples": 7,
+              "source_config_ref": "cfg-sgl-b1-h16-n4096-ab2864262f18",
+              "subject_ref": "commit-7c30bd1515ba"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b1-h16-n4096-9312ba540168",
+      "shape_hash": "sha256:9312ba540168175a22a1215c15847135afed9e592ca9bbe14881b21b4cba90dc",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-sgl-b1-h16-n4096-6cced8dabb3f",
+        "cfg-sgl-b1-h16-n4096-9840b4f9314c",
+        "cfg-sgl-b1-h16-n4096-9af71d705db0",
+        "cfg-sgl-b1-h16-n4096-ab2864262f18",
+        "cfg-sgl-b1-h16-n4096-b4d928d1972f",
+        "cfg-sgl-b1-h16-n4096-de053cefe4b3"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-c999761491f0",
+      "shape_hash": "sha256:c999761491f0705ca00feea0d89df2b03be072bda4137cd7b7ea603e4417cd40",
+      "shared_baselines": [
+        {
+          "baseline_ref": "baseline-c0354a8b4ced",
+          "comparison_note": "Shared reference to the original measurement. Equal input shapes alone do not establish comparable protocol, verifier, or environment.",
+          "relationship": "same_fixed_input_shape_only",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "D04_k1024",
+              "comparison_key": "sha256:cd26a6cd5894ad011ffa6f514bfc81f37cb395b54dbea1f37b0ee90c04606102",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 15.733,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 302.136,
+              "logical_bandwidth_utilization": 0.1845,
+              "mfu": 0.0099,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 15.85,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-c0354a8b4ced",
+              "samples": 7,
+              "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+              "subject_ref": "commit-c0354a8b4ced"
+            }
+          ],
+          "source_algorithm_ref": "algorithm-mla_decode-dense-tiled-attention",
+          "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215"
+        },
+        {
+          "baseline_ref": "baseline-3056a8c7d19a",
+          "comparison_note": "Shared reference to the original measurement. Equal input shapes alone do not establish comparable protocol, verifier, or environment.",
+          "relationship": "same_fixed_input_shape_only",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "D04_k1024",
+              "comparison_key": "sha256:c81a5eecc6484af6d13de0c0c9499d77c04111cb06997f9daecd6a5c3ad31f2b",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 15.621,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 304.29,
+              "logical_bandwidth_utilization": 0.1858,
+              "mfu": 0.0099,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 15.742,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.1858,
+              "run_ref": "run-3056a8c7d19a",
+              "samples": 11,
+              "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+              "subject_ref": "commit-3056a8c7d19a"
+            }
+          ],
+          "source_algorithm_ref": "algorithm-mla_decode-dense-tiled-attention",
+          "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215"
+        }
+      ],
+      "source_config_refs": [
+        "cfg-sgl-b1-h16-n4096-3a2b2feace55",
+        "cfg-sgl-b1-h16-n4096-462cbb28dd5d",
+        "cfg-sgl-b1-h16-n4096-5664c1126696"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "sgl_a-4692f2e16512",
+          "baseline_ref": "baseline-30d0fccb0b69",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+          },
+          "config_ref": "cfg-sgl-b8-h16-n4096-d70d55db0971",
+          "description": "Source-declared baseline candidate SGL_A; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_A",
+          "repo_uid": "project2:sglang-jax",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "SGL_A",
+              "comparison_key": "sha256:315cb53b597acb70ddfa5f81523c9f8762569bbea7c42e058ba187c3c14ae18f",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 73.974,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 514.064,
+              "logical_bandwidth_utilization": 0.3138,
+              "mfu": 0.0168,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 74.189,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-30d0fccb0b69",
+              "samples": 7,
+              "source_config_ref": "cfg-sgl-b8-h16-n4096-d70d55db0971",
+              "subject_ref": "commit-30d0fccb0b69"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b8-h16-n4096-da90acda8581",
+      "shape_hash": "sha256:da90acda8581d418354f147599a601ec42df25ae151f63a330eac070d55834d6",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-sgl-b8-h16-n4096-642e7819cc37",
+        "cfg-sgl-b8-h16-n4096-a14b6c2fb70f",
+        "cfg-sgl-b8-h16-n4096-a6c53ac21d13",
+        "cfg-sgl-b8-h16-n4096-aae684984cc2",
+        "cfg-sgl-b8-h16-n4096-d70d55db0971",
+        "cfg-sgl-b8-h16-n4096-e1627bd622a5"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "bf16-prescaled-query-attention",
+  "algorithm_ref": "algorithm-mla_fwd-bf16-prescaled-query-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "BF16 prescaled-query attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "在 FP32 中先对 Q 缩放，再转 BF16 进入 QK dot，配合512对角 panel attention。此方法改变 BF16 舍入位置，是近似数值变体；不作为 exact 方法的替代。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

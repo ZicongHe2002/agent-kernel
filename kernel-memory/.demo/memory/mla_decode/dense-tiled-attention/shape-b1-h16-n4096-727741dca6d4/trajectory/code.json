@@ -1,0 +1,475 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-0309f4827d8a",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_08_qk256_k2048",
+        "implementation_overrides": {
+          "candidate": "R2_08_qk256_k2048",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_08_qk256_k2048",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 256,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:7cc754f00ee244ea43c4b6b024727594d115eb0cf43747d5a0f0b7ce67f7c937"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "subject_ref": "commit-0309f4827d8a"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-06b3ba09dfca",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_04_local_k1024_bf16",
+        "implementation_overrides": {
+          "candidate": "R2_04_local_k1024_bf16",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 1024,
+            "capacity_multiple": 1024,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_04_local_k1024_bf16",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 1024,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:162b711c7167ef05f48ebea40ce120d6819def79e0dab8440840dda4dddaaaf6"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-3330c0051469",
+      "subject_ref": "commit-06b3ba09dfca"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-08217ad86884",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_05_local_k2048_bf16",
+        "implementation_overrides": {
+          "candidate": "R2_05_local_k2048_bf16",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_05_local_k2048_bf16",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 2048,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:71241b4c6edfe736f1e6b2a5fef34da78760770ea7ec7aa47ca69f8b5312b67f"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "subject_ref": "commit-08217ad86884"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 4096,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-448823d61524",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_03_local_k4096_bf16",
+        "implementation_overrides": {
+          "candidate": "R2_03_local_k4096_bf16",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 4096,
+            "capacity_multiple": 4096,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_03_local_k4096_bf16",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 4096,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:1b95ad74607ac585f35aef97c322860d859712ccb7514b79ae57930a463b5a39"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-1f58d2aa4a13",
+      "subject_ref": "commit-448823d61524"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 512,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-b256eb569fe8",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/decode_extensions.py#candidate=C01_dma_bf16_base2",
+        "implementation_overrides": {
+          "candidate": "C01_dma_bf16_base2",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "base2": true,
+            "bf16_p": true,
+            "bf16_qk": true,
+            "block_kv": 512,
+            "compute_kv": 0,
+            "first_block": true,
+            "head_group": 0,
+            "mode": "manual_dma",
+            "name": "C01_dma_bf16_base2",
+            "prune": true,
+            "split_qk": false,
+            "transpose_scores": false
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "BF16_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:22d71e61f0179aebd01b0d64220a972f572143e055cfa84a7a18367badf5c28c"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-d31f4aae0f11",
+      "subject_ref": "commit-b256eb569fe8"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-c1c908413197",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_07_qk256_k1024",
+        "implementation_overrides": {
+          "candidate": "R2_07_qk256_k1024",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 1024,
+            "capacity_multiple": 1024,
+            "description": null,
+            "dma2": false,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_07_qk256_k1024",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 256,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:60ebd272815e6b220b7bf43f1e7ddaa906495b266d582df7254456a8344c744e"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-3330c0051469",
+      "subject_ref": "commit-c1c908413197"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-f2dea4a7b6b1",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/round2_kernels.py#candidate=R2_06_local_k2048_dma2",
+        "implementation_overrides": {
+          "candidate": "R2_06_local_k2048_dma2",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "bf16": true,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": true,
+            "feature_preparation": "per tile inside Pallas, no dense-cache global pad/concat",
+            "name": "R2_06_local_k2048_dma2",
+            "native_tpu_status": "requires Colab compile, correctness gate and measurement",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "qk_compute": 2048,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:b955b0cc8b732a1941f6b92ac9e895a7d7e6d710f31e5219dd3c9d61c77d3f2a"
+      },
+      "source_config_ref": "cfg-dt-b1-h16-n4096-01944e306469",
+      "subject_ref": "commit-f2dea4a7b6b1"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+  "source_config_refs": [
+    "cfg-dt-b1-h16-n4096-01944e306469",
+    "cfg-dt-b1-h16-n4096-1f58d2aa4a13",
+    "cfg-dt-b1-h16-n4096-3330c0051469",
+    "cfg-dt-b1-h16-n4096-d31f4aae0f11"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "algorithm_ref": "algorithm-mla_decode-dense-tiled-attention",
+  "document_type": "baseline",
+  "kernel_id": "mla_decode",
+  "schema_version": "2.0.0",
+  "selection": "declared_baselines_per_shape",
+  "shapes": [
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-727741dca6d4",
+      "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-dt-b1-h16-n4096-01944e306469",
+        "cfg-dt-b1-h16-n4096-1f58d2aa4a13",
+        "cfg-dt-b1-h16-n4096-3330c0051469",
+        "cfg-dt-b1-h16-n4096-d31f4aae0f11"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "d04_k1024-005103585a95",
+          "baseline_ref": "baseline-c0354a8b4ced",
+          "commit_oid": {
+            "algorithm": "sha256",
+            "hex": "567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304"
+          },
+          "config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+          "description": "Source-declared baseline candidate D04_k1024; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=D04_k1024",
+          "repo_uid": "project2:mla_decode",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "D04_k1024",
+              "comparison_key": "sha256:cd26a6cd5894ad011ffa6f514bfc81f37cb395b54dbea1f37b0ee90c04606102",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 15.733,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 302.136,
+              "logical_bandwidth_utilization": 0.1845,
+              "mfu": 0.0099,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 15.85,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-c0354a8b4ced",
+              "samples": 7,
+              "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+              "subject_ref": "commit-c0354a8b4ced"
+            }
+          ]
+        },
+        {
+          "baseline_id": "d04_k1024-375bf2b4b6c5",
+          "baseline_ref": "baseline-3056a8c7d19a",
+          "commit_oid": {
+            "algorithm": "sha256",
+            "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+          },
+          "config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+          "description": "Source-declared baseline candidate D04_k1024; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/decode_kernels.py#candidate=D04_k1024",
+          "repo_uid": "project2:mla_decode",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "D04_k1024",
+              "comparison_key": "sha256:c81a5eecc6484af6d13de0c0c9499d77c04111cb06997f9daecd6a5c3ad31f2b",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 15.621,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 304.29,
+              "logical_bandwidth_utilization": 0.1858,
+              "mfu": 0.0099,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 15.742,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.1858,
+              "run_ref": "run-3056a8c7d19a",
+              "samples": 11,
+              "source_config_ref": "cfg-dt-b1-h16-n4096-f4fed0206215",
+              "subject_ref": "commit-3056a8c7d19a"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b1-h16-n4096-c999761491f0",
+      "shape_hash": "sha256:c999761491f0705ca00feea0d89df2b03be072bda4137cd7b7ea603e4417cd40",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-dt-b1-h16-n4096-3a2b2feace55",
+        "cfg-dt-b1-h16-n4096-5fb6d86d6cdd",
+        "cfg-dt-b1-h16-n4096-f4fed0206215"
+      ]
+    }
+  ]
+}

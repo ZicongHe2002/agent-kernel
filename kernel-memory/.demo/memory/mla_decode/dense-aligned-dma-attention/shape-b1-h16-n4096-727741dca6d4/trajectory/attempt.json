@@ -1,0 +1,340 @@
+{
+  "attempts": [
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+      },
+      "context_ref": "attempt-5ef4bf1796f8",
+      "created_at": "2026-09-18T11:47:26.305215Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-5ef4bf1796f8",
+        "pr_ref": "attempt-5ef4bf1796f8",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "A_K1024",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "accumulation": "FP32",
+              "accuracy_atol": 0.01,
+              "accuracy_rtol": 0.01,
+              "bf16": true,
+              "block_kv": 1024,
+              "capacity_multiple": 1024,
+              "description": null,
+              "dma2": false,
+              "dma_feature_multiple": 128,
+              "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+              "heads_multiple": 8,
+              "latent_multiple": 128,
+              "name": "A_K1024",
+              "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "probability_operands": "BF16",
+              "qk_compute": 1024,
+              "qk_operands": "BF16",
+              "rope_max": 128,
+              "rope_min": 1,
+              "skips_empty_blocks": true,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-5ef4bf1796f8",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-5ef4bf1796f8",
+          "session_id": "project2-375bf2b4b6c5",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dma-b1-h16-n4096-3330c0051469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-5ef4bf1796f8",
+      "subject_type": "commit",
+      "summary": "A_K1024: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "A_K1024"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+      },
+      "context_ref": "attempt-cddf2d296e0b",
+      "created_at": "2026-09-18T11:47:26.305215Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-cddf2d296e0b",
+        "pr_ref": "attempt-cddf2d296e0b",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "A_K2048_DMA2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "accumulation": "FP32",
+              "accuracy_atol": 0.01,
+              "accuracy_rtol": 0.01,
+              "bf16": true,
+              "block_kv": 2048,
+              "capacity_multiple": 2048,
+              "description": null,
+              "dma2": true,
+              "dma_feature_multiple": 128,
+              "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+              "heads_multiple": 8,
+              "latent_multiple": 128,
+              "name": "A_K2048_DMA2",
+              "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "probability_operands": "BF16",
+              "qk_compute": 2048,
+              "qk_operands": "BF16",
+              "rope_max": 128,
+              "rope_min": 1,
+              "skips_empty_blocks": true,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-cddf2d296e0b",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-cddf2d296e0b",
+          "session_id": "project2-375bf2b4b6c5",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dma-b1-h16-n4096-01944e306469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-cddf2d296e0b",
+      "subject_type": "commit",
+      "summary": "A_K2048_DMA2: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "A_K2048_DMA2"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+      },
+      "context_ref": "attempt-d707a68a1a74",
+      "created_at": "2026-09-18T11:47:26.305215Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-d707a68a1a74",
+        "pr_ref": "attempt-d707a68a1a74",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "A_K4096_DMA2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "accumulation": "FP32",
+              "accuracy_atol": 0.01,
+              "accuracy_rtol": 0.01,
+              "bf16": true,
+              "block_kv": 4096,
+              "capacity_multiple": 4096,
+              "description": null,
+              "dma2": true,
+              "dma_feature_multiple": 128,
+              "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+              "heads_multiple": 8,
+              "latent_multiple": 128,
+              "name": "A_K4096_DMA2",
+              "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "probability_operands": "BF16",
+              "qk_compute": 4096,
+              "qk_operands": "BF16",
+              "rope_max": 128,
+              "rope_min": 1,
+              "skips_empty_blocks": true,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-d707a68a1a74",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-d707a68a1a74",
+          "session_id": "project2-375bf2b4b6c5",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dma-b1-h16-n4096-1f58d2aa4a13",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-d707a68a1a74",
+      "subject_type": "commit",
+      "summary": "A_K4096_DMA2: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "A_K4096_DMA2"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha256",
+        "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+      },
+      "context_ref": "attempt-f1ebdce8be35",
+      "created_at": "2026-09-18T11:47:26.305215Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-f1ebdce8be35",
+        "pr_ref": "attempt-f1ebdce8be35",
+        "provider": "local",
+        "repo_uid": "project2:mla_decode"
+      },
+      "repo_uid": "project2:mla_decode",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "A_K2048",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "accumulation": "FP32",
+              "accuracy_atol": 0.01,
+              "accuracy_rtol": 0.01,
+              "bf16": true,
+              "block_kv": 2048,
+              "capacity_multiple": 2048,
+              "description": null,
+              "dma2": false,
+              "dma_feature_multiple": 128,
+              "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+              "heads_multiple": 8,
+              "latent_multiple": 128,
+              "name": "A_K2048",
+              "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+              "precision_category": "explicit_bf16_qk_and_probability",
+              "probability_operands": "BF16",
+              "qk_compute": 2048,
+              "qk_operands": "BF16",
+              "rope_max": 128,
+              "rope_min": 1,
+              "skips_empty_blocks": true,
+              "softmax_updates_per_dma_tile": 1,
+              "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+            },
+            "interface": "dense_reference",
+            "is_declared_baseline": false,
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "revision_kind": "source_snapshot_content_address",
+            "source_identity_kind": "source_snapshot_content_address",
+            "timing_boundary": "dense"
+          },
+          "pair_id": null,
+          "request_id": "run-f1ebdce8be35",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-f1ebdce8be35",
+          "session_id": "project2-375bf2b4b6c5",
+          "source_identity_kind": "source_snapshot_content_address",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-dma-b1-h16-n4096-01944e306469",
+      "source_identity_kind": "source_snapshot_content_address",
+      "status": "recorded",
+      "subject_ref": "commit-f1ebdce8be35",
+      "subject_type": "commit",
+      "summary": "A_K2048: source snapshot SHA-256 content address; no Git commit was recorded.",
+      "title": "A_K2048"
+    }
+  ],
+  "document_type": "attempt",
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+  "source_config_refs": [
+    "cfg-dma-b1-h16-n4096-01944e306469",
+    "cfg-dma-b1-h16-n4096-1f58d2aa4a13",
+    "cfg-dma-b1-h16-n4096-3330c0051469"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "paired-query-attention",
+  "algorithm_ref": "algorithm-mla_fwd-paired-query-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "Paired-query attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "同一驻留 KV 块依次服务两个 Q512 子块，保留各自的 FP32 online-softmax 状态以复用 KV；N14进一步将 causal 对角分成256 panel。具体调度属于 attempt 配置。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "annotations": [],
+  "decisions": [],
+  "document_type": "result",
+  "runs": [
+    {
+      "attention_mxu_static": null,
+      "candidate": "G_T1_X1_F32S",
+      "comparison_key": "sha256:ca1419843d80b36db4eb5225be481d269aa46bba01a51068e5080f7681f6a894",
+      "correctness": "not_run",
+      "execution_status": "compile_error",
+      "failure_reason": "INTERNAL: Mosaic failed to compile TPU kernel: Failed to prove that a dynamic slice size along dimension 1 is divisible by the tiling (128).",
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "recorded",
+      "latency_us": null,
+      "llo": "not_collected",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": null,
+      "mfu_executed_estimate": null,
+      "mxu": null,
+      "p90_latency_us": null,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-36176bb2d1f0",
+      "samples": 0,
+      "source_config_ref": "cfg-pa-b1-h16-n4096-518bf302ca39",
+      "subject_ref": "commit-36176bb2d1f0"
+    },
+    {
+      "attention_mxu_static": null,
+      "candidate": "G_T0_X1_F32S",
+      "comparison_key": "sha256:cd8888175c06226841283269cc2a039ffb406bdd94df34a5998d338279799e3e",
+      "correctness": "not_run",
+      "execution_status": "compile_error",
+      "failure_reason": "INTERNAL: Mosaic failed to compile TPU kernel: Failed to prove that a dynamic slice size along dimension 1 is divisible by the tiling (128).",
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "recorded",
+      "latency_us": null,
+      "llo": "not_collected",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": null,
+      "mfu_executed_estimate": null,
+      "mxu": null,
+      "p90_latency_us": null,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-9ef4855c94aa",
+      "samples": 0,
+      "source_config_ref": "cfg-pa-b1-h16-n4096-954e9a715089",
+      "subject_ref": "commit-9ef4855c94aa"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:88c9305c5c73cca240bc5e6608b71bcb78c667ba4fadea0b8cbc29e8fcad1fc1",
+  "source_config_refs": [
+    "cfg-pa-b1-h16-n4096-518bf302ca39",
+    "cfg-pa-b1-h16-n4096-954e9a715089"
+  ]
+}

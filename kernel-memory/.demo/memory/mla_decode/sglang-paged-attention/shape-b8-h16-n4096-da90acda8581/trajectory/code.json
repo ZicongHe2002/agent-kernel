@@ -1,0 +1,531 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {
+        "block_kv": 384,
+        "block_size": 384,
+        "decode_batch_size": 1,
+        "pages_per_block": 3,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-11de70edce5a",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_A_B1",
+        "implementation_overrides": {
+          "candidate": "SGL_A_B1",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 384,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 1,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_A_B1",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              3,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 3,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:5d66fbeb4f09b3c9015f27025d1be35d992a190dedf9d508eef930ef72b7b9c5"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-a6c53ac21d13",
+      "subject_ref": "commit-11de70edce5a"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 4096,
+        "block_size": 4096,
+        "decode_batch_size": 1,
+        "pages_per_block": 32,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-22b1fc96678b",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_C_B1",
+        "implementation_overrides": {
+          "candidate": "SGL_C_B1",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 4096,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 1,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_C_B1",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              32,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 32,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:d453ddf078629befb4559da266274c1c4cdcb96d4a99dec616702d1bee438c54"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-aae684984cc2",
+      "subject_ref": "commit-22b1fc96678b"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 384,
+        "block_size": 384,
+        "decode_batch_size": 4,
+        "pages_per_block": 3,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-30d0fccb0b69",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_A",
+        "implementation_overrides": {
+          "candidate": "SGL_A",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 384,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 4,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_A",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              3,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 3,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": true,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:66ba6d3012aa20fc2e834655dcf21cafeb686ffb270d9bb69a5dcb4ebf3e5c63"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-d70d55db0971",
+      "subject_ref": "commit-30d0fccb0b69"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 2048,
+        "block_size": 2048,
+        "decode_batch_size": 1,
+        "pages_per_block": 16,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-311af0b64b70",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_B_B1",
+        "implementation_overrides": {
+          "candidate": "SGL_B_B1",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 2048,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 1,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_B_B1",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              16,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 16,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:78ea885e8da50e086863da8669fd386e79795a6163a0fd0d3d00b921617e5586"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-a14b6c2fb70f",
+      "subject_ref": "commit-311af0b64b70"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 2048,
+        "block_size": 2048,
+        "decode_batch_size": 2,
+        "pages_per_block": 16,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-5a2973e230c3",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_B",
+        "implementation_overrides": {
+          "candidate": "SGL_B",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 2048,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 2,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_B",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              16,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 16,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:eec045b58e348ec6da885116bd04226d509cf30c7042a0957b6d8a0d29fc09b6"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-e1627bd622a5",
+      "subject_ref": "commit-5a2973e230c3"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 4096,
+        "block_size": 4096,
+        "decode_batch_size": 2,
+        "pages_per_block": 32,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-e05a0a10ebc7",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=SGL_C",
+        "implementation_overrides": {
+          "candidate": "SGL_C",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 4096,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+            "decode_batch_size": 2,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "SGL_C",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              32,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 32,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "source": "sglang-jax",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:sglang-jax",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:e1762a6118cb0d0d43abbba7355a59fbe8381f3d6769d057b5738f8c6b5be690"
+      },
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-642e7819cc37",
+      "subject_ref": "commit-e05a0a10ebc7"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:da90acda8581d418354f147599a601ec42df25ae151f63a330eac070d55834d6",
+  "source_config_refs": [
+    "cfg-sgl-b8-h16-n4096-642e7819cc37",
+    "cfg-sgl-b8-h16-n4096-a14b6c2fb70f",
+    "cfg-sgl-b8-h16-n4096-a6c53ac21d13",
+    "cfg-sgl-b8-h16-n4096-aae684984cc2",
+    "cfg-sgl-b8-h16-n4096-d70d55db0971",
+    "cfg-sgl-b8-h16-n4096-e1627bd622a5"
+  ]
+}

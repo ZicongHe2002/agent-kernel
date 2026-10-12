@@ -1,0 +1,99 @@
+{
+  "algorithm_ref": "algorithm-mla_fwd-expanded-online-softmax",
+  "document_type": "baseline",
+  "kernel_id": "mla_fwd",
+  "schema_version": "2.0.0",
+  "selection": "declared_baselines_per_shape",
+  "shapes": [
+    {
+      "baselines": [
+        {
+          "baseline_id": "leader-aligned-original-b3acbf8ec933",
+          "baseline_ref": "baseline-leader-aligned-original-b3acbf8ec933",
+          "commit_oid": {
+            "algorithm": "sha256",
+            "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+          },
+          "config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+          "description": "Original forward implementation measured in this archived experiment.",
+          "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+          "repo_uid": "project2:mla_fwd",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": 0.5883,
+              "candidate": "leader_aligned_original",
+              "comparison_key": "sha256:b2a7b3d89533d5a91cb70844d92b0d3dd5a8881e80ff7ce6b5a4c3fc4525ec52",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "not_collected",
+              "latency_us": 676.228,
+              "llo": "recorded",
+              "logical_bandwidth_gbps": null,
+              "logical_bandwidth_utilization": null,
+              "mfu": 0.2076,
+              "mfu_executed_estimate": 0.2422,
+              "mxu": null,
+              "p90_latency_us": 676.995,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-leader-aligned-original-b3acbf8ec933",
+              "samples": 128,
+              "source_config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+              "subject_ref": "baseline-leader-aligned-original-b3acbf8ec933"
+            }
+          ]
+        },
+        {
+          "baseline_id": "leader-aligned-original-8f894056684e",
+          "baseline_ref": "baseline-leader-aligned-original-8f894056684e",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "4a091d004575787db9d43c68b9b1ef4d17b83063"
+          },
+          "config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+          "description": "Original forward implementation measured in this archived experiment.",
+          "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+          "repo_uid": "project2:mla_fwd",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": 0.587,
+              "candidate": "leader_aligned_original",
+              "comparison_key": "sha256:65575bb0ff159dd2c8d3ec6ce2d2445c44831f30a0c95f1c580e30379c863be4",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "not_collected",
+              "latency_us": 676.292,
+              "llo": "recorded",
+              "logical_bandwidth_gbps": null,
+              "logical_bandwidth_utilization": null,
+              "mfu": 0.2076,
+              "mfu_executed_estimate": 0.2421,
+              "mxu": null,
+              "p90_latency_us": 676.95,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-leader-aligned-original-8f894056684e",
+              "samples": 128,
+              "source_config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+              "subject_ref": "baseline-leader-aligned-original-8f894056684e"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b1-h16-s4096-e5d9581e2104",
+      "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8"
+      ]
+    }
+  ]
+}

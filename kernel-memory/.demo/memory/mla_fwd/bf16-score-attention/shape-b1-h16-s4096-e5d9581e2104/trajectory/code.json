@@ -1,0 +1,76 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {},
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-approx-n6-score-bf16-9e3927f04e71",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:pallas_kernels/kernels/mla_fwd.py",
+        "implementation_overrides": {
+          "candidate": "approx_n6_score_bf16",
+          "compiler_evidence": {
+            "hlo": {
+              "file_count": 0,
+              "sha256": [],
+              "status": "not_collected"
+            },
+            "llo": {
+              "archive_file_count": 22,
+              "bundle_owners": [
+                "attention",
+                "kv_projection"
+              ],
+              "file_count": 2,
+              "sha256": [
+                "sha256:cef5a4c6cc2ed8176ff725cd7716bda01e8c3964d9d760adbe9fdb13a1becf36",
+                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
+              ],
+              "status": "recorded"
+            }
+          },
+          "numeric_class": "approximate_score_bf16",
+          "options": {
+            "diagonal_panel": 512,
+            "full_visible_mask_bypass": true,
+            "qk_dot_256": true,
+            "score_bf16": true
+          },
+          "source_identity_kind": "source_archive_content_address",
+          "source_run_id": "s4096_next_round_dv128__production_s4096_dv128__whole__output_only__approx_n6_score_bf16__q1024_kv1024",
+          "tiling": {
+            "block_b": null,
+            "block_kv": 1024,
+            "block_q": 1024,
+            "block_rkv": 128,
+            "block_rq": 256
+          }
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_fwd",
+        "source_digest": "sha256:842ef64807bfd049e6ad26a9c16c8b490d15121201aa0fd6c4bcf5f4bd8e2362",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:ac9ee52af838179df06b8acb4f919db006e0bb4e2d5cc2e606233f3aa716103d"
+      },
+      "source_config_ref": "cfg-fwd-5b6152f4-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-9e3927f04e71"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-5b6152f4-b1-h16-s4096-90dec5fb83a8"
+  ]
+}

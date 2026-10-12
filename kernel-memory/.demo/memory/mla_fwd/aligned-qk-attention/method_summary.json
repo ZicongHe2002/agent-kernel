@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "aligned-qk-attention",
+  "algorithm_ref": "algorithm-mla_fwd-aligned-qk-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "Aligned QK attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "将 NoPE 与 RoPE 的 QK 收缩维从192补齐到256，以更规整的 MXU dot 计算分数；完整可见的历史块跳过 causal mask，维持 FP32 online softmax 和 BF16 PV 输入。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

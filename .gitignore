@@ -17,7 +17,8 @@ dist/
 .DS_Store
 
 # Local demo stores and scratch output (regenerable)
-kernel-memory/.demo/
+kernel-memory/.demo/*
+!kernel-memory/.demo/memory/
 kernel-memory/memory/
 *.sqlite
 

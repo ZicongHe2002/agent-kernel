@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "expanded-online-softmax",
+  "algorithm_ref": "algorithm-mla_fwd-expanded-online-softmax",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "Expanded online-softmax MLA",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "基于 TPU Pallas 的 expanded dense causal MLA forward。先将压缩 KV 投影为各头的 K/V，在 query 分块中投影 Q，计算包含 NoPE 与 RoPE 的 causal attention，并用 FP32 online softmax 状态合并 KV 块，返回 BF16 O，可选返回自然对数 LSE。原始实现分别计算 K 与 V 投影，并在 attention 中融合 Q 投影；这是后续方法共用的历史比较基线。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

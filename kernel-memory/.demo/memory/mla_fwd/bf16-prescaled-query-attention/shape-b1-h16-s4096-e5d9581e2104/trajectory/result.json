@@ -1,0 +1,37 @@
+{
+  "annotations": [],
+  "decisions": [],
+  "document_type": "result",
+  "runs": [
+    {
+      "attention_mxu_static": 0.5637,
+      "candidate": "approx_prescale_q_bf16",
+      "comparison_key": "sha256:92eb76cbda04affdf535a91ff3acbd193ef7055b766b355fc8bd0c54d6af05a5",
+      "correctness": "pass",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "not_collected",
+      "latency_us": 489.831,
+      "llo": "recorded",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": 0.2866,
+      "mfu_executed_estimate": 0.3534,
+      "mxu": null,
+      "p90_latency_us": 490.429,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-approx-prescale-q-bf16-a296e28977f7",
+      "samples": 128,
+      "source_config_ref": "cfg-fwd-830078a3-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-a296e28977f7"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-830078a3-b1-h16-s4096-90dec5fb83a8"
+  ]
+}

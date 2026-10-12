@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "bf16-score-attention",
+  "algorithm_ref": "algorithm-mla_fwd-bf16-score-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "BF16 score attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "在512对角 panel attention中将 score 降为 BF16，以改变临时值压力；这是近似数值变体，正确性和性能必须按此数值类别解读。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

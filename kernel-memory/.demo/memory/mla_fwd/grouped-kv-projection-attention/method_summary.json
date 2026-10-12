@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "grouped-kv-projection-attention",
+  "algorithm_ref": "algorithm-mla_fwd-grouped-kv-projection-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "Grouped KV projection attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "融合 K/V projection 并让两个 head 共同复用 latent KV 输入；attention 使用512对角 panel和 FP32 online softmax。此方法的 pipeline 收益来自投影分组。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

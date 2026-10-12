@@ -1,0 +1,39 @@
+{
+  "adapter_id": "project2-mla-fwd-v1",
+  "algorithms": [
+    {
+      "algorithm_id": "aligned-qk-attention",
+      "algorithm_ref": "algorithm-mla_fwd-aligned-qk-attention"
+    },
+    {
+      "algorithm_id": "bf16-prescaled-query-attention",
+      "algorithm_ref": "algorithm-mla_fwd-bf16-prescaled-query-attention"
+    },
+    {
+      "algorithm_id": "bf16-score-attention",
+      "algorithm_ref": "algorithm-mla_fwd-bf16-score-attention"
+    },
+    {
+      "algorithm_id": "diagonal-panel-attention",
+      "algorithm_ref": "algorithm-mla_fwd-diagonal-panel-attention"
+    },
+    {
+      "algorithm_id": "expanded-online-softmax",
+      "algorithm_ref": "algorithm-mla_fwd-expanded-online-softmax"
+    },
+    {
+      "algorithm_id": "grouped-kv-projection-attention",
+      "algorithm_ref": "algorithm-mla_fwd-grouped-kv-projection-attention"
+    },
+    {
+      "algorithm_id": "paired-query-attention",
+      "algorithm_ref": "algorithm-mla_fwd-paired-query-attention"
+    }
+  ],
+  "contract_notes": "Expanded dense causal MLA forward with seven BF16 inputs; produces O and optional natural-log LSE. Shape and timing scope are fixed per config. Imported historical TPU measurements have not been independently reproduced.",
+  "display_name": "MLA forward",
+  "document_type": "kernel",
+  "kernel_id": "mla_fwd",
+  "kernel_ref": "kernel-mla_fwd",
+  "schema_version": "2.0.0"
+}

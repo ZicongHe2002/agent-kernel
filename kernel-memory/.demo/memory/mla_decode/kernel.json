@@ -1,0 +1,27 @@
+{
+  "adapter_id": "project2-mla-v2",
+  "algorithms": [
+    {
+      "algorithm_id": "dense-tiled-attention",
+      "algorithm_ref": "algorithm-mla_decode-dense-tiled-attention"
+    },
+    {
+      "algorithm_id": "paged-attention",
+      "algorithm_ref": "algorithm-mla_decode-paged-attention"
+    },
+    {
+      "algorithm_id": "sglang-paged-attention",
+      "algorithm_ref": "algorithm-mla_decode-sglang-paged-attention"
+    },
+    {
+      "algorithm_id": "dense-aligned-dma-attention",
+      "algorithm_ref": "algorithm-mla_decode-dense-aligned-dma-attention"
+    }
+  ],
+  "contract_notes": "MLA single-query decode. Native input is q/new_kv/resident cache/postappend lengths; dense input is q/kv/lengths. Outputs are latent attention, and updated cache for native. Exact tensor ABI and precision are recorded per config. No final latent-to-value projection. Historical results are imported_unverified.",
+  "display_name": "MLA decode",
+  "document_type": "kernel",
+  "kernel_id": "mla_decode",
+  "kernel_ref": "kernel-mla_decode",
+  "schema_version": "2.0.0"
+}

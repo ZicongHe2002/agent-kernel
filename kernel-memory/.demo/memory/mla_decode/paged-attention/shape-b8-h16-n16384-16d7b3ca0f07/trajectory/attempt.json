@@ -1,0 +1,397 @@
+{
+  "attempts": [
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "context_ref": "attempt-13be256a3535",
+      "created_at": "2026-09-18T11:51:11.896768Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-13be256a3535",
+        "pr_ref": "attempt-13be256a3535",
+        "provider": "local",
+        "repo_uid": "project2:tpu-inference"
+      },
+      "repo_uid": "project2:tpu-inference",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "M_T1_K2048_B2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "all_active_fast_path": true,
+              "block_kv": 2048,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+              "control_candidate": "G_T1_X0_F32S",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "M_T1_K2048_B2",
+              "native_only": true,
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                16,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "optimization": "KV DMA tile/internal batch scheduling and all-active request preparation",
+              "page_size": 128,
+              "pages_per_block": 16,
+              "precision_category": "controlled_fp32_scores_bf16_prob",
+              "precision_note": "Explicit s_dtype=float32 control; upstream probability cast to BF16 remains",
+              "score_dtype": "float32",
+              "source": "tpu-inference",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "traffic_note": "Same padded BF16 cache representation; no KV compression or reduced logical bytes",
+              "transpose_cache": false,
+              "two_step": true,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "controlled_fp32_scores_bf16_prob",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-13be256a3535",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-13be256a3535",
+          "session_id": "project2-e65293c240ca",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-13be256a3535",
+      "subject_type": "commit",
+      "summary": "M_T1_K2048_B2: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "M_T1_K2048_B2"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "context_ref": "attempt-9f9f86da3007",
+      "created_at": "2026-09-18T11:51:11.896768Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-9f9f86da3007",
+        "pr_ref": "attempt-9f9f86da3007",
+        "provider": "local",
+        "repo_uid": "project2:tpu-inference"
+      },
+      "repo_uid": "project2:tpu-inference",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "M_T1_K4096_B2",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "all_active_fast_path": true,
+              "block_kv": 4096,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+              "control_candidate": "G_T1_X0_F32S",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "M_T1_K4096_B2",
+              "native_only": true,
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                32,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "optimization": "KV DMA tile/internal batch scheduling and all-active request preparation",
+              "page_size": 128,
+              "pages_per_block": 32,
+              "precision_category": "controlled_fp32_scores_bf16_prob",
+              "precision_note": "Explicit s_dtype=float32 control; upstream probability cast to BF16 remains",
+              "score_dtype": "float32",
+              "source": "tpu-inference",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "traffic_note": "Same padded BF16 cache representation; no KV compression or reduced logical bytes",
+              "transpose_cache": false,
+              "two_step": true,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "controlled_fp32_scores_bf16_prob",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-9f9f86da3007",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-9f9f86da3007",
+          "session_id": "project2-e65293c240ca",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-pa-b8-h16-n16384-a8f00bf64b87",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-9f9f86da3007",
+      "subject_type": "commit",
+      "summary": "M_T1_K4096_B2: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "M_T1_K4096_B2"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "context_ref": "attempt-a48f74d4377e",
+      "created_at": "2026-09-18T11:51:11.896768Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-a48f74d4377e",
+        "pr_ref": "attempt-a48f74d4377e",
+        "provider": "local",
+        "repo_uid": "project2:tpu-inference"
+      },
+      "repo_uid": "project2:tpu-inference",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "G_T1_X0_F32S",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 2048,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "G_T1_X0_F32S",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                16,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 16,
+              "precision_category": "controlled_fp32_scores_bf16_prob",
+              "precision_note": "Explicit s_dtype=float32 control; upstream probability cast to BF16 remains",
+              "score_dtype": "float32",
+              "source": "tpu-inference",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "two_step": true,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": true,
+            "precision_category": "controlled_fp32_scores_bf16_prob",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-a48f74d4377e",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-a48f74d4377e",
+          "session_id": "project2-e65293c240ca",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-a48f74d4377e",
+      "subject_type": "commit",
+      "summary": "G_T1_X0_F32S: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "G_T1_X0_F32S"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+      },
+      "context_ref": "attempt-b53e3051c5d5",
+      "created_at": "2026-09-20T02:02:48.930543Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-b53e3051c5d5",
+        "pr_ref": "attempt-b53e3051c5d5",
+        "provider": "local",
+        "repo_uid": "project2:tpu-inference"
+      },
+      "repo_uid": "project2:tpu-inference",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "G_T1_X0_F32S",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 2048,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "G_T1_X0_F32S",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                16,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 16,
+              "precision_category": "controlled_fp32_scores_bf16_prob",
+              "precision_note": "Explicit s_dtype=float32 control; upstream probability cast to BF16 remains",
+              "score_dtype": "float32",
+              "source": "tpu-inference",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "two_step": true,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": true,
+            "precision_category": "controlled_fp32_scores_bf16_prob",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-b53e3051c5d5",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-b53e3051c5d5",
+          "session_id": "project2-b1bbbf8275b3",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-b53e3051c5d5",
+      "subject_type": "commit",
+      "summary": "G_T1_X0_F32S: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "G_T1_X0_F32S"
+    }
+  ],
+  "document_type": "attempt",
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:16d7b3ca0f07fdafe0c9ec6eb211e1b1e2df8e0f3e75688b1463e90f4bf263b3",
+  "source_config_refs": [
+    "cfg-pa-b8-h16-n16384-a8f00bf64b87",
+    "cfg-pa-b8-h16-n16384-f8133a9a34cc"
+  ]
+}

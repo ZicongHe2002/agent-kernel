@@ -1,0 +1,320 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 1024,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-5ef4bf1796f8",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/aligned_kernels.py#candidate=A_K1024",
+        "implementation_overrides": {
+          "candidate": "A_K1024",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "accumulation": "FP32",
+            "accuracy_atol": 0.01,
+            "accuracy_rtol": 0.01,
+            "bf16": true,
+            "block_kv": 1024,
+            "capacity_multiple": 1024,
+            "description": null,
+            "dma2": false,
+            "dma_feature_multiple": 128,
+            "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+            "heads_multiple": 8,
+            "latent_multiple": 128,
+            "name": "A_K1024",
+            "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "probability_operands": "BF16",
+            "qk_compute": 1024,
+            "qk_operands": "BF16",
+            "rope_max": 128,
+            "rope_min": 1,
+            "skips_empty_blocks": true,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:7148b4f7e60c74392748927fb6e4ee1f76308c1f4b5fe468cf8d1d8da82ad5af"
+      },
+      "source_config_ref": "cfg-dma-b1-h16-n4096-3330c0051469",
+      "subject_ref": "commit-5ef4bf1796f8"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-cddf2d296e0b",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/aligned_kernels.py#candidate=A_K2048_DMA2",
+        "implementation_overrides": {
+          "candidate": "A_K2048_DMA2",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "accumulation": "FP32",
+            "accuracy_atol": 0.01,
+            "accuracy_rtol": 0.01,
+            "bf16": true,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": true,
+            "dma_feature_multiple": 128,
+            "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+            "heads_multiple": 8,
+            "latent_multiple": 128,
+            "name": "A_K2048_DMA2",
+            "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "probability_operands": "BF16",
+            "qk_compute": 2048,
+            "qk_operands": "BF16",
+            "rope_max": 128,
+            "rope_min": 1,
+            "skips_empty_blocks": true,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:f3764b780d0e9d1bfc3591681705f905c04efab13eeebbc0d82ca25f218c3765"
+      },
+      "source_config_ref": "cfg-dma-b1-h16-n4096-01944e306469",
+      "subject_ref": "commit-cddf2d296e0b"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 4096,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-d707a68a1a74",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/aligned_kernels.py#candidate=A_K4096_DMA2",
+        "implementation_overrides": {
+          "candidate": "A_K4096_DMA2",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "accumulation": "FP32",
+            "accuracy_atol": 0.01,
+            "accuracy_rtol": 0.01,
+            "bf16": true,
+            "block_kv": 4096,
+            "capacity_multiple": 4096,
+            "description": null,
+            "dma2": true,
+            "dma_feature_multiple": 128,
+            "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+            "heads_multiple": 8,
+            "latent_multiple": 128,
+            "name": "A_K4096_DMA2",
+            "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "probability_operands": "BF16",
+            "qk_compute": 4096,
+            "qk_operands": "BF16",
+            "rope_max": 128,
+            "rope_min": 1,
+            "skips_empty_blocks": true,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:fbd88a12fc96ea3ffe3e208fe221c0381bdf38860cde98d8aab1daf7eb989dc2"
+      },
+      "source_config_ref": "cfg-dma-b1-h16-n4096-1f58d2aa4a13",
+      "subject_ref": "commit-d707a68a1a74"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": null,
+        "block_size": 2048,
+        "decode_batch_size": null,
+        "pages_per_block": null,
+        "transpose_cache": false,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-f1ebdce8be35",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/aligned_kernels.py#candidate=A_K2048",
+        "implementation_overrides": {
+          "candidate": "A_K2048",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "accumulation": "FP32",
+            "accuracy_atol": 0.01,
+            "accuracy_rtol": 0.01,
+            "bf16": true,
+            "block_kv": 2048,
+            "capacity_multiple": 2048,
+            "description": null,
+            "dma2": false,
+            "dma_feature_multiple": 128,
+            "feature_preparation": "whole dense Q/KV zero padding inside timed JIT; no per-tile pad/concat",
+            "heads_multiple": 8,
+            "latent_multiple": 128,
+            "name": "A_K2048",
+            "native_tpu_status": "requires native compile, correctness gate and measurement; latency unknown",
+            "precision_category": "explicit_bf16_qk_and_probability",
+            "probability_operands": "BF16",
+            "qk_compute": 2048,
+            "qk_operands": "BF16",
+            "rope_max": 128,
+            "rope_min": 1,
+            "skips_empty_blocks": true,
+            "softmax_updates_per_dma_tile": 1,
+            "timing_boundary": "complete dense BF16 q/kv to logical BF16 latent output, including feature padding"
+          },
+          "interface": "dense_reference",
+          "is_declared_baseline": false,
+          "precision_category": "explicit_bf16_qk_and_probability",
+          "revision_kind": "source_snapshot_content_address",
+          "source_identity_kind": "source_snapshot_content_address",
+          "timing_boundary": "dense"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:mla_decode",
+        "source_digest": "sha256:e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531",
+        "target_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_commit": {
+          "algorithm": "sha256",
+          "hex": "e34b7be4a8117aafb1d6e54f65f92092a2c0fd09eff3bf5f20f0c590d0763531"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:c9b364fba0b768f1ba4cf4ca4b8cc4e4983bf25b76e25d30f3025e27b97c96ef"
+      },
+      "source_config_ref": "cfg-dma-b1-h16-n4096-01944e306469",
+      "subject_ref": "commit-f1ebdce8be35"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+  "source_config_refs": [
+    "cfg-dma-b1-h16-n4096-01944e306469",
+    "cfg-dma-b1-h16-n4096-1f58d2aa4a13",
+    "cfg-dma-b1-h16-n4096-3330c0051469"
+  ]
+}

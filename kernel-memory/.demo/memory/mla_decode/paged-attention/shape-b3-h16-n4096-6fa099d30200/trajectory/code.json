@@ -1,0 +1,187 @@
+{
+  "document_type": "code",
+  "entries": [
+    {
+      "config_implementation_parameters": {
+        "block_kv": 2048,
+        "block_size": 2048,
+        "decode_batch_size": 2,
+        "pages_per_block": 16,
+        "transpose_cache": true,
+        "two_step": true
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-97d34449b97e",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X1",
+        "implementation_overrides": {
+          "candidate": "G_T1_X1",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 2048,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+            "decode_batch_size": 2,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "G_T1_X1",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              16,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 16,
+            "precision_category": "upstream_bf16_scores_prob",
+            "score_dtype": "bfloat16",
+            "source": "tpu-inference",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": true,
+            "two_step": true,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_scores_prob",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:tpu-inference",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:35555fe5a99081da9b1da717c6cd39cc9ab393a9fa7efbc5087f3cb0446610fb"
+      },
+      "source_config_ref": "cfg-pa-b3-h16-n4096-e23a3badf275",
+      "subject_ref": "commit-97d34449b97e"
+    },
+    {
+      "config_implementation_parameters": {
+        "block_kv": 2048,
+        "block_size": 2048,
+        "decode_batch_size": 2,
+        "pages_per_block": 16,
+        "transpose_cache": true,
+        "two_step": false
+      },
+      "content": null,
+      "content_status": "not_retained_in_compact_output",
+      "run_ref": "run-ed1806f61f7e",
+      "source": {
+        "checkout_mode": "exact_commit",
+        "dirty": false,
+        "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T0_X1",
+        "implementation_overrides": {
+          "candidate": "G_T0_X1",
+          "compiler_evidence": {
+            "hlo": {
+              "status": "recorded"
+            },
+            "llo": {
+              "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+              "status": "not_collected"
+            }
+          },
+          "implementation_parameters": {
+            "block_kv": 2048,
+            "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+            "commit": "a0135382e192ae03b4c79a5b30b740a9a31f38b1",
+            "decode_batch_size": 2,
+            "description": null,
+            "device_kind": "TPU v6 lite",
+            "input_precondition": "finite historical KV, including positions excluded by sliding window",
+            "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+            "locally_tested_native_frontend_jax": "0.8.1",
+            "minimum_native_jax": "0.8.1",
+            "name": "G_T0_X1",
+            "native_tpu_measured": false,
+            "num_kv_pages_per_block": [
+              16,
+              1,
+              1
+            ],
+            "num_queries_per_block": [
+              1,
+              1,
+              1
+            ],
+            "page_size": 128,
+            "pages_per_block": 16,
+            "precision_category": "upstream_bf16_scores_prob",
+            "score_dtype": "bfloat16",
+            "source": "tpu-inference",
+            "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+            "transpose_cache": true,
+            "two_step": false,
+            "vmem_capacity_bytes": 134217728,
+            "vmem_fraction": 0.9,
+            "vmem_limit_bytes": 120795955,
+            "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+          },
+          "interface": "paged_native",
+          "is_declared_baseline": false,
+          "precision_category": "upstream_bf16_scores_prob",
+          "revision_kind": "upstream_git_revision_with_local_wrapper",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "timing_boundary": "native"
+        },
+        "merge_parent_oids": [],
+        "patch_digest": null,
+        "repo_uid": "project2:tpu-inference",
+        "source_digest": "sha256:567f623c2791bb3955298938a1e9d8ae535042f48e15dbd2feed641059496304",
+        "target_commit": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "tested_commit": {
+          "algorithm": "sha1",
+          "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+        },
+        "tested_tree": null,
+        "variant_digest": "sha256:fe43c3c6b6101b062b2302ca3e4cdbd41ecdcf92980106c3dba0874003cccb44"
+      },
+      "source_config_ref": "cfg-pa-b3-h16-n4096-eaf41de166d6",
+      "subject_ref": "commit-ed1806f61f7e"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:6fa099d30200225e79fbf5dd9961d6da02e135b7bb3e1dcc78c625109d36bfbf",
+  "source_config_refs": [
+    "cfg-pa-b3-h16-n4096-e23a3badf275",
+    "cfg-pa-b3-h16-n4096-eaf41de166d6"
+  ]
+}

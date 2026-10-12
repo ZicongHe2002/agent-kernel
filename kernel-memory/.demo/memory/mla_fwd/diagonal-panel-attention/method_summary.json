@@ -1,0 +1,17 @@
+{
+  "algorithm_id": "diagonal-panel-attention",
+  "algorithm_ref": "algorithm-mla_fwd-diagonal-panel-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "Diagonal-panel attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_fwd",
+  "method_summary": "对 dense causal MLA 的对角区域进一步划分 panel，跳过确定无效的未来 token 计算；历史全可见 KV 块维持较大分块，并使用 FP32 online softmax 合并。attempt 分别记录512/256 panel、query子块、首块处理、遍历顺序和外层 buffering 等调度参数。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "forward",
+    "mla",
+    "project2",
+    "whole"
+  ]
+}

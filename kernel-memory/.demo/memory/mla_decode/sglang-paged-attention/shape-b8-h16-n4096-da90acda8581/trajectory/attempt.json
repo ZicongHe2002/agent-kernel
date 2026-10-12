@@ -1,0 +1,561 @@
+{
+  "attempts": [
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-11de70edce5a",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-11de70edce5a",
+        "pr_ref": "attempt-11de70edce5a",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_A_B1",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 384,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 1,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_A_B1",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                3,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 3,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-11de70edce5a",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-11de70edce5a",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-a6c53ac21d13",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-11de70edce5a",
+      "subject_type": "commit",
+      "summary": "SGL_A_B1: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_A_B1"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-22b1fc96678b",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-22b1fc96678b",
+        "pr_ref": "attempt-22b1fc96678b",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_C_B1",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 4096,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 1,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_C_B1",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                32,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 32,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-22b1fc96678b",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-22b1fc96678b",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-aae684984cc2",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-22b1fc96678b",
+      "subject_type": "commit",
+      "summary": "SGL_C_B1: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_C_B1"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-30d0fccb0b69",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-30d0fccb0b69",
+        "pr_ref": "attempt-30d0fccb0b69",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_A",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 384,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 4,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_A",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                3,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 3,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": true,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-30d0fccb0b69",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-30d0fccb0b69",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-d70d55db0971",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-30d0fccb0b69",
+      "subject_type": "commit",
+      "summary": "SGL_A: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_A"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-311af0b64b70",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-311af0b64b70",
+        "pr_ref": "attempt-311af0b64b70",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_B_B1",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 2048,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 1,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_B_B1",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                16,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 16,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-311af0b64b70",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-311af0b64b70",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-a14b6c2fb70f",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-311af0b64b70",
+      "subject_type": "commit",
+      "summary": "SGL_B_B1: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_B_B1"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-5a2973e230c3",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-5a2973e230c3",
+        "pr_ref": "attempt-5a2973e230c3",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_B",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 2048,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_B",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                16,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 16,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-5a2973e230c3",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-5a2973e230c3",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-e1627bd622a5",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-5a2973e230c3",
+      "subject_type": "commit",
+      "summary": "SGL_B: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_B"
+    },
+    {
+      "changes": [],
+      "commit_oid": {
+        "algorithm": "sha1",
+        "hex": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4"
+      },
+      "context_ref": "attempt-e05a0a10ebc7",
+      "created_at": "2026-09-18T08:22:44.054960Z",
+      "hypothesis": "Imported local candidate trial; no PR association was recorded.",
+      "origin_ref": null,
+      "pr": {
+        "number": null,
+        "pr_key": "local-e05a0a10ebc7",
+        "pr_ref": "attempt-e05a0a10ebc7",
+        "provider": "local",
+        "repo_uid": "project2:sglang-jax"
+      },
+      "repo_uid": "project2:sglang-jax",
+      "runs": [
+        {
+          "attempt_no": 1,
+          "implementation_overrides": {
+            "candidate": "SGL_C",
+            "compiler_evidence": {
+              "hlo": {
+                "status": "recorded"
+              },
+              "llo": {
+                "reason": "Not enabled by this runner. LLO requires compiler flags before JAX initialization; HLO is not LLO.",
+                "status": "not_collected"
+              }
+            },
+            "implementation_parameters": {
+              "block_kv": 4096,
+              "cache_page_table": "per-request reserved capacity; fixed stride, permuted for active requests",
+              "commit": "0c74a5504e9986ae6fdd5890d7a546978c7f48d4",
+              "decode_batch_size": 2,
+              "description": null,
+              "device_kind": "TPU v6 lite",
+              "input_precondition": "finite historical KV, including positions excluded by sliding window",
+              "invalid_cache_slots": "unspecified after packed-word append; valid prefix must match exactly",
+              "locally_tested_native_frontend_jax": "0.8.1",
+              "minimum_native_jax": "0.8.1",
+              "name": "SGL_C",
+              "native_tpu_measured": false,
+              "num_kv_pages_per_block": [
+                32,
+                1,
+                1
+              ],
+              "num_queries_per_block": [
+                1,
+                1,
+                1
+              ],
+              "page_size": 128,
+              "pages_per_block": 32,
+              "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+              "source": "sglang-jax",
+              "source_url": "https://github.com/jax-ml/jax/blob/533182d0c303d74e351b8deb40332a27f1263571/jax/_src/tpu_info.py#L449-L459",
+              "transpose_cache": false,
+              "vmem_capacity_bytes": 134217728,
+              "vmem_fraction": 0.9,
+              "vmem_limit_bytes": 120795955,
+              "vmem_source": "runtime pltpu.get_tpu_info().vmem_capacity_bytes"
+            },
+            "interface": "paged_native",
+            "is_declared_baseline": false,
+            "precision_category": "upstream_bf16_qk_fp32_scores_prob_pv",
+            "revision_kind": "upstream_git_revision_with_local_wrapper",
+            "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+            "timing_boundary": "native"
+          },
+          "pair_id": null,
+          "request_id": "run-e05a0a10ebc7",
+          "rerun_of": null,
+          "role_in_pair": null,
+          "run_ref": "run-e05a0a10ebc7",
+          "session_id": "project2-4692f2e16512",
+          "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+          "stage": "benchmark"
+        }
+      ],
+      "source_config_ref": "cfg-sgl-b8-h16-n4096-642e7819cc37",
+      "source_identity_kind": "upstream_git_revision_with_local_wrapper",
+      "status": "recorded",
+      "subject_ref": "commit-e05a0a10ebc7",
+      "subject_type": "commit",
+      "summary": "SGL_C: pinned upstream Git revision; local wrapper and variant recorded by source digest.",
+      "title": "SGL_C"
+    }
+  ],
+  "document_type": "attempt",
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:da90acda8581d418354f147599a601ec42df25ae151f63a330eac070d55834d6",
+  "source_config_refs": [
+    "cfg-sgl-b8-h16-n4096-642e7819cc37",
+    "cfg-sgl-b8-h16-n4096-a14b6c2fb70f",
+    "cfg-sgl-b8-h16-n4096-a6c53ac21d13",
+    "cfg-sgl-b8-h16-n4096-aae684984cc2",
+    "cfg-sgl-b8-h16-n4096-d70d55db0971",
+    "cfg-sgl-b8-h16-n4096-e1627bd622a5"
+  ]
+}

@@ -1,0 +1,510 @@
+{
+  "algorithm_ref": "algorithm-mla_decode-paged-attention",
+  "document_type": "baseline",
+  "kernel_id": "mla_decode",
+  "schema_version": "2.0.0",
+  "selection": "declared_baselines_per_shape",
+  "shapes": [
+    {
+      "baselines": [
+        {
+          "baseline_id": "g_t1_x0_f32s-8262bf59832e",
+          "baseline_ref": "baseline-77a9bd3d4aa0",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+          },
+          "config_ref": "cfg-pa-b8-h16-n4096-7fb4cce82083",
+          "description": "Source-declared baseline candidate G_T1_X0_F32S; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X0_F32S",
+          "repo_uid": "project2:tpu-inference",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:90334538c8f075275ab2642858cfd6760118e2cf7f1f46eac9b0c16a451bfebb",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 43.61,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 871.985,
+              "logical_bandwidth_utilization": 0.5323,
+              "mfu": 0.0285,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 43.883,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-b55e03718b5f",
+              "samples": 7,
+              "source_config_ref": "cfg-pa-b8-h16-n4096-7fb4cce82083",
+              "subject_ref": "commit-b55e03718b5f"
+            },
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:f2e8ff5bf55db522769a4147805bb1821d3864406cd4f615d94a53911433813b",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 43.983,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 864.6,
+              "logical_bandwidth_utilization": 0.5278,
+              "mfu": 0.0283,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 44.7,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.528,
+              "run_ref": "run-77a9bd3d4aa0",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b8-h16-n4096-7fb4cce82083",
+              "subject_ref": "commit-77a9bd3d4aa0"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b8-h16-n4096-042649d6406e",
+      "shape_hash": "sha256:042649d6406e65b8d54d5792ab46d5952d5b31c9a90d83445df8f4c4b0b71ec0",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b8-h16-n4096-2b3a7e36aa2d",
+        "cfg-pa-b8-h16-n4096-4f3331dcd9cd",
+        "cfg-pa-b8-h16-n4096-7fb4cce82083",
+        "cfg-pa-b8-h16-n4096-89a0965e2b9c",
+        "cfg-pa-b8-h16-n4096-8fd2c8c25d91",
+        "cfg-pa-b8-h16-n4096-b49e2d7b869c",
+        "cfg-pa-b8-h16-n4096-cd82d0552864",
+        "cfg-pa-b8-h16-n4096-fd1a81f990f3"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-0658926d02e6",
+      "shape_hash": "sha256:0658926d02e618efccd081e1f1bfd67ca1c9c042bbc27b8c6542738c01874624",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-1503ea55e792",
+        "cfg-pa-b1-h16-n4096-b612d9a768c1"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b3-h16-n4096-096e6a4cbf50",
+      "shape_hash": "sha256:096e6a4cbf50ea7ce5c84717584cb49dc256ea2d283d69b6dc5001be0a7855e0",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b3-h16-n4096-79db0c8ad675",
+        "cfg-pa-b3-h16-n4096-7aebfcf83957"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "g_t1_x0_f32s-e65293c240ca",
+          "baseline_ref": "baseline-a48f74d4377e",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+          },
+          "config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+          "description": "Source-declared baseline candidate G_T1_X0_F32S; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X0_F32S",
+          "repo_uid": "project2:tpu-inference",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:39e53ef9f5177a46ba289b222ee3c218aaaf15a0f10281083e3e0ff27784cda1",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 123.804,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 1221.88,
+              "logical_bandwidth_utilization": 0.746,
+              "mfu": 0.0402,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 125.061,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.746,
+              "run_ref": "run-a48f74d4377e",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+              "subject_ref": "commit-a48f74d4377e"
+            },
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:39e53ef9f5177a46ba289b222ee3c218aaaf15a0f10281083e3e0ff27784cda1",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 123.454,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 1225.347,
+              "logical_bandwidth_utilization": 0.7481,
+              "mfu": 0.0403,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 125.106,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.7481,
+              "run_ref": "run-b53e3051c5d5",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+              "subject_ref": "commit-b53e3051c5d5"
+            }
+          ]
+        },
+        {
+          "baseline_id": "g_t1_x0_f32s-b1bbbf8275b3",
+          "baseline_ref": "baseline-b53e3051c5d5",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+          },
+          "config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+          "description": "Source-declared baseline candidate G_T1_X0_F32S; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X0_F32S",
+          "repo_uid": "project2:tpu-inference",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:39e53ef9f5177a46ba289b222ee3c218aaaf15a0f10281083e3e0ff27784cda1",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 123.804,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 1221.88,
+              "logical_bandwidth_utilization": 0.746,
+              "mfu": 0.0402,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 125.061,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.746,
+              "run_ref": "run-a48f74d4377e",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+              "subject_ref": "commit-a48f74d4377e"
+            },
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:39e53ef9f5177a46ba289b222ee3c218aaaf15a0f10281083e3e0ff27784cda1",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 123.454,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 1225.347,
+              "logical_bandwidth_utilization": 0.7481,
+              "mfu": 0.0403,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 125.106,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.7481,
+              "run_ref": "run-b53e3051c5d5",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b8-h16-n16384-f8133a9a34cc",
+              "subject_ref": "commit-b53e3051c5d5"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b8-h16-n16384-16d7b3ca0f07",
+      "shape_hash": "sha256:16d7b3ca0f07fdafe0c9ec6eb211e1b1e2df8e0f3e75688b1463e90f4bf263b3",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b8-h16-n16384-a8f00bf64b87",
+        "cfg-pa-b8-h16-n16384-f8133a9a34cc"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b8-h16-n4096-20d4e3b032b1",
+      "shape_hash": "sha256:20d4e3b032b184b2663b87bea7eb3d7ecfeda38da03c07774a4851d78ef0d6dc",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b8-h16-n4096-0c1abe84c1db",
+        "cfg-pa-b8-h16-n4096-be21e37c1b9f"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "g_t1_x0_f32s-75c11175e846",
+          "baseline_ref": "baseline-2f2f12801784",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+          },
+          "config_ref": "cfg-pa-b1-h16-n4096-0e3351ac5a9e",
+          "description": "Source-declared baseline candidate G_T1_X0_F32S; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X0_F32S",
+          "repo_uid": "project2:tpu-inference",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:b02de0c94387fc697ecdb08f4a76bfc2c72ed5b4dcf38dd2431f38e40bdb9135",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 11.943,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 398.025,
+              "logical_bandwidth_utilization": 0.243,
+              "mfu": 0.013,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 11.953,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-6f276e173b13",
+              "samples": 7,
+              "source_config_ref": "cfg-pa-b1-h16-n4096-0e3351ac5a9e",
+              "subject_ref": "commit-6f276e173b13"
+            },
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:c185ae4729e48b7bd068eeef13eec5494f28ac84522de6ce7d7fbbdf8f90174d",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 11.925,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 398.611,
+              "logical_bandwidth_utilization": 0.2434,
+              "mfu": 0.013,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 12.065,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.2434,
+              "run_ref": "run-2f2f12801784",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b1-h16-n4096-0e3351ac5a9e",
+              "subject_ref": "commit-2f2f12801784"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b1-h16-n4096-499b14733e80",
+      "shape_hash": "sha256:499b14733e8032b4e62045b700ec9916bc9c52018b48d60f304bc69a1dd404a1",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-0e3351ac5a9e",
+        "cfg-pa-b1-h16-n4096-1c5b4ba1865a",
+        "cfg-pa-b1-h16-n4096-21d24812f6f0",
+        "cfg-pa-b1-h16-n4096-387b661ea0d6",
+        "cfg-pa-b1-h16-n4096-60c64a0b2364",
+        "cfg-pa-b1-h16-n4096-73b5cbe187a3",
+        "cfg-pa-b1-h16-n4096-e2a659e2673b",
+        "cfg-pa-b1-h16-n4096-f11cecb844e3"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b3-h16-n4096-6fa099d30200",
+      "shape_hash": "sha256:6fa099d30200225e79fbf5dd9961d6da02e135b7bb3e1dcc78c625109d36bfbf",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b3-h16-n4096-e23a3badf275",
+        "cfg-pa-b3-h16-n4096-eaf41de166d6"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-727741dca6d4",
+      "shape_hash": "sha256:727741dca6d4f65a192a76c4d031b9b113d55a361ab1ef00c40a5cf4e790b1ff",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-01944e306469",
+        "cfg-pa-b1-h16-n4096-1b626caec5b1",
+        "cfg-pa-b1-h16-n4096-9b1ef0b1cf40",
+        "cfg-pa-b1-h16-n4096-ff63dc12b941"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-88c9305c5c73",
+      "shape_hash": "sha256:88c9305c5c73cca240bc5e6608b71bcb78c667ba4fadea0b8cbc29e8fcad1fc1",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-518bf302ca39",
+        "cfg-pa-b1-h16-n4096-954e9a715089"
+      ]
+    },
+    {
+      "baselines": [
+        {
+          "baseline_id": "g_t1_x0_f32s-1511ab7587ee",
+          "baseline_ref": "baseline-29b49f04fb0d",
+          "commit_oid": {
+            "algorithm": "sha1",
+            "hex": "a0135382e192ae03b4c79a5b30b740a9a31f38b1"
+          },
+          "config_ref": "cfg-pa-b3-h16-n4096-568f97c1d1c1",
+          "description": "Source-declared baseline candidate G_T1_X0_F32S; measurement is retained on its local attempt.",
+          "entrypoint": "project2:source_snapshot/upstream_adapters.py:build_upstream_native#candidate=G_T1_X0_F32S",
+          "repo_uid": "project2:tpu-inference",
+          "role": "both",
+          "runs": [
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:430fb3b1464f0465e0822c56e98ad56d3923e9ee6ac1cc91c9e0fc5990854140",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 29.207,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 488.24,
+              "logical_bandwidth_utilization": 0.2981,
+              "mfu": 0.016,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 29.238,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": null,
+              "run_ref": "run-f6e0156a883d",
+              "samples": 7,
+              "source_config_ref": "cfg-pa-b3-h16-n4096-568f97c1d1c1",
+              "subject_ref": "commit-f6e0156a883d"
+            },
+            {
+              "attention_mxu_static": null,
+              "candidate": "G_T1_X0_F32S",
+              "comparison_key": "sha256:0908dc616c7ff5b5b191c27169931d0aba359d03485599fd61df3607e7fde9d8",
+              "correctness": "pass",
+              "execution_status": "succeeded",
+              "failure_reason": null,
+              "hbm_bandwidth_gbps": null,
+              "hbm_bandwidth_utilization": null,
+              "hlo": "recorded",
+              "latency_us": 28.575,
+              "llo": "not_collected",
+              "logical_bandwidth_gbps": 499.047,
+              "logical_bandwidth_utilization": 0.3047,
+              "mfu": 0.0163,
+              "mfu_executed_estimate": null,
+              "mxu": null,
+              "p90_latency_us": 28.707,
+              "provenance": "imported_unverified",
+              "roofline_efficiency": 0.3047,
+              "run_ref": "run-29b49f04fb0d",
+              "samples": 11,
+              "source_config_ref": "cfg-pa-b3-h16-n4096-568f97c1d1c1",
+              "subject_ref": "commit-29b49f04fb0d"
+            }
+          ]
+        }
+      ],
+      "shape": "shape-b3-h16-n4096-8cd9db3ea896",
+      "shape_hash": "sha256:8cd9db3ea896a40d872f73478be3f52eea77db6c6843b06ff55773d161a78b8b",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b3-h16-n4096-181bde25a2cc",
+        "cfg-pa-b3-h16-n4096-568f97c1d1c1",
+        "cfg-pa-b3-h16-n4096-65cb5a124bfc",
+        "cfg-pa-b3-h16-n4096-bc4b9b857899",
+        "cfg-pa-b3-h16-n4096-d770cf85bdc1",
+        "cfg-pa-b3-h16-n4096-df231fe90cdb",
+        "cfg-pa-b3-h16-n4096-f6ba9aa7c6bb",
+        "cfg-pa-b3-h16-n4096-fe1518ee8acf"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b8-h16-n4096-a8bb297311c2",
+      "shape_hash": "sha256:a8bb297311c217c9ab5c7f6d59167a7a56667c773b02f2754789befd5908cbe8",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b8-h16-n4096-0605ca5e89d2",
+        "cfg-pa-b8-h16-n4096-ff189bba4f1c"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-ac1deb31a339",
+      "shape_hash": "sha256:ac1deb31a3397d58be8118983f5daf1a005c4713e34b4239c9bd41d45138e6df",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-4ae6905b08ba",
+        "cfg-pa-b1-h16-n4096-6938faf01cc5",
+        "cfg-pa-b1-h16-n4096-ea0291a06756",
+        "cfg-pa-b1-h16-n4096-f6976f6eca48"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b8-h16-n4096-ad50a564adb7",
+      "shape_hash": "sha256:ad50a564adb7bd68dae47fa889688a92a95d3958f7065cfef92ada50d5390d71",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b8-h16-n4096-01e19ae880a5",
+        "cfg-pa-b8-h16-n4096-2aa8062fcb61"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b1-h16-n4096-cc4df7beba97",
+      "shape_hash": "sha256:cc4df7beba977553e5b6717c0eb5bbd3db6e49ccace069cae105b643fc231a86",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b1-h16-n4096-2e61ad4541d2",
+        "cfg-pa-b1-h16-n4096-928f4b56727c"
+      ]
+    },
+    {
+      "baselines": [],
+      "shape": "shape-b3-h16-n4096-d82b8d8b237e",
+      "shape_hash": "sha256:d82b8d8b237e32fe0a6032aed0a9537b5b8e231aa7c7b3e9bba3dac96d7ab5ff",
+      "shared_baselines": [],
+      "source_config_refs": [
+        "cfg-pa-b3-h16-n4096-42ac5fc702e7",
+        "cfg-pa-b3-h16-n4096-602ddac06c2b"
+      ]
+    }
+  ]
+}

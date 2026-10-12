@@ -1,0 +1,16 @@
+{
+  "algorithm_id": "dense-tiled-attention",
+  "algorithm_ref": "algorithm-mla_decode-dense-tiled-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "dense-tiled-attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_decode",
+  "method_summary": "连续 KV 输入上的分块 MLA attention：按有效长度对 latent 与 RoPE 分数进行 masked softmax，再聚合 latent 输出。B/D/C/R2 候选比较完整扫描、空块裁剪、循环展开、精度、分块与 DMA 路径，输入准备计入 dense 测量边界。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "decode",
+    "mla",
+    "project2"
+  ]
+}

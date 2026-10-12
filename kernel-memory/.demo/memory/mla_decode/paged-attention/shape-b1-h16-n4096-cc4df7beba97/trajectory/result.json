@@ -1,0 +1,63 @@
+{
+  "annotations": [],
+  "decisions": [],
+  "document_type": "result",
+  "runs": [
+    {
+      "attention_mxu_static": null,
+      "candidate": "G_T0_X0",
+      "comparison_key": "sha256:85a2f0f5ea0fe5581c0d209ca7c96ac13ba5dc799974aae66c6153d635977ecb",
+      "correctness": "fail",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "recorded",
+      "latency_us": null,
+      "llo": "not_collected",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": null,
+      "mfu_executed_estimate": null,
+      "mxu": null,
+      "p90_latency_us": null,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-4f296b8f2c19",
+      "samples": 0,
+      "source_config_ref": "cfg-pa-b1-h16-n4096-928f4b56727c",
+      "subject_ref": "commit-4f296b8f2c19"
+    },
+    {
+      "attention_mxu_static": null,
+      "candidate": "G_T1_X0",
+      "comparison_key": "sha256:29ba4166b4e3e6ab7fd4df18d956568bf1c9d40b6ca0587d282882015665e7d7",
+      "correctness": "fail",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "recorded",
+      "latency_us": null,
+      "llo": "not_collected",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": null,
+      "mfu_executed_estimate": null,
+      "mxu": null,
+      "p90_latency_us": null,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-62b9e63488db",
+      "samples": 0,
+      "source_config_ref": "cfg-pa-b1-h16-n4096-2e61ad4541d2",
+      "subject_ref": "commit-62b9e63488db"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:cc4df7beba977553e5b6717c0eb5bbd3db6e49ccace069cae105b643fc231a86",
+  "source_config_refs": [
+    "cfg-pa-b1-h16-n4096-2e61ad4541d2",
+    "cfg-pa-b1-h16-n4096-928f4b56727c"
+  ]
+}

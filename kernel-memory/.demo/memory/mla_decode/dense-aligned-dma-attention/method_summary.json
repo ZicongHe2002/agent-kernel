@@ -1,0 +1,16 @@
+{
+  "algorithm_id": "dense-aligned-dma-attention",
+  "algorithm_ref": "algorithm-mla_decode-dense-aligned-dma-attention",
+  "annotations": [],
+  "author_kind": "agent",
+  "display_name": "dense-aligned-dma-attention",
+  "document_type": "method_summary",
+  "kernel_id": "mla_decode",
+  "method_summary": "对齐 DMA 的连续输入 MLA attention：在计时 JIT 内将 Q/KV 特征从 576 对齐到 640，使用 BF16 QK 和概率操作数、FP32 累加，按 KV tile 计算 attention。A_K* 变体比较 tile 大小和 DMA2 调度，输出为 latent attention。",
+  "schema_version": "2.0.0",
+  "tags": [
+    "decode",
+    "mla",
+    "project2"
+  ]
+}

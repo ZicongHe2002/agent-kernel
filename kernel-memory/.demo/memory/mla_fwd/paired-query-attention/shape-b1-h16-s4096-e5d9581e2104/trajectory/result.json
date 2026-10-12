@@ -1,0 +1,62 @@
+{
+  "annotations": [],
+  "decisions": [],
+  "document_type": "result",
+  "runs": [
+    {
+      "attention_mxu_static": 0.5611,
+      "candidate": "N13_kv_resident_paired_q512",
+      "comparison_key": "sha256:f4ae2d5867e5ccb875c78c9e91e05a84312c70a57e7be8a8316377915e178893",
+      "correctness": "pass",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "not_collected",
+      "latency_us": 505.753,
+      "llo": "recorded",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": 0.2776,
+      "mfu_executed_estimate": 0.3423,
+      "mxu": null,
+      "p90_latency_us": 506.88,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-n13-kv-resident-paired-q512-3672181fe419",
+      "samples": 128,
+      "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-3672181fe419"
+    },
+    {
+      "attention_mxu_static": 0.528,
+      "candidate": "N14_paired_q512_diagonal256",
+      "comparison_key": "sha256:5ea80528d6a61c065412802476a5849fe86bb63f953f031f9f380ad19facd326",
+      "correctness": "pass",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "not_collected",
+      "latency_us": 503.94,
+      "llo": "recorded",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": 0.2786,
+      "mfu_executed_estimate": 0.3296,
+      "mxu": null,
+      "p90_latency_us": 504.625,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-n14-paired-q512-diagonal256-c5eefeed5c04",
+      "samples": 128,
+      "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "commit-c5eefeed5c04"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8"
+  ]
+}

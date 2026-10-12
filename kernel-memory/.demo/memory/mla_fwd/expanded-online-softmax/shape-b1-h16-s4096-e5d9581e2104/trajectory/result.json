@@ -1,0 +1,62 @@
+{
+  "annotations": [],
+  "decisions": [],
+  "document_type": "result",
+  "runs": [
+    {
+      "attention_mxu_static": 0.5883,
+      "candidate": "leader_aligned_original",
+      "comparison_key": "sha256:b2a7b3d89533d5a91cb70844d92b0d3dd5a8881e80ff7ce6b5a4c3fc4525ec52",
+      "correctness": "pass",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "not_collected",
+      "latency_us": 676.228,
+      "llo": "recorded",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": 0.2076,
+      "mfu_executed_estimate": 0.2422,
+      "mxu": null,
+      "p90_latency_us": 676.995,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-leader-aligned-original-b3acbf8ec933",
+      "samples": 128,
+      "source_config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "baseline-leader-aligned-original-b3acbf8ec933"
+    },
+    {
+      "attention_mxu_static": 0.587,
+      "candidate": "leader_aligned_original",
+      "comparison_key": "sha256:65575bb0ff159dd2c8d3ec6ce2d2445c44831f30a0c95f1c580e30379c863be4",
+      "correctness": "pass",
+      "execution_status": "succeeded",
+      "failure_reason": null,
+      "hbm_bandwidth_gbps": null,
+      "hbm_bandwidth_utilization": null,
+      "hlo": "not_collected",
+      "latency_us": 676.292,
+      "llo": "recorded",
+      "logical_bandwidth_gbps": null,
+      "logical_bandwidth_utilization": null,
+      "mfu": 0.2076,
+      "mfu_executed_estimate": 0.2421,
+      "mxu": null,
+      "p90_latency_us": 676.95,
+      "provenance": "imported_unverified",
+      "roofline_efficiency": null,
+      "run_ref": "run-leader-aligned-original-8f894056684e",
+      "samples": 128,
+      "source_config_ref": "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8",
+      "subject_ref": "baseline-leader-aligned-original-8f894056684e"
+    }
+  ],
+  "schema_version": "2.0.0",
+  "shape_hash": "sha256:e5d9581e2104578aaed0bf982b9967b9e026767f577caac70cb87588d1bd3b74",
+  "source_config_refs": [
+    "cfg-fwd-0aa21afe-b1-h16-s4096-90dec5fb83a8"
+  ]
+}
