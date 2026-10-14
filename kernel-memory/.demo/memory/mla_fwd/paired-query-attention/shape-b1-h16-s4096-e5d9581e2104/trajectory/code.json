@@ -14,21 +14,9 @@
           "candidate": "N13_kv_resident_paired_q512",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:31eca6c47c310e81c6c9a677833dd79e7b03a846b9655dfcf428292f490fd09f",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -62,7 +50,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:15d3b625a5e97bc78ec7dc560311d20b3adb115ae09dbced89c1be85b7429e98"
+        "variant_digest": "sha256:440078a93cef70b5cf11e1f5cd162cb13a0a6b5d364e92172880ae4eb63f8a15"
       },
       "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-3672181fe419"
@@ -80,21 +68,9 @@
           "candidate": "N14_paired_q512_diagonal256",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:5d5eefe56c60bb9cd28e946727481a42c972b1080b7d51e27176f2f7b30f27d1",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -130,7 +106,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:d12ae5e19d55b4a8a26d481cd44eed728bfa026960c5eb4835d2b42a61701ecb"
+        "variant_digest": "sha256:b89a8d4ce56842e9f7a0fa8414c5441fea1ce240ca1cc30fc4aaccfa8adb10b1"
       },
       "source_config_ref": "cfg-fwd-953bff7d-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-c5eefeed5c04"

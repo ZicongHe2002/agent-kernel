@@ -25,21 +25,9 @@
             "candidate": "N12a_staircase_diagonal256",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:3ddb2e6d3c0bbfa3579c4e10d25c73c932f5197ab88e89fc48e9e1555e69a256",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -104,21 +92,9 @@
             "candidate": "N12_recursive_diagonal_subpanel256",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:c5a488b19cf0accfb0e298e30691648eddbd4eb167839703202c30a2d7749870",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -183,21 +159,9 @@
             "candidate": "diagnostic_outer_grid_buffers_q2_kv2",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:c9f85c44155ebdf4a129b46621452d6b4ffdb54b239ffec6d87be54f0c4b7f55",
-                  "sha256:6430cd0ce3d0b6fe64661fb06767687bd7623ea1588e02589ee7b2245fb5dfdf"
-                ],
                 "status": "recorded"
               }
             },
@@ -268,21 +232,9 @@
             "candidate": "D2_q_major_grid",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:e96454c3eeaeeca165a395855ddfd214253400f89e29169024ff999a556c2223",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -346,21 +298,9 @@
             "candidate": "N6_diagonal_panel512",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:92dc0d60431e00c86c037ddb70cd5e77c4c08a92dbe809063f4f9d9551252f0c",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -423,21 +363,9 @@
             "candidate": "diagnostic_cost_estimate",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:92dc0d60431e00c86c037ddb70cd5e77c4c08a92dbe809063f4f9d9551252f0c",
-                  "sha256:e9f08d51eefb923fdf74dd9df9bf770200f589670effc48743e16ddf426ed7d6"
-                ],
                 "status": "recorded"
               }
             },
@@ -501,21 +429,9 @@
             "candidate": "N8_qsub512_diagonal_panel512",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:4834ad8887bfc80ee28127adff3cb84752fcfbb5965ffad94b1ede757c578b93",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -579,21 +495,9 @@
             "candidate": "N12_recursive_diagonal256_first",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:c6576c24c0a28b6920cd9bdf9ca2b667c01e9711a5752de936022647c058ce9e",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -659,21 +563,9 @@
             "candidate": "N12b_prefix_diagonal256",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:3a5fdd1f17dbb75ec44b339204df928cb491f1691065c85e59707bf89ec8c15c",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -738,21 +630,9 @@
             "candidate": "N12c_ragged_diagonal256",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:431527e8fd9c23543e374cc997e73742829c6f7d029952054d8a095440083b65",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -817,21 +697,9 @@
             "candidate": "N7_diagonal_panel512_first",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:43a68ffaf4ed918c57fa7726b89a5a58cd7140a384cb13779d987cb088914dd7",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -895,21 +763,9 @@
             "candidate": "diagnostic_outer_grid_buffers_q1_kv2",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:b01e2deab60fdd40297db1f8107e06424f5a12be17eff2ac3e791ef8952312a1",
-                  "sha256:6430cd0ce3d0b6fe64661fb06767687bd7623ea1588e02589ee7b2245fb5dfdf"
-                ],
                 "status": "recorded"
               }
             },

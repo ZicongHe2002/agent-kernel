@@ -1,9 +1,10 @@
 # Kernel Memory — design and implementation conventions
 
-This document is the shared contract for everyone implementing modules in this repository.
-The normative requirements come from the handoff specification
-(`../kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md`, read-only input) and its machine
-contracts, which are copied verbatim into `src/kernel_memory/contracts/`.
+This document describes the internal MemoryStore implementation. The current public JSON input and compact
+memory output are documented in [README_MEMORY.md](../README_MEMORY.md).
+Implementation began from a handoff specification, now retained in Git history; subsequent user requirements
+and the ADRs amended that design. The active machine-readable contracts live in `src/kernel_memory/contracts/`;
+the original record contract remains under `contracts/legacy/` for migration tests.
 
 ## 1. Hierarchy and non-negotiables
 

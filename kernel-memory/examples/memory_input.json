@@ -1,0 +1,107 @@
+{
+  "format": "kernel-memory-input",
+  "schema_version": "1.0.0",
+  "kernels": [
+    {
+      "kernel_id": "vector_add_example",
+      "description": "SYNTHETIC FORMAT EXAMPLE ONLY. All latency and utilization values below are invented to demonstrate the input contract; they are not benchmark measurements or performance claims.",
+      "algorithms": [
+        {
+          "algorithm_id": "elementwise-add",
+          "display_name": "Elementwise addition (synthetic example)",
+          "method_summary": "Illustrative float32 vector addition y = a + b, comparing a reference candidate with a hypothetical optimized candidate. No implementation is executed by this example and no performance claim is made.",
+          "summary_author": "agent",
+          "shapes": [
+            {
+              "shape_id": "n4096-f32",
+              "problem": {
+                "input_signature": {
+                  "a": {"shape": [4096], "dtype": "float32"},
+                  "b": {"shape": [4096], "dtype": "float32"}
+                },
+                "output_signature": {
+                  "y": {"shape": [4096], "dtype": "float32"}
+                },
+                "parameters": {"operation": "vector_add"}
+              },
+              "baseline_run_id": "baseline-example",
+              "attempts": [
+                {
+                  "attempt_id": "reference-example",
+                  "candidate": "Reference (synthetic example)",
+                  "summary": "Invented baseline values for schema demonstration only.",
+                  "pr_url": null,
+                  "commit": null,
+                  "code": null,
+                  "runs": [
+                    {
+                      "run_id": "baseline-example",
+                      "recorded_at": null,
+                      "environment": {
+                        "device": "Hypothetical device; no actual run",
+                        "software": {}
+                      },
+                      "measurement": {
+                        "scope": "Synthetic illustrative values, not measurements",
+                        "timing_method": null,
+                        "warmup": null
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 12.0,
+                        "p90_latency_us": null,
+                        "samples": null,
+                        "mfu": 0.6237,
+                        "mxu": null,
+                        "hlo": "not_collected",
+                        "llo": "not_collected"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "attempt_id": "optimized-example",
+                  "candidate": "Optimized (synthetic example)",
+                  "summary": "Invented candidate values for schema demonstration only; mfu 0.7484 represents 74.84%.",
+                  "runs": [
+                    {
+                      "run_id": "candidate-example",
+                      "recorded_at": null,
+                      "environment": {
+                        "device": "Hypothetical device; no actual run",
+                        "software": {}
+                      },
+                      "measurement": {
+                        "scope": "Synthetic illustrative values, not measurements",
+                        "timing_method": null,
+                        "warmup": null
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 10.0,
+                        "mfu": 0.7484,
+                        "mfu_executed_estimate": null,
+                        "mxu": null,
+                        "attention_mxu_static": null,
+                        "roofline_efficiency": null,
+                        "logical_bandwidth_gbps": null,
+                        "logical_bandwidth_utilization": null,
+                        "hbm_bandwidth_gbps": null,
+                        "hbm_bandwidth_utilization": null,
+                        "hlo": "not_collected",
+                        "llo": "not_collected",
+                        "failure_reason": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

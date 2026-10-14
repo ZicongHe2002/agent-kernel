@@ -1,5 +1,9 @@
 # agent-kernel
 
+**公共 Memory 输入：** [统一 JSON 输入规范及 AI 整理提示词](kernel-memory/README_MEMORY.md)。
+现有 [`.demo/memory/`](kernel-memory/.demo/memory/) 示例的生成和阅读方式见 [Project2 适配说明](kernel-memory/README_PROJECT2.md)。
+该示例采用精简阅读结构；下文的存储层级描述内部 MemoryStore。
+
 面向计算内核（kernel）自动优化的智能体项目。当前已实现的组件是 **Kernel Memory**
 （Python 包名 `kernel_memory`，命令行工具 `kmem`）：以文件为权威数据源的记忆系统，
 用于存储、校验、检索、比较和重建内核优化历史，按以下层级组织数据：
@@ -12,8 +16,12 @@
 | 路径 | 用途 |
 |---|---|
 | `kernel-memory/` | 主项目：`src/kernel_memory/` 为源码包，`tests/` 为测试，`fixtures/handoff/` 保存数据契约和合成演示数据的副本，`scripts/` 提供演示及验收报告脚本，`docs/` 为项目文档。 |
-| `kernel_memory_ai_handoff/` | 只读交付包，包含实现规范、机器可读的数据契约、合成示例和交付包校验工具。禁止向此目录写入内容；`MANIFEST.sha256` 必须保持校验通过，可运行 `cd kernel_memory_ai_handoff && shasum -a 256 -c MANIFEST.sha256` 检查。 |
 | `LICENSE`、`.gitignore` | 许可证及 Git 忽略规则。 |
+
+给同事生成 Memory 时，交付 `kernel-memory/` 即可，使用说明已经包含在
+`kernel-memory/README_MEMORY.md` 中。同事提供自己的实验记录，整理成 `input.json` 后生成 `memory/`。
+打包时排除 `.venv/`、Python/测试缓存和临时演示输出；`.demo/memory/` 是可选的真实历史结果示例。
+早期的 `kernel_memory_ai_handoff/` 交付包和旧演示输出已清理；程序和测试使用项目内的契约及 fixtures。
 
 ## 快速开始
 
@@ -42,7 +50,8 @@ $env:PYTHONPATH = "$PWD\src"
 & .\.venv\Scripts\python.exe -m kernel_memory.cli.main --help
 ```
 
-演示脚本仅向 `kernel-memory/.demo/` 写入数据，该目录已被 Git 忽略。
+演示脚本仅向 `kernel-memory/.demo/` 写入数据。普通演示目录已被 Git 忽略，
+其中 `kernel-memory/.demo/memory/` 是单独保留并提交的 Project2 阅读示例。
 运行 `.venv/bin/kmem --help` 可查看命令行帮助。
 
 WSL 中先进入 `/mnt/c/Users/fengluo/Desktop/agent-kernel`，再执行上面的 Bash 命令。
@@ -91,8 +100,7 @@ P0 演示和 CPU 演示。这些阶段的标准输出和报错都保存到 `kern
 
 ## 仓库维护约定
 
-* `.venv/`、`__pycache__/`、`*.egg-info/`、`.pytest_cache/`、`.DS_Store`、`kernel-memory/.demo/` 和 `*.sqlite`
-  已加入 Git 忽略规则。不要提交虚拟环境或演示生成的存储数据。
-* 仅使用 `kernel-memory/.venv` 中的 `pip` 安装依赖；不要在 `kernel_memory_ai_handoff/` 内运行 `pytest`，
-  以免在交付包中生成 `__pycache__`，破坏只读输入的约定。
+* `.venv/`、`__pycache__/`、`*.egg-info/`、`.pytest_cache/`、`.DS_Store`、普通 `kernel-memory/.demo/` 子目录和 `*.sqlite`
+  已加入 Git 忽略规则。`kernel-memory/.demo/memory/` 是用于阅读的已提交示例；不要提交虚拟环境或其他临时演示存储。
+* 仅使用 `kernel-memory/.venv` 中的 `pip` 安装依赖；运行测试所需的合成数据在 `kernel-memory/fixtures/`，应随源码保留。
 * 提交和推送由仓库所有者执行，详见[工作区边界约定](kernel-memory/docs/adr/ADR-0001-workspace-boundary.md)。

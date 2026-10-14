@@ -4,4 +4,3 @@
 *.sh text eol=lf
 kernel-memory/fixtures/handoff/** text eol=lf
 kernel-memory/src/kernel_memory/contracts/** text eol=lf
-kernel_memory_ai_handoff/** text eol=lf

@@ -45,6 +45,14 @@ def _document(kind: str, **values: Any) -> dict[str, Any]:
     return {"schema_version": OUTPUT_VERSION, "document_type": kind, **values}
 
 
+def round_output_value(value: float | None, digits: int = 3) -> float | None:
+    """Shorten display values without turning a positive measurement into zero."""
+    if value is None:
+        return None
+    rounded = round(value, digits)
+    return value if value > 0 and rounded == 0 else rounded
+
+
 def _slot(run: Record, name: str) -> float | None:
     unit, aliases = METRIC_SLOTS[name]
     matches = [m for alias in aliases for m in run.payload.analysis_metrics if m.name == alias]
@@ -61,7 +69,7 @@ def _slot(run: Record, name: str) -> float | None:
         return None
     # One convention for every utilization: 1 = 100%. Do not clamp estimates
     # above peak or replace unavailable values with zero.
-    return round(value / 100, 4) if unit == "percent" else round(value, 3)
+    return round_output_value(value / 100, 4) if unit == "percent" else round_output_value(value)
 
 
 def _ir_status(run: Record, level: str) -> str:
@@ -89,8 +97,8 @@ def _result(run: Record) -> dict[str, Any]:
         "execution_status": p.execution_status,
         "failure_reason": p.failure_reason,
         "correctness": p.correctness.status,
-        "latency_us": round(p.timing.median_us, 3) if p.timing.median_us is not None else None,
-        "p90_latency_us": round(p.timing.p90_us, 3) if p.timing.p90_us is not None else None,
+        "latency_us": round_output_value(p.timing.median_us),
+        "p90_latency_us": round_output_value(p.timing.p90_us),
         "samples": p.timing.sample_count,
         **{name: _slot(run, name) for name in METRIC_SLOTS},
         "hlo": _ir_status(run, "hlo"),
@@ -312,7 +320,16 @@ def export_output_memory(store: MemoryStore, output_root: Path) -> dict[str, Any
     resolved = root.resolve()
     if resolved == source_root or resolved in source_root.parents or source_root in resolved.parents:
         raise InputError("output root must be separate from the authoritative store", code="OUTPUT_OVERLAPS_STORE")
-    documents = build_output_memory(store)
+    return export_output_documents(build_output_memory(store), root)
+
+
+def export_output_documents(documents: dict[str, dict[str, Any]], output_root: Path) -> dict[str, Any]:
+    """Write validated readable documents using the shared manifest and path rules."""
+    root = Path(output_root).absolute()
+    if root.is_symlink():
+        raise InputError("output root must not be a symlink", code="UNSAFE_OUTPUT_PATH")
+    for relative in documents:
+        resolve_inside(root, relative)
     encoded = {path: (json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8") for path, doc in documents.items()}
     files = {path: sha256_bytes(data) for path, data in encoded.items()}
     manifest = {
@@ -332,6 +349,7 @@ def export_output_memory(store: MemoryStore, output_root: Path) -> dict[str, Any
             "logical_bandwidth": "Calculated from a logical byte model; hbm_bandwidth uses measured HBM traffic.",
             "null": "Unavailable, unsupported, invalid, or ambiguous measurement; never treated as zero.",
             "hlo_llo": "Status in source inputs; compiler files are not included in this output.",
+            "small_positive_values": "Preserve original precision if rounding would turn a positive measurement into zero.",
         },
         "content_hash": jcs_digest(files), "files": files,
         "counts": {"kernels": sum(p.endswith("/kernel.json") for p in files),
@@ -465,4 +483,4 @@ def verify_output_memory(output_root: Path) -> dict[str, Any]:
             "files_checked": len(docs), "content_hash": manifest.get("content_hash"), "counts": counts}
 
 
-__all__ = ["OUTPUT_FORMAT", "OUTPUT_VERSION", "METRIC_SLOTS", "build_output_memory", "export_output_memory", "verify_output_memory"]
+__all__ = ["OUTPUT_FORMAT", "OUTPUT_VERSION", "METRIC_SLOTS", "build_output_memory", "export_output_memory", "export_output_documents", "verify_output_memory"]

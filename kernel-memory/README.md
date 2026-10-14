@@ -1,5 +1,9 @@
 # Kernel Memory (`kernel_memory`, CLI `kmem`)
 
+**公共 Memory 输入：** 请先看 [统一输入规范及 AI 整理提示词](README_MEMORY.md)，使用 JSON Schema 校验并生成固定输出。
+现有 `.demo/memory/` 的生成命令和字段解释见 [Project2 适配说明](README_PROJECT2.md)。
+该目录是精简阅读输出；下面介绍的是内部 MemoryStore 及 CLI 功能。
+
 面向内核优化智能体、以文件为基础的权威记忆系统（Memory）。它按照以下层级存储、校验、
 检索、比较和重建内核优化历史：
 
@@ -66,7 +70,7 @@ macOS 注意事项：如果在虚拟环境中执行 `import kernel_memory` 失�
 ## 演示
 
 两个脚本都在当前目录下使用 `.venv` 运行，无需网络，仅向 `.demo/` 写入文件
-（该目录已被 Git 忽略；每次运行都会删除并重建目标存储）。
+（这些演示目标已被 Git 忽略；每次运行都会删除并重建目标存储；另行生成的 `.demo/memory/` 是已提交的 Project2 示例）。
 
 * `bash scripts/demo_p0.sh [STORE]` — 使用合成的交接数据包（原样的 v0.2 数据包，导入时在内存中升级到 v0.3，
   为 kernel 补上占位算法），离线演示 P0 流程：`init`、两次 `import-bundle --allow-fixture`（第二次导入满足幂等性，

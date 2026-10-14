@@ -25,21 +25,9 @@
             "candidate": "N13_kv_resident_paired_q512",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:31eca6c47c310e81c6c9a677833dd79e7b03a846b9655dfcf428292f490fd09f",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -103,21 +91,9 @@
             "candidate": "N14_paired_q512_diagonal256",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:5d5eefe56c60bb9cd28e946727481a42c972b1080b7d51e27176f2f7b30f27d1",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },

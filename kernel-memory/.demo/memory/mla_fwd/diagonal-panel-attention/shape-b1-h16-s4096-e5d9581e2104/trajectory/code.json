@@ -14,21 +14,9 @@
           "candidate": "N12a_staircase_diagonal256",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:3ddb2e6d3c0bbfa3579c4e10d25c73c932f5197ab88e89fc48e9e1555e69a256",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -63,7 +51,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:7a86e158e96d4392d62a8d10a76d539cec2962d9adfe6719e035d7a25ca33de7"
+        "variant_digest": "sha256:bea538c2de6db7aca3e8c2cbca5e90fb8e5da7fa1f9c4161904d343fa5d61e75"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-0ed9ecd5f00c"
@@ -81,21 +69,9 @@
           "candidate": "N12_recursive_diagonal_subpanel256",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:c5a488b19cf0accfb0e298e30691648eddbd4eb167839703202c30a2d7749870",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -130,7 +106,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:75429d616b51831c5f387de44f6b142420413fc5c9a276bdccc82a7dc131f506"
+        "variant_digest": "sha256:5ccdda4643c151ac7cb4a962b2a02d61bf46441422294273e7438b07229ed641"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-0f627f5bd70f"
@@ -148,21 +124,9 @@
           "candidate": "diagnostic_outer_grid_buffers_q2_kv2",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:c9f85c44155ebdf4a129b46621452d6b4ffdb54b239ffec6d87be54f0c4b7f55",
-                "sha256:6430cd0ce3d0b6fe64661fb06767687bd7623ea1588e02589ee7b2245fb5dfdf"
-              ],
               "status": "recorded"
             }
           },
@@ -203,7 +167,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:0efbcd0d84066cd6e6fe515f25313d0a4b8b1830f342de221374a34354f486f1"
+        "variant_digest": "sha256:bd686498d9bb9cdca3338425e3570fe2ef07bebeafa7f8871af0985bf9a50b95"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-1498ebb2ac32"
@@ -221,21 +185,9 @@
           "candidate": "D2_q_major_grid",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:e96454c3eeaeeca165a395855ddfd214253400f89e29169024ff999a556c2223",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -269,7 +221,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:9d7d50b6b2d462955133f94c63300e552d6cbca2a1ab1074fd36ea583a4fc206"
+        "variant_digest": "sha256:d1387687137b75f4bd93a2d8c02bed0e9a96dadd2a0be3c353ed4637fc40b353"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-1bd8bc30db04"
@@ -287,21 +239,9 @@
           "candidate": "N6_diagonal_panel512",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:92dc0d60431e00c86c037ddb70cd5e77c4c08a92dbe809063f4f9d9551252f0c",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -334,7 +274,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:a9889d7ba1c7bcfef36299a130994d5731e9a0cb9ea40657f95158f242e540c3"
+        "variant_digest": "sha256:ec0b3ca7edd6bf63fa174b9f69bdd73c5f4efc0e8fb6966c3b27abbe46392466"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-28aa3b35e7e7"
@@ -352,21 +292,9 @@
           "candidate": "diagnostic_cost_estimate",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:92dc0d60431e00c86c037ddb70cd5e77c4c08a92dbe809063f4f9d9551252f0c",
-                "sha256:e9f08d51eefb923fdf74dd9df9bf770200f589670effc48743e16ddf426ed7d6"
-              ],
               "status": "recorded"
             }
           },
@@ -400,7 +328,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:2ea8a1e051116cd1c2bd01b62d926b32d702e30beea4958066474528abc74351"
+        "variant_digest": "sha256:780a69224a67fb71397ef26453d49bf78d5884857cbb0fb93f10eac3bd2cc54e"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-32850beb90af"
@@ -418,21 +346,9 @@
           "candidate": "N8_qsub512_diagonal_panel512",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:4834ad8887bfc80ee28127adff3cb84752fcfbb5965ffad94b1ede757c578b93",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -466,7 +382,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:1942344bc5c767f73919ff04044ed067a4ce364fa3c5ece49abf0b1e0550e1d9"
+        "variant_digest": "sha256:b2bd881a4351f2fc31e4f8222ff2c52e7c5501f77be2a5bbd7dbab74b9d7d932"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-3526c9f075fb"
@@ -484,21 +400,9 @@
           "candidate": "N12_recursive_diagonal256_first",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:c6576c24c0a28b6920cd9bdf9ca2b667c01e9711a5752de936022647c058ce9e",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -534,7 +438,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:2eded531ec38363fcd7afbbe32381566a6bb3f2c86eec38120db0c85e835ce3f"
+        "variant_digest": "sha256:629ff28030d79e27ba8108eafecddf744227b6346c18b04464199f43b13d63f8"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-47086107b4a8"
@@ -552,21 +456,9 @@
           "candidate": "N12b_prefix_diagonal256",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:3a5fdd1f17dbb75ec44b339204df928cb491f1691065c85e59707bf89ec8c15c",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -601,7 +493,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:92f6c46193f0c23852a35e5f831430869a7837f1f5391d4a950d6361006f7f4d"
+        "variant_digest": "sha256:862eadbc8372ea19df9f333e2765bb75b0b86f1adac5ce15c8e4cdbc6864cf23"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-4853ca5b6f7c"
@@ -619,21 +511,9 @@
           "candidate": "N12c_ragged_diagonal256",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:431527e8fd9c23543e374cc997e73742829c6f7d029952054d8a095440083b65",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -668,7 +548,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:504156126c5f293178a7c814a6044555e7deb82dfb8b0307c69b82ab59cd0725"
+        "variant_digest": "sha256:50526c362e0c1008bf4b31db60920152663daf1524fe3fbfe1cc11fca5febccb"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-9de06ee46f87"
@@ -686,21 +566,9 @@
           "candidate": "N7_diagonal_panel512_first",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:43a68ffaf4ed918c57fa7726b89a5a58cd7140a384cb13779d987cb088914dd7",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -734,7 +602,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:4a22ce65d53c81602273b0f4b8bef419f6beba7ed5aecceada374575fd2a079a"
+        "variant_digest": "sha256:2d8a8ba4c9124105dd71e5810713fd6591687eb4bce6a3d488890b8033205560"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-b3f070f6cfd0"
@@ -752,21 +620,9 @@
           "candidate": "diagnostic_outer_grid_buffers_q1_kv2",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:b01e2deab60fdd40297db1f8107e06424f5a12be17eff2ac3e791ef8952312a1",
-                "sha256:6430cd0ce3d0b6fe64661fb06767687bd7623ea1588e02589ee7b2245fb5dfdf"
-              ],
               "status": "recorded"
             }
           },
@@ -807,7 +663,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:d4d137e8f55f909322ec0a28c46ed8fdcb5804f3751ed40814b00edd2486d36f"
+        "variant_digest": "sha256:8e76c5c0953d563435221e78029b6c601e22fbcb7e9a795bf93aeafbebb9b4b3"
       },
       "source_config_ref": "cfg-fwd-ee6e8b98-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-c496a059a36d"

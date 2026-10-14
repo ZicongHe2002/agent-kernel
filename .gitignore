@@ -9,6 +9,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.uv-cache*/
 *.egg-info/
 build/
 dist/
@@ -20,6 +21,7 @@ dist/
 kernel-memory/.demo/*
 !kernel-memory/.demo/memory/
 kernel-memory/memory/
+/kernel-memory.zip
 *.sqlite
 
 # Local editor / agent settings

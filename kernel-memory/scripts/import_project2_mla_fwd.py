@@ -185,33 +185,14 @@ def _source(manifest: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]
                                                       implementation_overrides=overrides, checkout_mode="exact_commit")}
 
 
-def _compiler_evidence(source_dir: Path, compile_row: dict[str, str]) -> dict[str, Any]:
-    """Keep compact compiler availability without copying any IR or bundle files."""
-    result = {level: {"status": "not_collected", "sha256": [], "file_count": 0}
-              for level in ("hlo", "llo")}
-    relative = compile_row.get("llo_directory")
-    if not relative:
-        return result
-    directory = (source_dir / relative).resolve()
-    if not directory.is_relative_to(source_dir):
-        raise ValueError("compiler evidence directory must stay inside the input dataset")
-    if not directory.is_dir():
-        raise ValueError(f"recorded compiler evidence directory is missing: {relative}")
-    files = sorted(path for path in directory.rglob("*") if path.is_file())
-    final_bundles = [path for path in files if path.name.endswith("-final_bundles.txt")]
-    expected_bundles = int(compile_row.get("final_bundle_count") or 0)
-    if len(final_bundles) != expected_bundles:
-        raise ValueError(f"recorded final bundle count does not match source files: {relative}")
-    for level, selected in (("hlo", [p for p in files if p.suffix in {".hlo", ".mlir"}]),
-                            ("llo", final_bundles)):
-        if selected:
-            if any(not path.resolve().is_relative_to(source_dir) for path in selected):
-                raise ValueError("compiler evidence file must stay inside the input dataset")
-            result[level] = {"status": "recorded", "sha256": [_digest(p.read_bytes()) for p in selected],
-                             "file_count": len(selected)}
-    result["llo"]["archive_file_count"] = len(files)
-    result["llo"]["bundle_owners"] = json.loads(compile_row.get("expected_bundle_owners") or "[]")
-    return result
+def _compiler_evidence(run_id: str, static: list[dict[str, str]],
+                       pressure: list[dict[str, str]]) -> dict[str, Any]:
+    """Record availability of parsed LLO results without opening raw compiler files."""
+    has_llo_results = any(row.get("run_id") == run_id for row in (*static, *pressure))
+    return {
+        "hlo": {"status": "not_collected"},
+        "llo": {"status": "recorded" if has_llo_results else "not_collected"},
+    }
 
 
 def build_records(source_dir: Path, *, candidates: list[str] | None = None,
@@ -271,7 +252,7 @@ def build_records(source_dir: Path, *, candidates: list[str] | None = None,
                    "options": json.loads(row.get("options_json") or "{}"),
                    "tiling": {k: _num(row.get(k)) for k in ("block_b", "block_q", "block_kv", "block_rq", "block_rkv")},
                    "source_run_id": original_run_id,
-                   "compiler_evidence": _compiler_evidence(source_dir, compile_rows.get(original_run_id, {}))}
+                   "compiler_evidence": _compiler_evidence(original_run_id, static, pressure)}
         source = _source(manifest, options)
         if row.get("is_leader_aligned_original") == "True":
             subject_ref = f"baseline-{short_name}-{identity}"

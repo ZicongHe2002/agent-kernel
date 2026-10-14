@@ -19,7 +19,7 @@ kernel/
 └── algorithm_3/
 ```
 
-The handoff specification (`kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md`, read-only input) fixes its own
+The original handoff specification (`IMPLEMENTATION.en.md`, retained in Git history) fixes its own
 precedence rule in §0.1, line 19: *"Precedence: subsequent explicit user instructions → the latest confirmed
 hierarchy → this specification and its companion contracts → the historical PDF."* The whiteboard is a subsequent
 explicit user instruction, so it outranks the §2 tree (`name → config → {trajectory, attempt}`) and the §4 layout

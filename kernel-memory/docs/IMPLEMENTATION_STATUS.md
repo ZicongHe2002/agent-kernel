@@ -1,11 +1,13 @@
 # Implementation status
 
 Project: `agent-kernel/kernel-memory/` (git repo `ZicongHe2002/agent-kernel`) · Python 3.11.8 venv at `.venv` ·
-Updated 2026-09-24 · Spec: `../kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md` (read-only input; its
-`MANIFEST.sha256` verifies unchanged).
+Updated 2026-09-24 · Original specification and handoff checksum report: retained in Git history.
 
-Read this file first when resuming. It records what is done, what was actually executed, what is unexecuted and
-why, and the minimum configuration a user still has to supply.
+This is a historical snapshot of what was executed on 2026-09-24, not the current environment or latest test
+results. With the user's explicit confirmation, the old handoff package and `docs/evidence/` logs were removed
+from the working tree on 2026-10-14. They are not required for the current public input workflow and remain
+available in Git history. For the current public input and compact output workflow, start with
+[README_MEMORY.md](../README_MEMORY.md).
 
 ## Milestones
 
@@ -15,9 +17,9 @@ why, and the minimum configuration a user still has to supply.
 | M1 contracts and identity (RFC 8785 JCS, hashes, strict models, problem normalizers) | done | `tests/test_jcs.py` (4 golden vectors + RFC 8785 appendix cases), `test_hashing.py` (every fixture hash reproduces), `test_models.py`, `test_problems.py` |
 | M2 authoritative storage (atomic publish, idempotency, artifacts, journal, integrity, recovery, SQLite index, lock) | done | `test_storage.py`, `test_storage_recovery.py` (crash injection), `test_storage_concurrency.py` (threads + second process + `LOCK_TIMEOUT`), `test_layout.py` |
 | M3 validation/import, trajectory/query/context, compare/decide | done | `test_validation.py` (86), `test_importer.py` (all 12 handoff negative cases), `test_trajectory.py`, `test_query.py`, `test_context.py`, `test_compare.py`, `test_decide.py`, `test_policy.py` |
-| M4 CLI + offline demonstration | done | `kmem` with 25 subcommands, `test_cli.py` (exit codes 0/2/3/4/5/7), `docs/evidence/demo_p0.log` |
+| M4 CLI + offline demonstration | done | `kmem` with 25 subcommands, `test_cli.py` (exit codes 0/2/3/4/5/7), historical P0 demo log in Git history |
 | M5 read-only GitHub client + `collect-pr` (pagination, 250-limit, force push, shared source) | done offline | `test_github_client.py`, `test_collect.py` with `tests/fixtures/github/*.json`; **live collection unexecuted** |
-| M6 real CPU demo adapter, JAX/TPU interface, request ledger, runner | done | `test_cpu_demo.py` (real execution), `test_jax_tpu.py` (T29 executes: `BackendUnavailable` on this CPU-only host), `test_ledger.py`, `test_runner.py`, `docs/evidence/demo_cpu.log` |
+| M6 real CPU demo adapter, JAX/TPU interface, request ledger, runner | done | `test_cpu_demo.py` (real execution), `test_jax_tpu.py` (T29 executes: `BackendUnavailable` on this CPU-only host), `test_ledger.py`, `test_runner.py`, historical CPU demo log in Git history |
 | M7 orchestration (budgets, ledger, MockPlanner, cancel/restart, decisions) | done | `test_budget.py`, `test_coordinator.py`; `kmem optimize` runs 3 real CPU rounds and stops on the candidate budget |
 | M8 real MLA kernel + TPU + LLO | **blocked** | no MLA source/ABI, no TPU device, no execution authorization, no LLO sample; explicit refusal paths tested |
 
@@ -28,20 +30,21 @@ why, and the minimum configuration a user still has to supply.
 # 1892 passed in 59.24s — 0 failed, 0 skipped, 38 test files (1272 test functions, some parametrized)
 .venv/bin/python scripts/acceptance_report.py --junit .demo/junit.xml --out docs/ACCEPTANCE.md
 # 32/32 acceptance scenarios mapped to executed tests; T02, T09, T17, T29 marked partial (external prerequisite missing)
-bash scripts/demo_p0.sh .demo/p0-memory              # exit 0 → docs/evidence/demo_p0.log
-REPS=50 WARMUP=10 bash scripts/demo_cpu.sh .demo/cpu-memory   # exit 0 → docs/evidence/demo_cpu.log
-.venv/bin/python ../kernel_memory_ai_handoff/tools/validate_handoff.py ../kernel_memory_ai_handoff --report .demo/handoff_validation.json
-# status passed, 18 records, 4 golden vectors → docs/evidence/handoff_validation.json (handoff directory left byte-identical)
+bash scripts/demo_p0.sh .demo/p0-memory              # exit 0; historical log in Git history
+REPS=50 WARMUP=10 bash scripts/demo_cpu.sh .demo/cpu-memory   # exit 0; historical log in Git history
 ```
 
-Offline P0 demo (`docs/evidence/demo_p0.log`, fixture numbers only): import 18 records + 7 artifacts; re-import 18
+The original handoff validator also passed: 18 records and 4 golden vectors, with the handoff directory left
+byte-identical. Its tool, source package, and report are now available through Git history.
+
+Offline P0 demo (historical log in Git history, fixture numbers only): import 18 records + 7 artifacts; re-import 18
 idempotent / 0 published; `validate --deep` ok (0 errors, 4 informational warnings about fixture provenance);
 `trajectory --rebuild/--verify` deterministic; `query --run-status not_run` → `commit-demo-a-in-102`, `commit-demo-b`;
 `query --component tiling` → `commit-demo-a`; `compare run-demo-a run-demo-baseline` → COMPARABLE, speedup 1.1111,
 latency reduction 10.0 %, blocker `FIXTURE_NOT_ELIGIBLE`; `decide` → **blocked** (`FIXTURE_NOT_ELIGIBLE`,
 `INSUFFICIENT_CONFIRMATION_PAIRS`), `is_production false`.
 
-Real CPU demo (`docs/evidence/demo_cpu.log`; host-synchronized numbers on this Mac, **not** kernel performance):
+Real CPU demo (historical log in Git history; host-synchronized numbers on this Mac, **not** kernel performance):
 kernel `demo_vector_add`, config n=4096 f32 (hash `sha256:8085a979…`), baseline identity = content address of the loaded
 demo source (`sha256:61ae1e5d…`). Baseline run `trusted_worker`/`cpu`, succeeded, correctness pass, 50 samples,
 median 1.125 µs; chunked variant (new `variant_digest`) succeeded, median 7.333 µs; replaying the request id executed

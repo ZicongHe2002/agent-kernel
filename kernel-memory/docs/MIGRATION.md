@@ -3,8 +3,8 @@
 Two migrations exist:
 
 * **v0.1 → v0.2 records** (sections 1–9): `kernel_memory.migrations.v01` (`read_v01_source`, `migrate_v01`,
-  `MigrationReport`, `NullResolver`, `MappingResolver`); CLI `kmem migrate-v01`. Specification: section 20 of
-  `../../kernel_memory_ai_handoff/docs/IMPLEMENTATION.en.md`; acceptance scenario T31.
+  `MigrationReport`, `NullResolver`, `MappingResolver`); CLI `kmem migrate-v01`. Originally specified in section 20
+  of the handoff implementation document (retained in Git history); acceptance scenario T31.
   Tests: `tests/test_migration_v01.py` (synthetic input only). Since ADR-0004 the v0.1 path also mints the
   placeholder algorithm described in section 10 and produces `0.3.0` records directly.
 * **v0.2 → v0.3** (section 10): `kernel_memory.migrations.v02` (`upgrade_v02_records`, `upgrade_bundle_v02`,

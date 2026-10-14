@@ -14,21 +14,9 @@
           "candidate": "approx_n6_score_bf16",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:cef5a4c6cc2ed8176ff725cd7716bda01e8c3964d9d760adbe9fdb13a1becf36",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -62,7 +50,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:ac9ee52af838179df06b8acb4f919db006e0bb4e2d5cc2e606233f3aa716103d"
+        "variant_digest": "sha256:95ea984a756ef274b4ed29bd88022094965c032f7136c296cafbbc7bdbf01df4"
       },
       "source_config_ref": "cfg-fwd-5b6152f4-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-9e3927f04e71"

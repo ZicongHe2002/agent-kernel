@@ -21,6 +21,7 @@ dev = ["pytest>=7.4", "numpy>=1.26", "PyYAML>=6.0"]
 
 [project.scripts]
 kmem = "kernel_memory.cli.main:main"
+kmem-import = "kernel_memory.services.memory_input:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

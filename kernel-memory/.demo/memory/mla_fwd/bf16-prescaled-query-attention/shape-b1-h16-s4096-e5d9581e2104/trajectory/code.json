@@ -14,21 +14,9 @@
           "candidate": "approx_prescale_q_bf16",
           "compiler_evidence": {
             "hlo": {
-              "file_count": 0,
-              "sha256": [],
               "status": "not_collected"
             },
             "llo": {
-              "archive_file_count": 22,
-              "bundle_owners": [
-                "attention",
-                "kv_projection"
-              ],
-              "file_count": 2,
-              "sha256": [
-                "sha256:1d5a0e8405973e2dbbcd23a26c0c57179413b7c7672885c085da92d15b1a275e",
-                "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-              ],
               "status": "recorded"
             }
           },
@@ -62,7 +50,7 @@
           "hex": "359ef19c9547475650b370b51075931e0e813da580fc4ac81f0991c5e504ccd4"
         },
         "tested_tree": null,
-        "variant_digest": "sha256:525b3365577775d8b77e8cd38ba654c458e8cb35301990d38992093fa6a7b901"
+        "variant_digest": "sha256:147c9dd26e81a396799a412c55acd439fc1c24a714243e5437b723fecbf03a16"
       },
       "source_config_ref": "cfg-fwd-830078a3-b1-h16-s4096-90dec5fb83a8",
       "subject_ref": "commit-a296e28977f7"

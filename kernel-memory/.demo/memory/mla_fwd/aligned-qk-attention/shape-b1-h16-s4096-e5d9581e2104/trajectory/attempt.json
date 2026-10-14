@@ -25,21 +25,9 @@
             "candidate": "current_qk256_mask",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:861fe99fde249299d06a479d0f7045e58aa7517b2de1c8872ace016f07fbb5c5",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },

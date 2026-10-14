@@ -144,23 +144,48 @@ def test_forward_rejects_bad_source_hash(converter, tmp_path: Path) -> None:
         converter.build_records(src)
 
 
-def test_forward_compiler_summary_uses_actual_files_not_collect_flag(converter, tmp_path: Path) -> None:
+def test_forward_uses_parsed_llo_results_without_raw_compiler_files(converter, tmp_path: Path) -> None:
     src = source(tmp_path / "source")
-    bundle_dir = src / "llo" / "n6" / "attention"
-    bundle_dir.mkdir(parents=True)
-    (bundle_dir / "123-attention-70-final_bundles.txt").write_text("recorded compiler bundles\n", encoding="utf-8")
     _csv(src / "compile.csv", [
-        {"run_id": "leader", "result": "PASS", "collect_llo": "True", "llo_directory": "", "final_bundle_count": "0"},
-        {"run_id": "n6", "result": "PASS", "collect_llo": "True", "llo_directory": "llo/n6", "final_bundle_count": "1"},
+        {"run_id": "leader", "result": "PASS", "collect_llo": "True", "llo_directory": "missing/leader", "final_bundle_count": "1"},
+        {"run_id": "n6", "result": "PASS", "collect_llo": "True", "llo_directory": "missing/n6", "final_bundle_count": "1"},
     ])
     records = converter.build_records(src)
     runs = {r["payload"]["source"]["implementation_overrides"]["candidate"]: r["payload"]
             for r in records if r["record_type"] == "run"}
     leader = runs["leader_aligned_original"]["source"]["implementation_overrides"]["compiler_evidence"]
     n6 = runs["N6_diagonal_panel512"]["source"]["implementation_overrides"]["compiler_evidence"]
-    assert leader["llo"]["status"] == "not_collected"
-    assert n6["hlo"]["status"] == "not_collected"
-    assert n6["llo"]["status"] == "recorded"
-    assert n6["llo"]["file_count"] == 1
-    assert len(n6["llo"]["sha256"]) == 1
+    assert leader == {"hlo": {"status": "not_collected"}, "llo": {"status": "not_collected"}}
+    assert n6 == {"hlo": {"status": "not_collected"}, "llo": {"status": "recorded"}}
+    metrics = {m["name"]: m for m in runs["N6_diagonal_panel512"]["analysis_metrics"]}
+    assert metrics["attention_mxu_static_utilization_percent"]["value"] == pytest.approx(55)
+    assert metrics["runtime_mxu_utilization_percent"]["value"] is None
     assert runs["N6_diagonal_panel512"]["artifacts"] == []
+
+
+def test_forward_pressure_results_do_not_require_raw_llo(converter, tmp_path: Path) -> None:
+    src = source(tmp_path / "source")
+    _csv(src / "llo_pressure_summary.csv", [{"run_id": "leader", "bundle_owner": "attention",
+        "unique_spill_allocations": "3", "known_unique_vector_spill_bytes": "4096"}])
+    records = converter.build_records(src)
+    leader = next(r["payload"] for r in records if r["record_type"] == "run"
+                  and r["payload"]["source"]["implementation_overrides"]["candidate"] == "leader_aligned_original")
+    assert leader["source"]["implementation_overrides"]["compiler_evidence"] == {
+        "hlo": {"status": "not_collected"}, "llo": {"status": "recorded"}}
+    metrics = {m["name"]: m for m in leader["analysis_metrics"]}
+    assert metrics["attention_unique_spill_allocations"]["value"] == 3
+    assert metrics["attention_known_unique_vector_spill_bytes"]["value"] == 4096
+    assert metrics["attention_known_unique_vector_spill_bytes"]["kind"] == "static_estimate"
+    assert metrics["hbm_bandwidth_utilization_percent"]["value"] is None
+
+
+@pytest.mark.parametrize("compile_result", [None, "FAIL"])
+def test_forward_requires_successful_compile_result(converter, tmp_path: Path, compile_result: str | None) -> None:
+    src = source(tmp_path / "source")
+    if compile_result is None:
+        (src / "compile.csv").unlink()
+    else:
+        _csv(src / "compile.csv", [{"run_id": "leader", "result": compile_result},
+                                   {"run_id": "n6", "result": "PASS"}])
+    with pytest.raises(ValueError, match="missing successful compile record"):
+        converter.build_records(src)

@@ -61,3 +61,11 @@ handoff record contract, sha256 `e24f4cd5bc52f6f0b8b8c40ee123f2760e3a1371bae9e15
 legacy input only). `contracts/record.schema.json` is the project's own `0.3.0` contract with the algorithm level;
 the divergence and its justification (the specification's own precedence rule) are recorded in ADR-0004. The fixture
 copy under `fixtures/handoff/` stays verbatim and is upgraded in memory by tests and the importer.
+
+## Amendment 2026-10-14 (working-tree cleanup)
+
+The user explicitly confirmed removal of the unused root `kernel_memory_ai_handoff/` package and historical
+`docs/evidence/` logs. They were removed from the working tree; their contents remain available in Git history.
+The earlier instructions to preserve that package describe the historical handoff and no longer require a local copy.
+Current source, contracts, `fixtures/handoff/`, and tests must remain: runtime and tests use the project-local copies.
+The public input and compact memory output workflow is documented in [README_MEMORY.md](../../README_MEMORY.md).

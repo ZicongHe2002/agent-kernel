@@ -1,0 +1,298 @@
+{
+  "format": "kernel-memory-input",
+  "schema_version": "1.0.0",
+  "kernels": [
+    {
+      "kernel_id": "mla_decode",
+      "description": "Historical Project2 dense MLA decode measurements from result/decode/result-decode-3/run_03. Values are copied from the existing readable memory export, not independently rerun. No declared baseline exists for this method and shape.",
+      "algorithms": [
+        {
+          "algorithm_id": "dense-aligned-dma-attention",
+          "display_name": "dense-aligned-dma-attention",
+          "method_summary": "对齐 DMA 的连续输入 MLA attention：在计时 JIT 内将 Q/KV 特征从 576 对齐到 640，使用 BF16 QK 和概率操作数、FP32 累加，按 KV tile 计算 attention。A_K* 变体比较 tile 大小和 DMA2 调度，输出为 latent attention。",
+          "summary_author": "agent",
+          "shapes": [
+            {
+              "shape_id": "b1-h16-n4096",
+              "problem": {
+                "input_signature": {
+                  "kv": {
+                    "shape": [
+                      1,
+                      4096,
+                      576
+                    ],
+                    "dtype": "bfloat16"
+                  },
+                  "lengths": {
+                    "shape": [
+                      1
+                    ],
+                    "dtype": "int32"
+                  },
+                  "q": {
+                    "shape": [
+                      1,
+                      16,
+                      576
+                    ],
+                    "dtype": "bfloat16"
+                  }
+                },
+                "output_signature": {
+                  "output": {
+                    "shape": [
+                      1,
+                      16,
+                      512
+                    ],
+                    "dtype": "bfloat16"
+                  }
+                },
+                "parameters": {
+                  "batch": 1,
+                  "cache_feature_dim": 576,
+                  "cache_layout": "dense",
+                  "capacity": 4096,
+                  "dtype": "bfloat16",
+                  "input_generation": {
+                    "distribution": "standard_normal",
+                    "quantization": "exact_bfloat16",
+                    "seed": 0
+                  },
+                  "interface": "dense_reference",
+                  "latent_dim": 512,
+                  "length_semantics": "valid_token_count",
+                  "num_q_heads": 16,
+                  "operation": "mla_decode",
+                  "page_size": null,
+                  "physical_cache_shape": [
+                    1,
+                    4096,
+                    576
+                  ],
+                  "probability_dtype": "bfloat16",
+                  "q_dim": 576,
+                  "query_tokens_per_request": 1,
+                  "rope_dim": 64,
+                  "score_dtype": "float32",
+                  "sliding_window": 0,
+                  "sm_scale": 0.07216878364870323,
+                  "soft_cap": 0.0,
+                  "timed_length": 4096,
+                  "input_layouts": {
+                    "kv": "[B,capacity,feature]",
+                    "lengths": "[B]",
+                    "q": "[B,H,q_dim]"
+                  },
+                  "output_layouts": {
+                    "output": "[B,H,latent_dim]"
+                  }
+                }
+              },
+              "baseline_run_id": null,
+              "attempts": [
+                {
+                  "attempt_id": "a-k1024",
+                  "candidate": "A_K1024",
+                  "summary": "Historical Project2 candidate measurement; not independently rerun. No Git commit or PR was recorded.",
+                  "parameters": {
+                    "block_kv": 1024,
+                    "dma2": false,
+                    "qk_operands": "BF16",
+                    "probability_operands": "BF16",
+                    "accumulation": "FP32"
+                  },
+                  "pr_url": null,
+                  "commit": null,
+                  "code": {
+                    "repository_url": null,
+                    "path": "source_snapshot/aligned_kernels.py",
+                    "entrypoint": "A_K1024"
+                  },
+                  "runs": [
+                    {
+                      "run_id": "run-5ef4bf1796f8",
+                      "recorded_at": "2026-09-18T11:47:26.305215Z",
+                      "measurement": {
+                        "scope": "dense",
+                        "timing_method": "device_profiler",
+                        "warmup": 5
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 13.999,
+                        "p90_latency_us": 14.111,
+                        "samples": 11,
+                        "mfu": 0.0111,
+                        "mfu_executed_estimate": null,
+                        "mxu": null,
+                        "attention_mxu_static": null,
+                        "roofline_efficiency": 0.2073,
+                        "logical_bandwidth_gbps": 339.558,
+                        "logical_bandwidth_utilization": 0.2073,
+                        "hbm_bandwidth_gbps": null,
+                        "hbm_bandwidth_utilization": null,
+                        "hlo": "recorded",
+                        "llo": "not_collected",
+                        "failure_reason": null
+                      }
+                    }
+                  ]
+                },
+                {
+                  "attempt_id": "a-k2048",
+                  "candidate": "A_K2048",
+                  "summary": "Historical Project2 candidate measurement; not independently rerun. No Git commit or PR was recorded.",
+                  "parameters": {
+                    "block_kv": 2048,
+                    "dma2": false,
+                    "qk_operands": "BF16",
+                    "probability_operands": "BF16",
+                    "accumulation": "FP32"
+                  },
+                  "pr_url": null,
+                  "commit": null,
+                  "code": {
+                    "repository_url": null,
+                    "path": "source_snapshot/aligned_kernels.py",
+                    "entrypoint": "A_K2048"
+                  },
+                  "runs": [
+                    {
+                      "run_id": "run-f1ebdce8be35",
+                      "recorded_at": "2026-09-18T11:47:26.305215Z",
+                      "measurement": {
+                        "scope": "dense",
+                        "timing_method": "device_profiler",
+                        "warmup": 5
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 13.23,
+                        "p90_latency_us": 13.331,
+                        "samples": 11,
+                        "mfu": 0.0117,
+                        "mfu_executed_estimate": null,
+                        "mxu": null,
+                        "attention_mxu_static": null,
+                        "roofline_efficiency": 0.2193,
+                        "logical_bandwidth_gbps": 359.292,
+                        "logical_bandwidth_utilization": 0.2193,
+                        "hbm_bandwidth_gbps": null,
+                        "hbm_bandwidth_utilization": null,
+                        "hlo": "recorded",
+                        "llo": "not_collected",
+                        "failure_reason": null
+                      }
+                    }
+                  ]
+                },
+                {
+                  "attempt_id": "a-k2048-dma2",
+                  "candidate": "A_K2048_DMA2",
+                  "summary": "Historical Project2 candidate measurement; not independently rerun. No Git commit or PR was recorded.",
+                  "parameters": {
+                    "block_kv": 2048,
+                    "dma2": true,
+                    "qk_operands": "BF16",
+                    "probability_operands": "BF16",
+                    "accumulation": "FP32"
+                  },
+                  "pr_url": null,
+                  "commit": null,
+                  "code": {
+                    "repository_url": null,
+                    "path": "source_snapshot/aligned_kernels.py",
+                    "entrypoint": "A_K2048_DMA2"
+                  },
+                  "runs": [
+                    {
+                      "run_id": "run-cddf2d296e0b",
+                      "recorded_at": "2026-09-18T11:47:26.305215Z",
+                      "measurement": {
+                        "scope": "dense",
+                        "timing_method": "device_profiler",
+                        "warmup": 5
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 13.046,
+                        "p90_latency_us": 13.095,
+                        "samples": 11,
+                        "mfu": 0.0119,
+                        "mfu_executed_estimate": null,
+                        "mxu": null,
+                        "attention_mxu_static": null,
+                        "roofline_efficiency": 0.2224,
+                        "logical_bandwidth_gbps": 364.351,
+                        "logical_bandwidth_utilization": 0.2224,
+                        "hbm_bandwidth_gbps": null,
+                        "hbm_bandwidth_utilization": null,
+                        "hlo": "recorded",
+                        "llo": "not_collected",
+                        "failure_reason": null
+                      }
+                    }
+                  ]
+                },
+                {
+                  "attempt_id": "a-k4096-dma2",
+                  "candidate": "A_K4096_DMA2",
+                  "summary": "Historical Project2 candidate measurement; not independently rerun. No Git commit or PR was recorded.",
+                  "parameters": {
+                    "block_kv": 4096,
+                    "dma2": true,
+                    "qk_operands": "BF16",
+                    "probability_operands": "BF16",
+                    "accumulation": "FP32"
+                  },
+                  "pr_url": null,
+                  "commit": null,
+                  "code": {
+                    "repository_url": null,
+                    "path": "source_snapshot/aligned_kernels.py",
+                    "entrypoint": "A_K4096_DMA2"
+                  },
+                  "runs": [
+                    {
+                      "run_id": "run-d707a68a1a74",
+                      "recorded_at": "2026-09-18T11:47:26.305215Z",
+                      "measurement": {
+                        "scope": "dense",
+                        "timing_method": "device_profiler",
+                        "warmup": 5
+                      },
+                      "result": {
+                        "execution_status": "succeeded",
+                        "correctness": "pass",
+                        "latency_us": 12.746,
+                        "p90_latency_us": 12.79,
+                        "samples": 11,
+                        "mfu": 0.0122,
+                        "mfu_executed_estimate": null,
+                        "mxu": null,
+                        "attention_mxu_static": null,
+                        "roofline_efficiency": 0.2277,
+                        "logical_bandwidth_gbps": 372.926,
+                        "logical_bandwidth_utilization": 0.2277,
+                        "hbm_bandwidth_gbps": null,
+                        "hbm_bandwidth_utilization": null,
+                        "hlo": "recorded",
+                        "llo": "not_collected",
+                        "failure_reason": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

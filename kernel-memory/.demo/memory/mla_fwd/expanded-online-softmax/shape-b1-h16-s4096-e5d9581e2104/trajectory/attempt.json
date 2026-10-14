@@ -19,21 +19,9 @@
             "candidate": "leader_aligned_original",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:dd3a38a8d42e157d6522d21d765e9e7e7ef492272c41576c2f559b780c5381d0",
-                  "sha256:7611d4431e3981831cad8bc281d283771b8854154d612adbf407a329ecb484de"
-                ],
                 "status": "recorded"
               }
             },
@@ -86,21 +74,9 @@
             "candidate": "leader_aligned_original",
             "compiler_evidence": {
               "hlo": {
-                "file_count": 0,
-                "sha256": [],
                 "status": "not_collected"
               },
               "llo": {
-                "archive_file_count": 22,
-                "bundle_owners": [
-                  "attention",
-                  "kv_projection"
-                ],
-                "file_count": 2,
-                "sha256": [
-                  "sha256:a7b402ef36d7b2b72f338b5eca06e3d5d62f5549a0ec0862aad5d9bdfc000167",
-                  "sha256:dba687e357124ccf210fdb42400a5caca64941fd28ea4fa942879d413cdfa45d"
-                ],
                 "status": "recorded"
               }
             },
